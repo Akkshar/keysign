@@ -61,6 +61,9 @@ WINDOW_S = 10.0          # features are computed on the last N seconds of events
 BUFFER_S = 120.0         # how much history a session keeps
 TICK_MS = 500            # minimum gap between ticks per session
 MIN_KEYS = 8             # don't score windows with fewer keydowns than this
+IDLE_RESET_S = 6.0       # a pause this long between ticks means someone else may have sat down: the
+                         # heads' vote/streak histories start over (measured: after an 80 s pause the
+                         # next person inherited the previous label for 4 ticks)
 
 # ---------------------------------------------------------------------------
 # Heads: each is fn(features: dict, baseline: Baseline | None, ctx: dict) -> dict
@@ -163,6 +166,10 @@ class Session:
         now = time.time()
         if (now - self.last_tick) * 1000 < TICK_MS:
             return None
+        if self.ticks and now - self.last_tick > IDLE_RESET_S:
+            for k in ("identity", "threat"):
+                self.ctx.pop(k, None)
+            self.ctx["idle_reset"] = True
         self.last_tick = now
         w = self.window()
         n_keys = sum(1 for e in w if e["type"] == "down")

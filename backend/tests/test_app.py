@@ -162,6 +162,18 @@ def test_broadcast_drops_dead_dashboards():
     backend.dashboards.clear()
 
 
+def test_idle_pause_resets_head_histories(monkeypatch):
+    monkeypatch.setattr(backend, "RECORD", False)
+    monkeypatch.setattr(backend, "TICK_MS", 0)
+    s = backend.Session("x", "u")
+    s.add(typed(30)); s.tick()
+    s.ctx["identity"] = {"history": ["someone"]}; s.ctx["threat"] = {"hist": [9.0]}
+    s.last_tick -= backend.IDLE_RESET_S + 1                 # a long pause, then typing resumes
+    s.add(typed(30, t0=60_000)); s.tick()
+    assert "identity" not in s.ctx or s.ctx["identity"].get("history") != ["someone"]
+    assert s.ctx.get("idle_reset") is True and s.ctx.get("threat", {}).get("hist") != [9.0]
+
+
 def test_window_trims_old_events(monkeypatch):
     monkeypatch.setattr(backend, "RECORD", False)      # a bare Session must not write into data/sessions
     s = backend.Session("x", "u")

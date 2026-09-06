@@ -43,8 +43,8 @@ NON_USER_PREFIX = "stranger"   # classes named "Stranger ..." are known NON-user
 
 def is_non_user(name: str | None) -> bool:
     return bool(name) and name.strip().lower().startswith(NON_USER_PREFIX)
-IDENTITY_MIN_KEYS = 15   # windows thinner than this don't vote (measured: 8-12-key windows are
-                         # right only 50-90% of the time, 21+ keys 85-100%)
+IDENTITY_MIN_KEYS = 20   # windows thinner than this don't vote (measured: 8-12-key windows are
+                         # right only 50-90% of the time, 13-20 keys 64% for Akkshar, 21+ keys 85-100%)
 UNKNOWN_MIN_KEYS = 25    # the distance rule needs a window this big; thin windows sit at 2+ for everyone
 _model_cache: dict[str, tuple[float, IdentityModel]] = {}
 
