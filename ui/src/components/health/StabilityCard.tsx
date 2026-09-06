@@ -28,6 +28,14 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
 
   const d = live.tick?.distance ?? null;   // sigma-distance from the declared user's calm baseline
   const score = d != null ? Math.round(Math.min(100, Math.max(0, 100 - d * 20))) : Math.round(liveConfidence > 0 ? liveConfidence * 0.92 : 92);
+  const who = live.declaredUser || 'the declared user';
+  const narrative = d == null
+    ? { text: `Waiting for typing. The ring shows how closely the rhythm matches ${who}'s calm baseline.`, label: 'No sample yet', dot: 'bg-slate-400' }
+    : score >= 70
+    ? { text: `Current typing is consistent with ${who}'s personal baseline (${d.toFixed(1)}σ).`, label: 'Stable', dot: 'bg-emerald-500' }
+    : score >= 40
+    ? { text: `Current typing is drifting from ${who}'s baseline (${d.toFixed(1)}σ). Could be load, fatigue or a different keyboard.`, label: 'Drifting', dot: 'bg-amber-400 animate-pulse' }
+    : { text: `Current typing does not match ${who}'s baseline (${d.toFixed(1)}σ). Either a different person or a very different state.`, label: 'Off baseline', dot: 'bg-rose-500 animate-pulse' };
   const radius = 40;
   const circumference = 2 * Math.PI * radius; // ~251.2
   const offset = circumference - (score / 100) * circumference;
@@ -89,11 +97,11 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
               Typing Pattern Stability
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
-              Your current typing behavior is consistent with your personal baseline.
+              {narrative.text}
             </p>
             <div className="flex items-center gap-1.5 pt-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Stable</span>
+              <span className={`w-2 h-2 rounded-full ${narrative.dot}`}></span>
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{narrative.label}</span>
             </div>
           </div>
         </div>
