@@ -15,12 +15,15 @@ export const CAPTURE_WS = (import.meta as any).env?.VITE_KEYSIGN_CAPTURE_WS || '
 
 export interface IdentityOut {
   user: string | null;
-  confidence?: number;
+  confidence?: number;             // posterior accumulated over the recent voting ticks
+  tick_confidence?: number;        // this window alone
   distance?: number | null;
+  open_set?: { score: number | null; threshold: number; calibrated: boolean; votes: number; of: number };
   unknown?: boolean | null;
   warming_up?: boolean;            // too few keys in the window to vote yet
-  matches_declared?: boolean;
+  matches_declared?: boolean | null;
   probs?: Record<string, number>;
+  posterior?: Record<string, number>;
   reason?: string;
   error?: string;
 }
@@ -39,7 +42,8 @@ export interface ThreatOut {
   level: 'none' | 'ok' | 'warn' | 'alert';
   kind?: 'intruder' | 'duress' | null;
   distance?: number;
-  sustained_ticks?: number;
+  sustained_ticks?: number;        // duress clock: consecutive ticks over the alert distance
+  mismatch_ticks?: number;         // intruder clock: consecutive ticks of identity mismatch
   identity_mismatch?: boolean;
   drivers?: [string, number][];
   alerts_total?: number;

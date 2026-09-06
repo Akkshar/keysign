@@ -91,13 +91,26 @@ def test_thin_windows_never_alert(baseline, alert_log):
 def test_kind_is_intruder_on_identity_mismatch(baseline, alert_log):
     ctx = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "unknown": False})
     out = None
-    for _ in range(heads.THREAT_PERSIST):
+    for _ in range(heads.INTRUDER_PERSIST):              # an intruder alerts on the faster clock
         out = heads.threat_head(odd_features(), baseline, ctx)
     assert out["level"] == "alert" and out["kind"] == "intruder" and out["identity_mismatch"] is True
+    assert out["mismatch_ticks"] == heads.INTRUDER_PERSIST and out["sustained_ticks"] < heads.THREAT_PERSIST
     assert json.loads(alert_log.read_text().splitlines()[-1])["kind"] == "intruder"
     # a mismatch alone (no deviation) is a warn, not an alert
     ctx2 = ctx_with(identity={"user": "Someone Else", "matches_declared": False})
     assert heads.threat_head(normal_features(), baseline, ctx2)["level"] == "warn"
+
+
+def test_same_person_burst_is_not_duress(baseline, alert_log):
+    """The right person typing oddly for a few seconds stays at warn; duress needs THREAT_PERSIST ticks."""
+    ctx = ctx_with(identity={"user": "Test User", "matches_declared": True, "unknown": False})
+    out = None
+    for _ in range(heads.INTRUDER_PERSIST + 2):
+        out = heads.threat_head(odd_features(), baseline, ctx)
+    assert out["level"] == "warn" and out["kind"] == "duress" and ctx["threat"]["alerts"] == 0
+    for _ in range(heads.THREAT_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, ctx)
+    assert out["level"] == "alert" and out["kind"] == "duress" and ctx["threat"]["alerts"] == 1
 
 
 def test_cooldown_prevents_repeat_pushes(baseline, alert_log, monkeypatch):

@@ -160,7 +160,8 @@ function deriveFromTick(tick: Tick, declared: string, baselineDoc: BaselineDoc |
       : idn && idn.matches_declared === false ? `Typing under ${declared || tick.user}'s name`
       : 'Enrolled · baseline on this device',
     title: d == null ? 'No baseline for the declared user yet'
-      : `${d.toFixed(2)}σ from ${tick.baseline?.user}'s calm baseline · identity ${confidence.toFixed(0)}%`,
+      : `${d.toFixed(2)}σ from ${tick.baseline?.user}'s calm baseline · identity ${confidence.toFixed(0)}%`
+        + (idn?.open_set?.score != null ? ` · open-set ${idn.open_set.score.toFixed(1)}/${idn.open_set.threshold.toFixed(1)}` : ''),
     avatarUrl: '',
     enrolledSamples: tick.baseline?.n_samples ?? 0,
     modelVersion: 'RandomForest · 22 timing features · on-device',

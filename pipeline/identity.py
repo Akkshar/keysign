@@ -3,9 +3,11 @@ Identity head model: who is typing?
 
 A RandomForest over the length-independent features (digraph timings
 included: they help identity even though they hurt the baseline distance).
-Open-set decision ("unknown user") is made in the backend head by combining
-the classifier's confidence with the distance to the predicted user's
-baseline; this module only does the closed-set part.
+Open-set decision ("unknown user") is made in the backend head. The
+classifier's confidence is useless for it (a stranger gets called someone
+with 92% confidence), so `train` also calibrates a per-user open-set score
+into each baseline: distance weighted by this model's feature importances,
+thresholded at the user's own p95 (see calibrate_open_set).
 
     uv run python -m pipeline.features <exports...> --windows -o data/features_windows.csv
     uv run python -m pipeline.identity train data/features_windows.csv -o data/models/identity.joblib
@@ -33,6 +35,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GroupKFold, StratifiedKFold, cross_val_predict
 
+from pipeline.baseline import Baseline, _slug
 from pipeline.features import FEATURE_NAMES
 
 # Length-independent features. Digraph timings are left out: on the 131-sample
@@ -42,6 +45,10 @@ IDENTITY_FEATURES: list[str] = [f for f in FEATURE_NAMES
                                 if f not in ("n_keys", "duration_s", "pause_count", "longest_pause_ms")
                                 and not f.startswith("dg_")]
 DEFAULT_MODEL_PATH = Path("data/models/identity.joblib")
+DEFAULT_BASELINE_DIR = Path("data/baselines")
+OPEN_SET_MIN_KEYS = 25          # calibrate on windows at least this big (the backend gates the rule the same way)
+OPEN_SET_FALSE_RATE = 0.05      # threshold = the user's own score at this quantile from the top
+OPEN_SET_THRESHOLD_RANGE = (2.2, 3.5)
 
 
 class IdentityModel:
@@ -123,7 +130,47 @@ def cross_val_accuracy(X: np.ndarray, y: np.ndarray, features: list[str], folds:
     return float((pred == y).mean())
 
 
-def train(features_csv: Path | str, out: Path | str = DEFAULT_MODEL_PATH, min_samples: int = 5) -> IdentityModel:
+def calibrate_open_set(model: IdentityModel, df: pd.DataFrame, baseline_dir: Path | str | None = DEFAULT_BASELINE_DIR,
+                       min_keys: int = OPEN_SET_MIN_KEYS, false_rate: float = OPEN_SET_FALSE_RATE,
+                       threshold_range: tuple[float, float] = OPEN_SET_THRESHOLD_RANGE) -> dict[str, float]:
+    """
+    Give every enrolled user's baseline an open-set score: the identity model's
+    feature importances as weights (mean 1 over the baseline features) and a
+    threshold at the user's own (1 - false_rate) quantile on their windows with
+    >= min_keys keys, clipped to threshold_range. Saves the baselines in place.
+    Returns {user: threshold} for the users that had a baseline.
+    """
+    if baseline_dir is None:
+        return {}
+    baseline_dir = Path(baseline_dir)
+    imp = pd.Series(model.clf.feature_importances_, index=model.features)
+    out: dict[str, float] = {}
+    for user in model.users:
+        path = baseline_dir / f"{_slug(user)}.json"
+        if not path.exists():
+            continue
+        b = Baseline.load(path)
+        w = imp.reindex(b.features).fillna(0.0).to_numpy(dtype=float)
+        if w.sum() <= 0:
+            continue
+        w = w / w.sum() * len(w)
+        b.open_set = {"weights": [float(v) for v in w], "threshold": None,
+                      "calibrated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                      "note": f"identity importances; own p{int((1 - false_rate) * 100)} on windows >= {min_keys} keys"}
+        own = df[(df["user"] == user) & (df["n_keys"] >= min_keys)] if "n_keys" in df else df[df["user"] == user]
+        if len(own) >= 5:
+            scores = np.asarray(b.open_set_score(own[b.features].to_numpy(dtype=float)))
+            thr = float(np.clip(np.quantile(scores, 1 - false_rate), *threshold_range))
+        else:
+            thr = float(threshold_range[1])
+        b.open_set["threshold"] = thr
+        b.save(path)
+        out[user] = thr
+    return out
+
+
+def train(features_csv: Path | str, out: Path | str = DEFAULT_MODEL_PATH, min_samples: int = 5,
+          baselines: Path | str | None = DEFAULT_BASELINE_DIR) -> IdentityModel:
     df = pd.read_csv(features_csv)
     counts = df["user"].value_counts()
     keep = counts[counts >= min_samples].index
@@ -137,6 +184,10 @@ def train(features_csv: Path | str, out: Path | str = DEFAULT_MODEL_PATH, min_sa
           f"cv accuracy {m.cv_accuracy:.1%}, chance {1/df['user'].nunique():.1%} -> {out}")
     if dropped:
         print(f"  skipped (fewer than {min_samples} samples): {', '.join(dropped)}")
+    thresholds = calibrate_open_set(m, df, baselines)
+    if thresholds:
+        print("  open-set thresholds (weighted distance, own p95): " +
+              ", ".join(f"{u} {t:.2f}" for u, t in thresholds.items()))
     return m
 
 
@@ -144,10 +195,12 @@ def _main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="KeySign identity model")
     sub = p.add_subparsers(dest="cmd", required=True)
     t = sub.add_parser("train"); t.add_argument("features_csv"); t.add_argument("-o", "--out", default=str(DEFAULT_MODEL_PATH))
+    t.add_argument("--baselines", default=str(DEFAULT_BASELINE_DIR),
+                   help="baseline folder to calibrate the open-set score in ('' to skip)")
     e = sub.add_parser("eval"); e.add_argument("features_csv")
     a = p.parse_args(argv)
     if a.cmd == "train":
-        train(a.features_csv, a.out)
+        train(a.features_csv, a.out, baselines=a.baselines or None)
     else:
         df = pd.read_csv(a.features_csv)
         X, y = df[IDENTITY_FEATURES].to_numpy(dtype=float), df["user"].astype(str).to_numpy()

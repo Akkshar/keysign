@@ -45,6 +45,25 @@ def test_save_load_roundtrip(tmp_path):
 def test_train_cli_skips_tiny_users(tmp_path, capsys):
     df = pd.concat([fake_users(), fake_users(n_per_user=2, seed=1).assign(user=lambda d: d.user + "_x")])
     csv = tmp_path / "f.csv"; df.to_csv(csv, index=False)
-    m = train(csv, tmp_path / "m.joblib", min_samples=5)
+    m = train(csv, tmp_path / "m.joblib", min_samples=5, baselines=None)
     assert set(m.users) == {"ann", "bob", "cat"}
     assert "skipped" in capsys.readouterr().out
+
+
+def test_train_calibrates_open_set_into_baselines(tmp_path):
+    from pipeline.baseline import Baseline, build_all
+    df = fake_users(n_per_user=20)
+    df["n_keys"] = 40
+    build_all(df, tmp_path / "b")
+    csv = tmp_path / "f.csv"; df.to_csv(csv, index=False)
+    train(csv, tmp_path / "m.joblib", baselines=tmp_path / "b")
+    b = Baseline.load(tmp_path / "b" / "ann.json")
+    assert b.open_set and b.open_set_threshold is not None
+    assert abs(np.mean(b.open_set["weights"]) - 1) < 1e-6 and len(b.open_set["weights"]) == len(b.features)
+    # ann's own rows mostly sit under her threshold; a stranger (cat's rows) mostly over it
+    ann = df[df.user == "ann"][b.features].to_numpy(float); cat = df[df.user == "cat"][b.features].to_numpy(float)
+    assert (b.open_set_score(ann) > b.open_set_threshold).mean() <= 0.1
+    assert (b.open_set_score(cat) > b.open_set_threshold).mean() >= 0.9
+    # uncalibrated baselines fall back to the plain distance
+    plain = Baseline(user="x", features=b.features, center=b.center, scale=b.scale, n_samples=1)
+    assert np.allclose(plain.open_set_score(ann), plain.distance(ann)) and plain.open_set_threshold is None
