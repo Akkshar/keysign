@@ -32,3 +32,6 @@ data/baselines/
 
 # Trained models (derived from personal data)
 data/models/
+
+# ad-hoc replay files
+capture/replay*.json

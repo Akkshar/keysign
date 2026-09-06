@@ -126,6 +126,13 @@
         <button id="liveReset" disabled title="Tell the backend a new window starts now (e.g. someone else sits down)">Reset</button>
         <span class="note" id="liveStatus" style="margin-top:0">off</span>
       </div>
+      <div class="row">
+        <label for="replayFile">Replay</label>
+        <input type="file" id="replayFile" accept=".json" title="A KeySign export; replays a recorded sample over the live socket at its original pace">
+        <select id="replaySample" disabled><option>load an export…</option></select>
+        <button id="replayBtn" disabled>Replay</button>
+        <span class="note" id="replayStatus" style="margin-top:0"></span>
+      </div>
     </div>
 
     <div class="panel" style="margin-top:16px">
@@ -184,7 +191,7 @@
 <script>
 (() => {
   'use strict';
-  const PAGE_VERSION = 'capture-1.2';
+  const PAGE_VERSION = 'capture-1.3';
   const STORE_KEY = 'keysign.samples.v1';
   const PREF_KEY = 'keysign.prefs.v1';
   const MIN_KEYDOWNS = 10;
@@ -414,6 +421,30 @@
   $('liveReset').addEventListener('click', () => live.send({ type: 'reset' }));
   el.user.addEventListener('change', () => live.send({ type: 'user', user: el.user.value.trim() || 'unknown' }));
   window.addEventListener('beforeunload', () => live.flush());
+
+  // ---------- replay a recorded sample over the live socket (demo insurance) ----------
+  const replay = { samples: [], timers: [] };
+  $('replayFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { replay.samples = JSON.parse(await f.text()); } catch (_) { $('replayStatus').textContent = 'not a KeySign export'; return; }
+    const sel = $('replaySample'); sel.innerHTML = '';
+    replay.samples.forEach((s, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `#${i + 1} ${s.user} · ${s.condition} · ${(s.n_keydowns || s.events.filter(x => x.type === 'down').length)} keys`; sel.appendChild(o); });
+    sel.disabled = !replay.samples.length; $('replayBtn').disabled = !replay.samples.length;
+    $('replayStatus').textContent = `${replay.samples.length} samples loaded`;
+  });
+  $('replayBtn').addEventListener('click', () => {
+    replay.timers.forEach(clearTimeout); replay.timers = [];
+    const s = replay.samples[Number($('replaySample').value)]; if (!s || !live.on) { $('replayStatus').textContent = live.on ? 'pick a sample' : 'turn Live on first'; return; }
+    live.send({ type: 'reset' });
+    const t0 = s.events[0].t, base = performance.now();
+    // re-stamp onto this page's clock so the backend window logic sees a fresh burst
+    s.events.forEach(ev => {
+      replay.timers.push(setTimeout(() => live.push({ type: ev.type, key: ev.key, code: ev.code, t: round3(base + (ev.t - t0)) }), ev.t - t0));
+    });
+    const span = (s.events[s.events.length - 1].t - t0) / 1000;
+    $('replayStatus').textContent = `replaying ${s.user} (${s.condition}) over ${span.toFixed(0)} s…`;
+    replay.timers.push(setTimeout(() => { $('replayStatus').textContent = 'replay done'; }, span * 1000 + 300));
+  });
 
   // ---------- countdown ----------
   function startTimer() {
