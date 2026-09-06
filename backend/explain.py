@@ -34,7 +34,8 @@ def enabled() -> bool:
 
 
 def template(user: str, label: str, load: float, drivers: list) -> str:
-    names = [DRIVER_WORDS.get(f, f.replace("_", " ")) for f, _ in drivers[:2]]
+    # only name signals that actually pushed load up (positive contribution)
+    names = [DRIVER_WORDS.get(f, f.replace("_", " ")) for f, v in drivers if v > 0][:2]
     why = " and ".join(names) if names else "a steady rhythm"
     if label == "deep focus":
         return f"{user} is in a steady, focused rhythm. Good moment to hold notifications."
