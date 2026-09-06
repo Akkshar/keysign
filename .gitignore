@@ -22,3 +22,7 @@ Thumbs.db
 
 # Derived feature tables
 data/*.csv
+
+# External datasets (staged from zips, see data/external/README.md)
+data/external/*
+!data/external/README.md
