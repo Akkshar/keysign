@@ -47,11 +47,14 @@ IDENTITY_FEATURES: list[str] = [f for f in FEATURE_NAMES
 DEFAULT_MODEL_PATH = Path("data/models/identity.joblib")
 DEFAULT_BASELINE_DIR = Path("data/baselines")
 OPEN_SET_MIN_KEYS = 25          # calibrate on windows at least this big (the backend gates the rule the same way)
-OPEN_SET_FALSE_RATE = 0.10      # threshold = the user's own score at this quantile from the top.
-                                # Per window; the head majority-votes 5 windows, so the shown false-unknown
-                                # rate is far lower. Held-out strangers flagged: p95 87% (worst pair 31%),
-                                # p90 92% (worst pair 62%).
-OPEN_SET_THRESHOLD_RANGE = (2.0, 3.5)
+OPEN_SET_FALSE_RATE = 0.05      # threshold = the user's own score at this quantile from the top.
+                                # Per window; the head majority-votes 5 windows. Held-out strangers flagged:
+                                # p95 87% (worst pair 31%), p90 92% (worst pair 62%). p90 with a 2.0 floor
+                                # was tried live and flagged a teammate as unknown at 2.4: live typing runs
+                                # hotter than enrolment, so the floor is 2.6. A teammate shown as UNKNOWN is
+                                # worse than a stranger shown as a teammate (the intruder alert still fires
+                                # on the mismatch with the declared user).
+OPEN_SET_THRESHOLD_RANGE = (2.6, 3.5)
 
 
 class IdentityModel:
