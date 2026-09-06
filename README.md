@@ -13,7 +13,7 @@ See [CLAUDE.md](CLAUDE.md) for the full brief, architecture, and 48h plan.
     backend/     FastAPI + WebSocket stream (step 4).
     dashboard/   React dashboard (step 4).
     data/        Exported samples land in data/samples/ (gitignored).
-    docs/        Notes, data format spec.
+    docs/        Data format spec, demo runbook (docs/demo-runbook.md).
     analyze.py   Pre-hackathon viability check. Reads a capture export, reports
                  whether users separate and whether stress shows up.
 

@@ -90,8 +90,9 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
   name-normalised file. Re-run when more samples land:
   `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json -o data/features.csv`
   then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`.
-- **h0-h7 — live stream end-to-end.** DONE (backend + dashboard + capture
-  Live mode). Identity head in progress.
+- **h0-h7 — live stream end-to-end.** DONE: backend, dashboard, capture Live
+  mode, and all four heads (Identity, State, Threat live; Drift chart).
+  Demo script: `docs/demo-runbook.md`.
 - **R1 (22:00, h7) — show:** live dashboard reacting to typing, chair swap
   making the distance jump, plus the benchmark slide (identity accuracy on 4
   teammates, 51-user CMU benchmark, four datasets). Message: "the sensing
