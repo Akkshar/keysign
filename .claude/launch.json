@@ -4,19 +4,40 @@
     {
       "name": "capture",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["capture/serve.js", "8080"],
+      "runtimeArgs": [
+        "capture/serve.js",
+        "8080"
+      ],
       "port": 8080
     },
     {
       "name": "backend",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "--python", "3.12", "uvicorn", "backend.app:app", "--port", "8000"],
+      "runtimeArgs": [
+        "run",
+        "--python",
+        "3.12",
+        "uvicorn",
+        "backend.app:app",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "backend",
+        "--reload-dir",
+        "pipeline"
+      ],
       "port": 8000
     },
     {
       "name": "dashboard",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "dashboard", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "dashboard",
+        "run",
+        "dev"
+      ],
       "port": 5173
     }
   ]
