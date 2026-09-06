@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useLiveFeed, WS_URL } from './useLiveFeed.js';
 
@@ -38,6 +38,7 @@ export default function App() {
           <DistancePanel s={s} tick={tick} />
           <FeaturesPanel tick={tick} />
           <TimelinePanel s={s} />
+          <DriftPanel />
         </div>
         <div className="col">
           <WhoPanel tick={tick} meta={meta} />
@@ -185,6 +186,86 @@ function ThreatPanel({ tick }) {
       {th?.drivers && <div className="drivers">{th.drivers.map(([f, z]) => <span key={f} className="chip">{f} {z > 0 ? '+' : ''}{z.toFixed(1)}σ</span>)}</div>}
       {last && <div className="note alert">silent alert #{th.alerts_total} ({last.kind}) {last.sent ? 'pushed to phone' : 'logged'} at {new Date(last.ts * 1000).toLocaleTimeString()}</div>}
       {th?.reason && <div className="note">{th.reason}</div>}
+    </div>
+  );
+}
+
+// ---- Drift: the long-term vision, from public longitudinal data (dashboard/public/drift.json) ----
+function DriftPanel() {
+  const [data, setData] = useState(null);
+  const [who, setWho] = useState(0);
+  const [metric, setMetric] = useState('wpm');
+  useEffect(() => {
+    fetch('/drift.json').then(r => r.ok ? r.json() : null).then(setData).catch(() => setData(null));
+  }, []);
+  if (!data) return (
+    <div className="panel"><h2>Drift <span className="muted">· weeks to months</span></h2>
+      <div className="empty">No drift data. Run <span className="mono">uv run python -m pipeline.drift</span>.</div></div>
+  );
+  const users = data.monkeytype || [];
+  const u = users[who] || null;
+  const dz = u?.drift?.[metric];
+  const zCls = dz?.z == null ? 'muted' : Math.abs(dz.z) >= 3 ? 'alert' : Math.abs(dz.z) >= 2 ? 'warn' : 'ok';
+  const rollKey = metric === 'wpm' ? 'wpm_roll' : metric === 'acc' ? 'acc_roll' : null;
+  const cmu = data.cmu;
+  const cmuData = cmu ? cmu.sessions.map((s, i) => ({ session: `s${s}`, flight: cmu.flight_mean[i], hold: cmu.hold_mean[i] })) : [];
+  return (
+    <div className="panel">
+      <div className="head">
+        <h2>Drift <span className="muted">· is the baseline itself moving?</span></h2>
+        <span className="tag">roadmap · public longitudinal data</span>
+      </div>
+      {u && (
+        <>
+          <div className="row" style={{ gap: 10, alignItems: 'center', marginBottom: 8 }}>
+            <select value={who} onChange={e => setWho(Number(e.target.value))}>
+              {users.map((x, i) => <option key={x.user} value={i}>{x.user} · {x.weeks} active weeks over {x.span_days} days</option>)}
+            </select>
+            <select value={metric} onChange={e => setMetric(e.target.value)}>
+              <option value="wpm">speed (wpm)</option><option value="acc">accuracy (%)</option><option value="consistency">consistency</option>
+            </select>
+            <span style={{ flex: 1 }} />
+            {dz && dz.z != null
+              ? <span className={`chip ${zCls}`}>drift <b>{dz.z > 0 ? '+' : ''}{dz.z.toFixed(1)}σ</b> vs first 8 weeks · {dz.slope_per_month > 0 ? '+' : ''}{dz.slope_per_month.toFixed(2)} / month</span>
+              : <span className="chip muted">not enough weeks</span>}
+          </div>
+          <div style={{ height: 180 }}>
+            <ResponsiveContainer>
+              <LineChart data={u.points} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                <CartesianGrid stroke="#2a2f3a" vertical={false} />
+                <XAxis dataKey="week" stroke="#8b93a7" fontSize={11} minTickGap={50} tickFormatter={w => w.slice(0, 7)} />
+                <YAxis stroke="#8b93a7" fontSize={11} domain={['auto', 'auto']} />
+                <Tooltip contentStyle={{ background: '#1e222b', border: '1px solid #2a2f3a' }} />
+                <Line type="monotone" dataKey={metric} name={metric} stroke="#8b93a7" strokeWidth={1} dot={false} isAnimationActive={false} />
+                {rollKey && <Line type="monotone" dataKey={rollKey} name="6-week baseline" stroke="#5ee1a1" strokeWidth={2} dot={false} isAnimationActive={false} connectNulls />}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </>
+      )}
+      {cmu && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+          <div>
+            <div className="note" style={{ marginTop: 0 }}>CMU benchmark · {cmu.subjects} people · same password, 8 sessions on different days</div>
+            <div style={{ height: 110 }}>
+              <ResponsiveContainer>
+                <LineChart data={cmuData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="session" stroke="#8b93a7" fontSize={11} />
+                  <YAxis stroke="#8b93a7" fontSize={11} domain={['auto', 'auto']} />
+                  <Tooltip contentStyle={{ background: '#1e222b', border: '1px solid #2a2f3a' }} />
+                  <Line type="monotone" dataKey="flight" name="flight ms" stroke="#f7b955" dot isAnimationActive={false} />
+                  <Line type="monotone" dataKey="hold" name="hold ms" stroke="#5ee1a1" dot isAnimationActive={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="note" style={{ marginTop: 0 }}>
+            Median typist gets <b>{Math.abs(cmu.flight_change_pct_median)}% {cmu.flight_change_pct_median < 0 ? 'faster' : 'slower'}</b> between the first and last session.
+            {cmu.identity_holdout && <> An identity model scores <b>{(cmu.identity_holdout.random_split * 100).toFixed(0)}%</b> on a random split but <b>{(cmu.identity_holdout.train_s1_4_test_s5_8 * 100).toFixed(0)}%</b> when trained on early sessions and tested on later ones: baselines move, so KeySign must re-learn them continuously.</>}
+            <div style={{ marginTop: 8 }}>{data.framing}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

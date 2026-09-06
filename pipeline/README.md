@@ -82,6 +82,13 @@ What the baseline is for, per head (measured on the 4-teammate set):
   More people and a harsher, consistent stressor are what would let the
   model win. The backend exposes the result at `GET /api/state` with
   `advice: defer|ok` for other apps.
+- **Drift** (`drift.py`, done, chart only): `uv run python -m pipeline.drift`
+  writes `dashboard/public/drift.json` from the public longitudinal sets:
+  per-person weekly Monkeytype series with a rolling baseline and a drift
+  score (latest 8 weeks vs first 8 weeks, in the person's own MAD units),
+  the CMU session-to-session shift (median typist 28% faster by session 8;
+  identity trained on sessions 1-4 drops from 52% to 37% on 5-8), and our
+  own samples by day. Framed as a screening signal, never a diagnosis.
 - **Identity**: nearest-baseline is a fallback (72% on 4 users); the
   RandomForest on raw features is better (92%). Use the classifier, and use
   distance-to-claimed-baseline only for the "unknown user" decision.
