@@ -1,0 +1,19 @@
+[project]
+name = "keysign"
+version = "0.1.0"
+description = "Behavioral vital-signs engine from keystroke timing"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["pipeline/tests"]
+
+[tool.uv]
+package = false

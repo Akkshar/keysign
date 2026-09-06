@@ -29,9 +29,18 @@ Then: enter your name, pick calm/stress, press Start, type the prompt, press
 Save (or Ctrl+Enter). Repeat 5+ times per person per condition. Export JSON
 and drop the file into data/samples/.
 
-Run the viability check on an export (needs Python 3 + scikit-learn):
+## Python side (pipeline)
 
-    python analyze.py data/samples/keysign_<date>.json
+Python deps are managed with [uv](https://docs.astral.sh/uv/); it fetches an
+interpreter too, so a bare Windows box works:
+
+    uv sync                                  # one-time, creates .venv
+    uv run python -m pytest -q               # pipeline tests
+    uv run python -m pipeline.features data/samples/<export>.json -o data/features.csv
+
+Run the viability check on an export:
+
+    uv run python analyze.py data/samples/keysign_<date>.json
 
 ## Data format
 
