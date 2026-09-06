@@ -15,9 +15,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import numpy as np
+
+from backend import explain
 from backend.app import ROOT, load_baseline, register_head
 from pipeline.baseline import Baseline
 from pipeline.identity import IdentityModel
+from pipeline.state import StateModel, rule_load
 
 # ---------------------------------------------------------------------------
 # Identity: who is typing? RandomForest (pipeline/identity.py) + open-set rule.
@@ -81,19 +85,58 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# State (placeholder): rule of thumb on the z-scores until the supervised model lands.
-# Measured direction of stress on the teammate set: faster, more errors, more
-# pauses, more key overlap. Owner: replace with the RandomForest on z-scores.
+# State: cognitive load. Supervised model on per-user z-scores (pipeline/state.py),
+# rule-based fallback until one is trained, EMA smoothing so the meter moves like
+# a gauge, and a plain-language line (Gemini if GEMINI_API_KEY is set, template otherwise).
+# Train with:  uv run python -m pipeline.state train data/features.csv
 # ---------------------------------------------------------------------------
+STATE_MODEL_PATH = ROOT / "data" / "models" / "state.joblib"
+STATE_EMA = 0.35              # weight of the newest tick
+# Label cut-offs, from the measured rule-score distribution on the team set:
+# calm median 0.14, timed-stress median 0.38. A real interrupter pushes higher.
+FOCUS_BELOW, LOAD_ABOVE = 0.25, 0.50
+# A trained model must beat the fixed rule to be used. Measured leave-one-user-out
+# on 4 people: rule 0.79, logistic model 0.66 (it learns the people, not the stress).
+MODEL_MIN_AUC = 0.80
+_state_cache: dict[str, tuple[float, StateModel]] = {}
+
+
+def _state_model() -> StateModel | None:
+    if not STATE_MODEL_PATH.exists():
+        return None
+    mtime = STATE_MODEL_PATH.stat().st_mtime
+    hit = _state_cache.get("m")
+    if hit and hit[0] == mtime:
+        return hit[1]
+    m = StateModel.load(STATE_MODEL_PATH)
+    _state_cache["m"] = (mtime, m)
+    return m
+
+
 def state_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     if baseline is None:
-        return {"load": None, "label": "unknown", "reason": "no baseline"}
-    z = dict(zip(baseline.features, baseline.zscores(features)))
-    load = (0.35 * max(z.get("speed_kps", 0), 0) + 0.25 * max(z.get("error_rate", 0), 0)
-            + 0.20 * max(z.get("pause_ratio", 0), 0) + 0.20 * max(z.get("rp_negative_ratio", 0), 0))
-    load = max(0.0, min(1.0, load / 3.0))            # 0..1, ~3 sigma on every driver = 1
-    label = "deep focus" if load < 0.2 else "engaged" if load < 0.5 else "high load"
-    return {"load": round(load, 2), "label": label}
+        return {"load": None, "label": "unknown", "advice": "unknown", "reason": "no baseline for this user yet"}
+    z = dict(zip(baseline.features, np.clip(baseline.zscores(features), -5, 5)))
+    m = _state_model()
+    if m is not None and (m.louo_auc or 0.0) >= MODEL_MIN_AUC:
+        out = m.predict(z)
+        raw, drivers, source = out["load"], out["drivers"], "model"
+    else:
+        raw, source = rule_load(z), "rule"
+        drivers = [[f, round(float(z.get(f, 0.0)), 2)] for f in ("speed_kps", "error_rate", "rp_negative_ratio")]
+    st = ctx.setdefault("state", {"ema": None})
+    st["ema"] = raw if st["ema"] is None else STATE_EMA * raw + (1 - STATE_EMA) * st["ema"]
+    load = float(st["ema"])
+    label = "deep focus" if load < FOCUS_BELOW else "engaged" if load < LOAD_ABOVE else "high load"
+    advice = "defer" if label == "deep focus" or label == "high load" else "ok"
+    user = ctx.get("user") or baseline.user
+    return {
+        "load": round(load, 2), "raw": round(float(raw), 2), "label": label,
+        "advice": advice,                      # what other apps should do with notifications right now
+        "drivers": drivers, "source": source,
+        "explanation": explain.get(st, user, label, load, drivers),
+        "explainer": "gemini" if explain.enabled() else "template",
+    }
 
 
 register_head("identity", identity_head)

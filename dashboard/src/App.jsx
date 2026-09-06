@@ -152,12 +152,15 @@ function WhoPanel({ tick, meta }) {
 function StatePanel({ tick, s }) {
   const st = tick?.heads?.state;
   const load = st?.load;
-  const color = load == null ? 'var(--muted)' : load < 0.2 ? 'var(--accent)' : load < 0.5 ? 'var(--warn)' : 'var(--danger)';
+  const color = load == null ? 'var(--muted)' : load < 0.35 ? 'var(--accent)' : load < 0.6 ? 'var(--warn)' : 'var(--danger)';
   return (
     <div className="panel">
-      <h2>State <span className="muted">· cognitive load</span></h2>
+      <div className="head"><h2>State <span className="muted">· cognitive load</span></h2>
+        {st?.source && <span className="tag">{st.source === 'model' ? 'trained model' : 'rule fallback'} · {st.explainer}</span>}</div>
       <div className="big" style={{ color }}>{load == null ? '–' : (load * 100).toFixed(0)}<span className="u">{st?.label || ''}</span></div>
       <div className="meter"><div style={{ width: `${(load || 0) * 100}%`, background: color }} /></div>
+      {st?.advice && <div className="note">notifications: <b className={st.advice === 'defer' ? 'warn' : 'ok'}>{st.advice === 'defer' ? 'DEFER' : 'OK to interrupt'}</b> · <span className="mono">GET /api/state</span></div>}
+      {st?.drivers && <div className="drivers">{st.drivers.map(([f, v]) => <span key={f} className="chip">{f} {v > 0 ? '+' : ''}{v.toFixed(1)}</span>)}</div>}
       {st?.explanation && <div className="note">{st.explanation}</div>}
       {st?.reason && <div className="note">{st.reason}</div>}
     </div>

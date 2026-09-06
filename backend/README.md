@@ -15,6 +15,13 @@ Endpoints:
 | `GET /health`     | sessions, dashboards, registered heads                       |
 | `GET /api/users`  | baselines on disk + feature name lists                       |
 | `GET /api/baseline/{user}` | one baseline JSON                                   |
+| `GET /api/state`  | State head as an API: `advice: defer|ok`, load, label, explanation (latest tick; `?session=` to pick one) |
+
+State explanations: set `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`,
+default `gemini-2.5-flash`) before starting the backend to get a Gemini
+one-liner, fetched in a background thread at most every 20 s per session.
+Without a key, or offline, a template sentence is used. Only the label,
+load and driver names leave the machine, never keystrokes or text.
 
 A tick = features on the last 10 s of events, the declared user's baseline
 distance and z-scores, the top-3 moved features, and every head's output.

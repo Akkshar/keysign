@@ -72,10 +72,16 @@ What the baseline is for, per head (measured on the 4-teammate set):
 
 - **Threat**: `distance()` is the anomaly score. Symmetric: anything unlike
   the calm baseline. Needs the bigger sample counts above to be reliable.
-- **State**: distance alone is weak (pooled AUC 0.54) because stress has a
-  *direction*: faster, more errors, more pauses, more key overlap. A
-  RandomForest on per-user z-scores (`score_frame` z columns), trained across
-  users, gets AUC 0.82 leave-one-user-out. Build the State head that way.
+- **State** (`state.py`, done): distance alone is weak because stress has a
+  *direction*: faster, shorter holds, more errors, more key overlap. The head
+  scores per-user z-scores with a fixed directional rule (`rule_load`), and a
+  trained logistic model (`uv run python -m pipeline.state train
+  data/features.csv`) replaces it only if its leave-one-user-out AUC beats
+  0.80. Measured on the 131-sample team set: rule 0.79 pooled (0.61-0.97 per
+  person), trained model 0.66 (with four people it learns who, not what).
+  More people and a harsher, consistent stressor are what would let the
+  model win. The backend exposes the result at `GET /api/state` with
+  `advice: defer|ok` for other apps.
 - **Identity**: nearest-baseline is a fallback (72% on 4 users); the
   RandomForest on raw features is better (92%). Use the classifier, and use
   distance-to-claimed-baseline only for the "unknown user" decision.

@@ -118,6 +118,7 @@ class Session:
         self.user = user
         self.events: deque[dict] = deque()
         self.last_tick = 0.0
+        self.last_tick_msg: dict | None = None
         self.ticks = 0
         self.ctx: dict[str, Any] = {}        # heads can keep per-session state here
 
@@ -158,12 +159,14 @@ class Session:
             top = [[f, round(v, 2)] for f, v in base.explain(feats, top=3)]
         self.ticks += 1
         self.ctx.update({"session": self.id, "user": self.user, "tick": self.ticks, "window": w})
-        return {"type": "tick", "session": self.id, "user": self.user, "ts": now,
-                "window_s": WINDOW_S, "n_events": len(w), "n_keys": n_keys,
-                "features": {k: float(v) for k, v in feats.items()},
-                "baseline": {"user": base.user, "n_samples": base.n_samples} if base else None,
-                "distance": distance, "z": z, "top": top,
-                "heads": run_heads(feats, base, self.ctx), "status": "ok"}
+        msg = {"type": "tick", "session": self.id, "user": self.user, "ts": now,
+               "window_s": WINDOW_S, "n_events": len(w), "n_keys": n_keys,
+               "features": {k: float(v) for k, v in feats.items()},
+               "baseline": {"user": base.user, "n_samples": base.n_samples} if base else None,
+               "distance": distance, "z": z, "top": top,
+               "heads": run_heads(feats, base, self.ctx), "status": "ok"}
+        self.last_tick_msg = msg
+        return msg
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +207,25 @@ def users():
 def baseline(user: str):
     b = load_baseline(user)
     return b.to_dict() if b else {"error": "no baseline", "user": user}
+
+
+@app.get("/api/state")
+def state_api(session: str | None = None):
+    """
+    The State head as an API for other apps: "should I interrupt this person now?"
+    Returns the latest tick's state output for a session (default: the most
+    recently active one). `advice` is "defer" or "ok".
+    """
+    live = [s for s in sessions.values() if s.last_tick_msg]
+    if session:
+        live = [s for s in live if s.id == session]
+    if not live:
+        return {"advice": "unknown", "reason": "no active typing session", "sessions": [s.id for s in sessions.values()]}
+    s = max(live, key=lambda x: x.last_tick)
+    st = (s.last_tick_msg.get("heads") or {}).get("state") or {}
+    return {"session": s.id, "user": s.user, "ts": s.last_tick_msg.get("ts"), "age_s": round(time.time() - s.last_tick, 1),
+            "advice": st.get("advice", "unknown"), "load": st.get("load"), "label": st.get("label"),
+            "explanation": st.get("explanation"), "identity": (s.last_tick_msg.get("heads") or {}).get("identity")}
 
 
 @app.websocket("/ws/capture")

@@ -181,3 +181,71 @@ def test_identity_head_recognises_and_rejects(client, monkeypatch, tmp_path):
         cap.send_json({"type": "events", "events": typed(40, t0=90_000, flight=600, hold=30)})
         idn = cap.receive_json()["heads"]["identity"]
         assert idn["unknown"] is True and idn["distance"] > heads.UNKNOWN_DIST
+
+
+# ---- state head + API ----
+
+def test_state_head_rule_fallback_smooths_and_advises(client, tmp_path, monkeypatch):
+    from backend import heads
+    monkeypatch.setattr(heads, "STATE_MODEL_PATH", tmp_path / "missing.joblib")
+    make_baseline(tmp_path)
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "s6"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(40)})
+        st = cap.receive_json()["heads"]["state"]
+        assert st["source"] == "rule" and st["label"] == "deep focus" and st["advice"] == "defer"
+        assert st["explainer"] == "template" and "Test User" in st["explanation"]
+        first = st["load"]
+        # much faster, sloppier typing: load rises but is smoothed (EMA), not a jump to the raw value
+        ev = typed(60, t0=20_000, flight=60, hold=40)
+        ev += [{"type": "down", "key": "Backspace", "code": "Backspace", "t": 20_000 + 60 * 60 + i * 60} for i in range(6)]
+        ev += [{"type": "up", "key": "Backspace", "code": "Backspace", "t": 20_000 + 60 * 60 + i * 60 + 30} for i in range(6)]
+        cap.send_json({"type": "events", "events": sorted(ev, key=lambda e: e["t"])})
+        st2 = cap.receive_json()["heads"]["state"]
+        assert st2["raw"] > st2["load"] > first
+    r = client.get("/api/state").json()
+    assert r["advice"] == "unknown"                      # session closed -> nothing active
+
+
+def test_state_api_returns_latest_tick(client, tmp_path):
+    make_baseline(tmp_path)
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "s7"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(40)})
+        cap.receive_json()
+        r = client.get("/api/state").json()
+        assert r["session"] == "s7" and r["user"] == "Test User"
+        assert r["advice"] in ("defer", "ok") and 0 <= r["load"] <= 1 and r["age_s"] >= 0
+        assert client.get("/api/state", params={"session": "nope"}).json()["advice"] == "unknown"
+
+
+def test_state_head_uses_trained_model(client, tmp_path, monkeypatch):
+    import pandas as pd
+    from backend import heads
+    from pipeline.state import StateModel, STATE_FEATURES
+    # a model that says: faster typing = load
+    Z = pd.DataFrame(np.zeros((40, len(STATE_FEATURES))), columns=STATE_FEATURES)
+    Z.loc[20:, "speed_kps"] = 3.0
+    y = np.array([0] * 20 + [1] * 20)
+    m = StateModel().fit(Z, y)
+    m.louo_auc = 0.5                                   # a weak model must NOT displace the rule
+    m.save(tmp_path / "state.joblib")
+    monkeypatch.setattr(heads, "STATE_MODEL_PATH", tmp_path / "state.joblib")
+    heads._state_cache.clear()
+    make_baseline(tmp_path)
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "s8"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(40)})
+        assert cap.receive_json()["heads"]["state"]["source"] == "rule"
+    m.louo_auc = 0.9                                   # a good one is used
+    m.save(tmp_path / "state.joblib")
+    heads._state_cache.clear()
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "s9"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(40)})
+        st = cap.receive_json()["heads"]["state"]
+        assert st["source"] == "model" and st["load"] < 0.5
+        cap.send_json({"type": "reset"})
+        cap.send_json({"type": "events", "events": typed(60, t0=30_000, flight=50, hold=50)})   # 2x+ faster
+        st = cap.receive_json()["heads"]["state"]
+        assert st["raw"] > 0.8 and st["drivers"][0][0] == "speed_kps"
