@@ -1,0 +1,77 @@
+import { VerificationEvent } from '../types/biometrics';
+
+export const mockVerificationEvents: VerificationEvent[] = [
+  {
+    id: 'evt-1',
+    timestamp: '14:28:42.108',
+    eventType: 'Session Continuous Re-auth',
+    temporalSignature: 'Dwell: 81ms | Flight: 122ms',
+    confidenceScore: 99.6,
+    duressIndex: 0.01,
+    duressLabel: 'Nominal',
+    statusText: 'PASS • AUTHORIZED',
+    statusType: 'success',
+  },
+  {
+    id: 'evt-2',
+    timestamp: '14:27:15.894',
+    eventType: 'Cadence Shift (Flow State)',
+    temporalSignature: 'Dwell: 76ms | Flight: 108ms',
+    confidenceScore: 98.8,
+    duressIndex: 0.03,
+    duressLabel: 'Nominal',
+    statusText: 'ACCELERATION • VALID',
+    statusType: 'info',
+  },
+  {
+    id: 'evt-3',
+    timestamp: '14:24:02.441',
+    eventType: 'Baseline Synchronization',
+    temporalSignature: 'Window: 5,000 vectors',
+    confidenceScore: 99.4,
+    duressIndex: 0.01,
+    duressLabel: 'Nominal',
+    statusText: 'SYNCED • LEVEL 0',
+    statusType: 'success',
+  },
+  {
+    id: 'evt-4',
+    timestamp: '14:19:50.012',
+    eventType: 'Rhythm Fluctuation',
+    temporalSignature: 'Dwell: 94ms | Flight: 156ms',
+    confidenceScore: 93.2,
+    duressIndex: 0.08,
+    duressLabel: 'Benign',
+    statusText: 'CAUTION • MONITORED',
+    statusType: 'warning',
+  },
+  {
+    id: 'evt-5',
+    timestamp: '14:15:33.729',
+    eventType: 'Session Continuous Re-auth',
+    temporalSignature: 'Dwell: 83ms | Flight: 125ms',
+    confidenceScore: 99.7,
+    duressIndex: 0.02,
+    duressLabel: 'Nominal',
+    statusText: 'PASS • AUTHORIZED',
+    statusType: 'success',
+  },
+  {
+    id: 'evt-6',
+    timestamp: '14:11:18.004',
+    eventType: 'Keyboard Modality Check',
+    temporalSignature: 'Dwell: 82ms | Flight: 114ms',
+    confidenceScore: 99.1,
+    duressIndex: 0.01,
+    duressLabel: 'Nominal',
+    statusText: 'PASS • AUTHORIZED',
+    statusType: 'success',
+  }
+];
+
+export const mockOverviewPillars = [
+  { label: 'Identity Score', value: '99.4% Auth Match', status: 'verified', dotColor: 'bg-secondary' },
+  { label: 'Cognitive State', value: 'Optimal Flow (78/100)', status: 'flow', dotColor: 'bg-secondary' },
+  { label: 'Threat Radar', value: '0 Duress Signals', status: 'clear', dotColor: 'bg-secondary' },
+  { label: 'Motor Baseline', value: 'Synchronized (±1.2%)', status: 'sync', dotColor: 'bg-primary' },
+];

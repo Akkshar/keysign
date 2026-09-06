@@ -1,0 +1,113 @@
+import React, { useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
+import { BiometricsProvider, useBiometrics } from './context/BiometricsContext';
+import { Sidebar } from './components/layout/Sidebar';
+import { Header } from './components/layout/Header';
+import { TypewriterWatermark } from './components/layout/TypewriterWatermark';
+
+import { OverviewView } from './views/OverviewView';
+import { HealthSignalsView } from './views/HealthSignalsView';
+import { LiveMonitoringView } from './views/LiveMonitoringView';
+import { HistoryView } from './views/HistoryView';
+import { PrivacyView } from './views/PrivacyView';
+import { IdentityView } from './views/IdentityView';
+import { StateView } from './views/StateView';
+import { ThreatsView } from './views/ThreatsView';
+import { DriftView } from './views/DriftView';
+import { DuressModal } from './components/telemetry/DuressModal';
+
+import { motion, AnimatePresence } from 'framer-motion';
+
+const MainContent: React.FC = () => {
+  const { activeArea, onKeyAction } = useBiometrics();
+
+  // Global keystroke listener: typing anywhere on the site interacts with the 3D typewriter and telemetry.
+  // The timings also stream to the local backend (see BiometricsContext), which is what the heads score.
+  useEffect(() => {
+    const handleGlobalDown = (e: KeyboardEvent) => {
+      // Don't intercept function shortcuts or browser hotkeys
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      onKeyAction('down', e);
+    };
+
+    const handleGlobalUp = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      onKeyAction('up', e);
+    };
+
+    window.addEventListener('keydown', handleGlobalDown);
+    window.addEventListener('keyup', handleGlobalUp);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalDown);
+      window.removeEventListener('keyup', handleGlobalUp);
+    };
+  }, [onKeyAction]);
+
+  const renderActiveView = () => {
+    switch (activeArea) {
+      case 'overview':
+        return <OverviewView />;
+      case 'health-signals':
+        return <HealthSignalsView />;
+      case 'monitoring':
+        return <LiveMonitoringView />;
+      case 'history':
+        return <HistoryView />;
+      case 'privacy':
+        return <PrivacyView />;
+      case 'identity':
+        return <IdentityView />;
+      case 'state':
+        return <StateView />;
+      case 'threats':
+        return <ThreatsView />;
+      case 'drift':
+        return <DriftView />;
+      default:
+        return <OverviewView />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-body theme-transition flex relative overflow-x-hidden">
+      {/* Ambient Misty Vintage Typewriter Watermark Layer */}
+      <TypewriterWatermark />
+
+      {/* Fixed Left Sidebar with KeySign Brand & Clinical Navigation */}
+      <Sidebar />
+      <DuressModal />
+
+      {/* Main Viewport Container */}
+      <div className="pl-64 flex-1 flex flex-col min-w-0 relative z-10">
+        {/* Fixed Header with Monitoring Pill, Theme Toggle, Profile */}
+        <Header />
+
+        {/* Scrollable Content Canvas */}
+        <main className="relative pt-24 min-h-screen w-full px-6 sm:px-10 lg:px-14 max-w-7xl mx-auto theme-transition">
+          {/* No exit animation: with mode="wait" the outgoing view could hang the switch while
+              the WebGL typewriter and the live tick stream keep re-rendering. */}
+          <motion.div
+            key={activeArea}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {renderActiveView()}
+          </motion.div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <BiometricsProvider>
+        <MainContent />
+      </BiometricsProvider>
+    </ThemeProvider>
+  );
+};
+
+export default App;

@@ -1,0 +1,3436 @@
+{
+ "generated_at": "2026-09-06T12:24:09+00:00",
+ "framing": "Screening signal, never a diagnosis. Baselines drift with fatigue, illness, injury and age; KeySign would flag the drift and leave interpretation to a person.",
+ "monkeytype": [
+  {
+   "user": "mt_E",
+   "weeks": 66,
+   "span_days": 938,
+   "points": [
+    {
+     "week": "2022-05-08",
+     "wpm": 195.4,
+     "acc": 98.61,
+     "consistency": 79.9,
+     "tests": 20,
+     "wpm_roll": 179.2,
+     "acc_roll": 97.87
+    },
+    {
+     "week": "2022-05-15",
+     "wpm": 172.0,
+     "acc": 97.87,
+     "consistency": 77.8,
+     "tests": 15,
+     "wpm_roll": 175.6,
+     "acc_roll": 98.19
+    },
+    {
+     "week": "2022-05-29",
+     "wpm": 179.2,
+     "acc": 97.53,
+     "consistency": 81.3,
+     "tests": 5,
+     "wpm_roll": 172.0,
+     "acc_roll": 97.91
+    },
+    {
+     "week": "2022-06-05",
+     "wpm": 168.0,
+     "acc": 98.51,
+     "consistency": 81.3,
+     "tests": 27,
+     "wpm_roll": 170.0,
+     "acc_roll": 97.89
+    },
+    {
+     "week": "2022-06-12",
+     "wpm": 143.2,
+     "acc": 97.91,
+     "consistency": 76.3,
+     "tests": 35,
+     "wpm_roll": 155.6,
+     "acc_roll": 97.8
+    },
+    {
+     "week": "2022-06-19",
+     "wpm": 126.2,
+     "acc": 97.73,
+     "consistency": 71.4,
+     "tests": 9,
+     "wpm_roll": 141.2,
+     "acc_roll": 97.82
+    },
+    {
+     "week": "2022-06-26",
+     "wpm": 139.2,
+     "acc": 97.73,
+     "consistency": 71.7,
+     "tests": 176,
+     "wpm_roll": 132.7,
+     "acc_roll": 97.88
+    },
+    {
+     "week": "2022-07-03",
+     "wpm": 64.8,
+     "acc": 98.04,
+     "consistency": 66.2,
+     "tests": 45,
+     "wpm_roll": 115.6,
+     "acc_roll": 97.78
+    },
+    {
+     "week": "2022-07-10",
+     "wpm": 69.1,
+     "acc": 97.84,
+     "consistency": 66.2,
+     "tests": 17,
+     "wpm_roll": 115.6,
+     "acc_roll": 97.78
+    },
+    {
+     "week": "2022-07-17",
+     "wpm": 105.0,
+     "acc": 97.25,
+     "consistency": 72.1,
+     "tests": 8,
+     "wpm_roll": 108.9,
+     "acc_roll": 97.78
+    },
+    {
+     "week": "2022-07-24",
+     "wpm": 161.4,
+     "acc": 98.5,
+     "consistency": 79.7,
+     "tests": 7,
+     "wpm_roll": 108.9,
+     "acc_roll": 97.66
+    },
+    {
+     "week": "2022-07-31",
+     "wpm": 112.8,
+     "acc": 97.47,
+     "consistency": 72.4,
+     "tests": 7,
+     "wpm_roll": 115.5,
+     "acc_roll": 97.66
+    },
+    {
+     "week": "2022-08-07",
+     "wpm": 118.2,
+     "acc": 96.84,
+     "consistency": 77.6,
+     "tests": 5,
+     "wpm_roll": 138.2,
+     "acc_roll": 97.58
+    },
+    {
+     "week": "2022-08-14",
+     "wpm": 158.2,
+     "acc": 97.92,
+     "consistency": 75.8,
+     "tests": 15,
+     "wpm_roll": 159.8,
+     "acc_roll": 97.79
+    },
+    {
+     "week": "2022-09-04",
+     "wpm": 168.2,
+     "acc": 97.68,
+     "consistency": 72.5,
+     "tests": 4,
+     "wpm_roll": 138.2,
+     "acc_roll": 97.79
+    },
+    {
+     "week": "2022-09-11",
+     "wpm": 174.0,
+     "acc": 97.91,
+     "consistency": 81.7,
+     "tests": 18,
+     "wpm_roll": 151.3,
+     "acc_roll": 97.79
+    },
+    {
+     "week": "2022-09-18",
+     "wpm": 86.8,
+     "acc": 98.42,
+     "consistency": 67.7,
+     "tests": 6,
+     "wpm_roll": 161.5,
+     "acc_roll": 97.79
+    },
+    {
+     "week": "2022-09-25",
+     "wpm": 144.5,
+     "acc": 97.14,
+     "consistency": 71.1,
+     "tests": 25,
+     "wpm_roll": 154.6,
+     "acc_roll": 97.41
+    },
+    {
+     "week": "2022-11-20",
+     "wpm": 164.8,
+     "acc": 90.65,
+     "consistency": 67.8,
+     "tests": 4,
+     "wpm_roll": 151.0,
+     "acc_roll": 97.52
+    },
+    {
+     "week": "2022-12-04",
+     "wpm": 25.1,
+     "acc": 96.8,
+     "consistency": 51.0,
+     "tests": 18,
+     "wpm_roll": 151.0,
+     "acc_roll": 97.77
+    },
+    {
+     "week": "2023-01-01",
+     "wpm": 157.5,
+     "acc": 98.4,
+     "consistency": 80.6,
+     "tests": 4,
+     "wpm_roll": 151.0,
+     "acc_roll": 97.48
+    },
+    {
+     "week": "2023-01-08",
+     "wpm": 216.6,
+     "acc": 100.0,
+     "consistency": 87.0,
+     "tests": 4,
+     "wpm_roll": 146.7,
+     "acc_roll": 97.78
+    },
+    {
+     "week": "2023-01-22",
+     "wpm": 82.4,
+     "acc": 97.83,
+     "consistency": 68.3,
+     "tests": 4,
+     "wpm_roll": 146.7,
+     "acc_roll": 98.07
+    },
+    {
+     "week": "2023-01-29",
+     "wpm": 136.0,
+     "acc": 97.74,
+     "consistency": 75.4,
+     "tests": 11,
+     "wpm_roll": 149.7,
+     "acc_roll": 98.07
+    },
+    {
+     "week": "2023-02-12",
+     "wpm": 259.2,
+     "acc": 98.31,
+     "consistency": 61.4,
+     "tests": 3,
+     "wpm_roll": 140.1,
+     "acc_roll": 98.07
+    },
+    {
+     "week": "2023-03-12",
+     "wpm": 141.8,
+     "acc": 95.71,
+     "consistency": 63.4,
+     "tests": 17,
+     "wpm_roll": 140.1,
+     "acc_roll": 98.07
+    },
+    {
+     "week": "2023-03-26",
+     "wpm": 138.4,
+     "acc": 99.67,
+     "consistency": 79.7,
+     "tests": 15,
+     "wpm_roll": 168.1,
+     "acc_roll": 98.99
+    },
+    {
+     "week": "2023-04-02",
+     "wpm": 229.0,
+     "acc": 100.0,
+     "consistency": 84.2,
+     "tests": 5,
+     "wpm_roll": 183.7,
+     "acc_roll": 99.32
+    },
+    {
+     "week": "2023-04-09",
+     "wpm": 194.4,
+     "acc": 100.0,
+     "consistency": 81.5,
+     "tests": 36,
+     "wpm_roll": 157.4,
+     "acc_roll": 99.32
+    },
+    {
+     "week": "2023-04-23",
+     "wpm": 173.0,
+     "acc": 98.97,
+     "consistency": 81.1,
+     "tests": 3,
+     "wpm_roll": 161.6,
+     "acc_roll": 99.32
+    },
+    {
+     "week": "2023-04-30",
+     "wpm": 134.5,
+     "acc": 98.63,
+     "consistency": 73.8,
+     "tests": 5,
+     "wpm_roll": 164.3,
+     "acc_roll": 98.8
+    },
+    {
+     "week": "2023-05-07",
+     "wpm": 150.1,
+     "acc": 98.44,
+     "consistency": 79.8,
+     "tests": 6,
+     "wpm_roll": 157.1,
+     "acc_roll": 98.53
+    },
+    {
+     "week": "2023-05-21",
+     "wpm": 155.6,
+     "acc": 97.76,
+     "consistency": 78.5,
+     "tests": 17,
+     "wpm_roll": 157.1,
+     "acc_roll": 98.53
+    },
+    {
+     "week": "2023-06-18",
+     "wpm": 158.6,
+     "acc": 98.05,
+     "consistency": 81.0,
+     "tests": 9,
+     "wpm_roll": 157.1,
+     "acc_roll": 98.53
+    },
+    {
+     "week": "2023-07-23",
+     "wpm": 177.2,
+     "acc": 98.89,
+     "consistency": 81.4,
+     "tests": 3,
+     "wpm_roll": 164.4,
+     "acc_roll": 98.38
+    },
+    {
+     "week": "2023-08-13",
+     "wpm": 186.8,
+     "acc": 99.12,
+     "consistency": 78.0,
+     "tests": 30,
+     "wpm_roll": 173.7,
+     "acc_roll": 98.41
+    },
+    {
+     "week": "2023-08-27",
+     "wpm": 170.2,
+     "acc": 98.33,
+     "consistency": 80.5,
+     "tests": 11,
+     "wpm_roll": 173.7,
+     "acc_roll": 98.41
+    },
+    {
+     "week": "2023-09-03",
+     "wpm": 199.4,
+     "acc": 98.48,
+     "consistency": 80.8,
+     "tests": 23,
+     "wpm_roll": 174.9,
+     "acc_roll": 98.41
+    },
+    {
+     "week": "2023-09-17",
+     "wpm": 106.6,
+     "acc": 97.87,
+     "consistency": 73.6,
+     "tests": 13,
+     "wpm_roll": 171.4,
+     "acc_roll": 98.38
+    },
+    {
+     "week": "2023-10-01",
+     "wpm": 172.7,
+     "acc": 98.23,
+     "consistency": 87.0,
+     "tests": 13,
+     "wpm_roll": 150.8,
+     "acc_roll": 98.28
+    },
+    {
+     "week": "2023-10-22",
+     "wpm": 131.5,
+     "acc": 98.42,
+     "consistency": 76.6,
+     "tests": 4,
+     "wpm_roll": 142.2,
+     "acc_roll": 98.25
+    },
+    {
+     "week": "2023-10-29",
+     "wpm": 108.8,
+     "acc": 94.91,
+     "consistency": 68.9,
+     "tests": 14,
+     "wpm_roll": 142.2,
+     "acc_roll": 98.25
+    },
+    {
+     "week": "2023-11-12",
+     "wpm": 152.9,
+     "acc": 98.28,
+     "consistency": 81.6,
+     "tests": 4,
+     "wpm_roll": 142.2,
+     "acc_roll": 98.25
+    },
+    {
+     "week": "2023-11-19",
+     "wpm": 186.4,
+     "acc": 98.38,
+     "consistency": 84.2,
+     "tests": 15,
+     "wpm_roll": 124.5,
+     "acc_roll": 97.85
+    },
+    {
+     "week": "2023-12-17",
+     "wpm": 117.4,
+     "acc": 96.78,
+     "consistency": 56.8,
+     "tests": 26,
+     "wpm_roll": 135.2,
+     "acc_roll": 97.42
+    },
+    {
+     "week": "2023-12-31",
+     "wpm": 30.2,
+     "acc": 97.42,
+     "consistency": 44.7,
+     "tests": 5,
+     "wpm_roll": 147.9,
+     "acc_roll": 97.85
+    },
+    {
+     "week": "2024-01-07",
+     "wpm": 159.2,
+     "acc": 97.42,
+     "consistency": 78.5,
+     "tests": 12,
+     "wpm_roll": 151.0,
+     "acc_roll": 97.6
+    },
+    {
+     "week": "2024-01-14",
+     "wpm": 142.9,
+     "acc": 100.0,
+     "consistency": 67.6,
+     "tests": 5,
+     "wpm_roll": 151.0,
+     "acc_roll": 97.6
+    },
+    {
+     "week": "2024-01-21",
+     "wpm": 189.2,
+     "acc": 97.78,
+     "consistency": 80.0,
+     "tests": 3,
+     "wpm_roll": 168.6,
+     "acc_roll": 97.97
+    },
+    {
+     "week": "2024-01-28",
+     "wpm": 179.6,
+     "acc": 98.94,
+     "consistency": 79.9,
+     "tests": 24,
+     "wpm_roll": 178.8,
+     "acc_roll": 98.56
+    },
+    {
+     "week": "2024-02-11",
+     "wpm": 178.0,
+     "acc": 98.17,
+     "consistency": 83.6,
+     "tests": 6,
+     "wpm_roll": 178.8,
+     "acc_roll": 98.56
+    },
+    {
+     "week": "2024-02-18",
+     "wpm": 198.3,
+     "acc": 100.0,
+     "consistency": 90.9,
+     "tests": 3,
+     "wpm_roll": 184.4,
+     "acc_roll": 97.97
+    },
+    {
+     "week": "2024-03-10",
+     "wpm": 33.1,
+     "acc": 85.01,
+     "consistency": 32.1,
+     "tests": 9,
+     "wpm_roll": 178.8,
+     "acc_roll": 97.42
+    },
+    {
+     "week": "2024-04-21",
+     "wpm": 310.1,
+     "acc": 92.5,
+     "consistency": 57.9,
+     "tests": 3,
+     "wpm_roll": 176.4,
+     "acc_roll": 97.42
+    },
+    {
+     "week": "2024-05-05",
+     "wpm": 95.6,
+     "acc": 96.67,
+     "consistency": 62.7,
+     "tests": 4,
+     "wpm_roll": 157.2,
+     "acc_roll": 97.01
+    },
+    {
+     "week": "2024-05-26",
+     "wpm": 174.8,
+     "acc": 98.85,
+     "consistency": 84.1,
+     "tests": 4,
+     "wpm_roll": 135.6,
+     "acc_roll": 97.01
+    },
+    {
+     "week": "2024-06-09",
+     "wpm": 139.6,
+     "acc": 97.35,
+     "consistency": 71.5,
+     "tests": 9,
+     "wpm_roll": 139.5,
+     "acc_roll": 97.01
+    },
+    {
+     "week": "2024-06-23",
+     "wpm": 131.5,
+     "acc": 98.53,
+     "consistency": 67.3,
+     "tests": 14,
+     "wpm_roll": 135.4,
+     "acc_roll": 97.94
+    },
+    {
+     "week": "2024-09-01",
+     "wpm": 139.4,
+     "acc": 95.89,
+     "consistency": 70.7,
+     "tests": 4,
+     "wpm_roll": 139.5,
+     "acc_roll": 98.61
+    },
+    {
+     "week": "2024-09-15",
+     "wpm": 122.4,
+     "acc": 98.69,
+     "consistency": 84.3,
+     "tests": 7,
+     "wpm_roll": 139.5,
+     "acc_roll": 98.61
+    },
+    {
+     "week": "2024-09-29",
+     "wpm": 212.7,
+     "acc": 100.0,
+     "consistency": 89.4,
+     "tests": 31,
+     "wpm_roll": 162.1,
+     "acc_roll": 98.61
+    },
+    {
+     "week": "2024-10-06",
+     "wpm": 190.5,
+     "acc": 98.98,
+     "consistency": 81.8,
+     "tests": 14,
+     "wpm_roll": 187.7,
+     "acc_roll": 98.84
+    },
+    {
+     "week": "2024-10-27",
+     "wpm": 184.8,
+     "acc": 97.84,
+     "consistency": 89.7,
+     "tests": 5,
+     "wpm_roll": 194.9,
+     "acc_roll": 99.29
+    },
+    {
+     "week": "2024-11-03",
+     "wpm": 199.2,
+     "acc": 99.6,
+     "consistency": 90.7,
+     "tests": 5,
+     "wpm_roll": 202.4,
+     "acc_roll": 99.29
+    },
+    {
+     "week": "2024-11-17",
+     "wpm": 212.0,
+     "acc": 100.0,
+     "consistency": 83.2,
+     "tests": 33,
+     "wpm_roll": 199.2,
+     "acc_roll": 98.98
+    },
+    {
+     "week": "2024-12-01",
+     "wpm": 205.6,
+     "acc": 98.48,
+     "consistency": 91.4,
+     "tests": 3,
+     "wpm_roll": 202.4,
+     "acc_roll": 99.04
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": 1.32,
+     "delta": 39.26,
+     "slope_per_month": 2.307,
+     "n": 66
+    },
+    "acc": {
+     "z": 0.19,
+     "delta": 0.95,
+     "slope_per_month": -0.005,
+     "n": 66
+    },
+    "consistency": {
+     "z": 1.53,
+     "delta": 9.83,
+     "slope_per_month": 0.268,
+     "n": 66
+    }
+   }
+  },
+  {
+   "user": "mt_D",
+   "weeks": 49,
+   "span_days": 819,
+   "points": [
+    {
+     "week": "2022-05-01",
+     "wpm": 235.0,
+     "acc": 89.36,
+     "consistency": 84.4,
+     "tests": 53,
+     "wpm_roll": 221.6,
+     "acc_roll": 93.75
+    },
+    {
+     "week": "2022-05-08",
+     "wpm": 220.8,
+     "acc": 93.75,
+     "consistency": 75.6,
+     "tests": 123,
+     "wpm_roll": 221.2,
+     "acc_roll": 93.63
+    },
+    {
+     "week": "2022-05-15",
+     "wpm": 221.6,
+     "acc": 95.74,
+     "consistency": 85.0,
+     "tests": 87,
+     "wpm_roll": 220.8,
+     "acc_roll": 93.75
+    },
+    {
+     "week": "2022-05-22",
+     "wpm": 207.4,
+     "acc": 93.52,
+     "consistency": 80.4,
+     "tests": 32,
+     "wpm_roll": 221.2,
+     "acc_roll": 94.09
+    },
+    {
+     "week": "2022-05-29",
+     "wpm": 213.6,
+     "acc": 94.44,
+     "consistency": 84.2,
+     "tests": 11,
+     "wpm_roll": 221.2,
+     "acc_roll": 95.09
+    },
+    {
+     "week": "2022-06-05",
+     "wpm": 240.0,
+     "acc": 99.67,
+     "consistency": 79.2,
+     "tests": 11,
+     "wpm_roll": 225.2,
+     "acc_roll": 97.7
+    },
+    {
+     "week": "2022-06-12",
+     "wpm": 231.2,
+     "acc": 100.0,
+     "consistency": 89.1,
+     "tests": 7,
+     "wpm_roll": 221.2,
+     "acc_roll": 97.06
+    },
+    {
+     "week": "2022-06-19",
+     "wpm": 228.8,
+     "acc": 100.0,
+     "consistency": 67.0,
+     "tests": 6,
+     "wpm_roll": 221.2,
+     "acc_roll": 97.06
+    },
+    {
+     "week": "2022-07-03",
+     "wpm": 20.4,
+     "acc": 86.67,
+     "consistency": 38.7,
+     "tests": 48,
+     "wpm_roll": 230.0,
+     "acc_roll": 96.59
+    },
+    {
+     "week": "2022-07-10",
+     "wpm": 24.8,
+     "acc": 90.71,
+     "consistency": 56.4,
+     "tests": 11,
+     "wpm_roll": 230.0,
+     "acc_roll": 93.8
+    },
+    {
+     "week": "2022-08-14",
+     "wpm": 269.0,
+     "acc": 93.52,
+     "consistency": 85.1,
+     "tests": 23,
+     "wpm_roll": 232.9,
+     "acc_roll": 93.8
+    },
+    {
+     "week": "2022-08-21",
+     "wpm": 237.0,
+     "acc": 94.08,
+     "consistency": 81.3,
+     "tests": 10,
+     "wpm_roll": 253.0,
+     "acc_roll": 93.8
+    },
+    {
+     "week": "2022-08-28",
+     "wpm": 275.4,
+     "acc": 100.0,
+     "consistency": 81.0,
+     "tests": 37,
+     "wpm_roll": 253.0,
+     "acc_roll": 93.8
+    },
+    {
+     "week": "2022-09-04",
+     "wpm": 282.6,
+     "acc": 94.66,
+     "consistency": 80.9,
+     "tests": 4,
+     "wpm_roll": 253.0,
+     "acc_roll": 93.8
+    },
+    {
+     "week": "2022-10-09",
+     "wpm": 140.5,
+     "acc": 90.18,
+     "consistency": 74.0,
+     "tests": 7,
+     "wpm_roll": 229.6,
+     "acc_roll": 93.73
+    },
+    {
+     "week": "2022-10-30",
+     "wpm": 218.1,
+     "acc": 87.87,
+     "consistency": 85.5,
+     "tests": 32,
+     "wpm_roll": 220.1,
+     "acc_roll": 94.02
+    },
+    {
+     "week": "2022-11-06",
+     "wpm": 222.1,
+     "acc": 93.38,
+     "consistency": 84.2,
+     "tests": 51,
+     "wpm_roll": 214.1,
+     "acc_roll": 93.52
+    },
+    {
+     "week": "2022-11-13",
+     "wpm": 210.1,
+     "acc": 94.71,
+     "consistency": 68.1,
+     "tests": 9,
+     "wpm_roll": 214.1,
+     "acc_roll": 93.35
+    },
+    {
+     "week": "2022-11-20",
+     "wpm": 170.1,
+     "acc": 93.66,
+     "consistency": 80.2,
+     "tests": 12,
+     "wpm_roll": 217.2,
+     "acc_roll": 93.35
+    },
+    {
+     "week": "2022-11-27",
+     "wpm": 241.8,
+     "acc": 93.33,
+     "consistency": 80.0,
+     "tests": 15,
+     "wpm_roll": 219.2,
+     "acc_roll": 93.52
+    },
+    {
+     "week": "2022-12-04",
+     "wpm": 216.3,
+     "acc": 91.19,
+     "consistency": 79.1,
+     "tests": 14,
+     "wpm_roll": 213.2,
+     "acc_roll": 93.75
+    },
+    {
+     "week": "2022-12-11",
+     "wpm": 234.8,
+     "acc": 93.85,
+     "consistency": 74.7,
+     "tests": 9,
+     "wpm_roll": 225.6,
+     "acc_roll": 93.75
+    },
+    {
+     "week": "2022-12-18",
+     "wpm": 155.6,
+     "acc": 95.8,
+     "consistency": 72.0,
+     "tests": 10,
+     "wpm_roll": 225.6,
+     "acc_roll": 93.59
+    },
+    {
+     "week": "2022-12-25",
+     "wpm": 253.5,
+     "acc": 98.23,
+     "consistency": 68.6,
+     "tests": 8,
+     "wpm_roll": 215.3,
+     "acc_roll": 92.52
+    },
+    {
+     "week": "2023-01-01",
+     "wpm": 185.3,
+     "acc": 89.83,
+     "consistency": 74.3,
+     "tests": 12,
+     "wpm_roll": 222.9,
+     "acc_roll": 91.84
+    },
+    {
+     "week": "2023-02-05",
+     "wpm": 214.3,
+     "acc": 82.68,
+     "consistency": 84.7,
+     "tests": 8,
+     "wpm_roll": 222.9,
+     "acc_roll": 89.34
+    },
+    {
+     "week": "2023-02-12",
+     "wpm": 231.6,
+     "acc": 85.71,
+     "consistency": 94.7,
+     "tests": 3,
+     "wpm_roll": 228.3,
+     "acc_roll": 87.28
+    },
+    {
+     "week": "2023-02-26",
+     "wpm": 253.4,
+     "acc": 88.85,
+     "consistency": 87.5,
+     "tests": 12,
+     "wpm_roll": 219.6,
+     "acc_roll": 84.96
+    },
+    {
+     "week": "2023-03-05",
+     "wpm": 225.0,
+     "acc": 82.69,
+     "consistency": 95.1,
+     "tests": 21,
+     "wpm_roll": 219.6,
+     "acc_roll": 84.96
+    },
+    {
+     "week": "2023-05-28",
+     "wpm": 164.8,
+     "acc": 84.21,
+     "consistency": 87.6,
+     "tests": 9,
+     "wpm_roll": 220.9,
+     "acc_roll": 86.97
+    },
+    {
+     "week": "2023-06-04",
+     "wpm": 206.8,
+     "acc": 88.22,
+     "consistency": 84.4,
+     "tests": 52,
+     "wpm_roll": 211.8,
+     "acc_roll": 88.53
+    },
+    {
+     "week": "2023-06-11",
+     "wpm": 216.8,
+     "acc": 90.88,
+     "consistency": 87.9,
+     "tests": 35,
+     "wpm_roll": 206.2,
+     "acc_roll": 89.55
+    },
+    {
+     "week": "2023-06-18",
+     "wpm": 205.6,
+     "acc": 91.88,
+     "consistency": 89.5,
+     "tests": 11,
+     "wpm_roll": 202.1,
+     "acc_roll": 91.38
+    },
+    {
+     "week": "2023-06-25",
+     "wpm": 198.6,
+     "acc": 92.27,
+     "consistency": 68.4,
+     "tests": 10,
+     "wpm_roll": 206.2,
+     "acc_roll": 92.07
+    },
+    {
+     "week": "2023-07-30",
+     "wpm": 164.8,
+     "acc": 94.04,
+     "consistency": 70.3,
+     "tests": 5,
+     "wpm_roll": 202.1,
+     "acc_roll": 93.16
+    },
+    {
+     "week": "2023-08-06",
+     "wpm": 310.1,
+     "acc": 100.0,
+     "consistency": 56.5,
+     "tests": 5,
+     "wpm_roll": 202.1,
+     "acc_roll": 94.67
+    },
+    {
+     "week": "2023-08-13",
+     "wpm": 161.1,
+     "acc": 95.31,
+     "consistency": 79.8,
+     "tests": 24,
+     "wpm_roll": 213.3,
+     "acc_roll": 94.67
+    },
+    {
+     "week": "2023-08-20",
+     "wpm": 243.9,
+     "acc": 96.1,
+     "consistency": 81.8,
+     "tests": 9,
+     "wpm_roll": 226.2,
+     "acc_roll": 94.67
+    },
+    {
+     "week": "2023-08-27",
+     "wpm": 228.0,
+     "acc": 89.14,
+     "consistency": 89.4,
+     "tests": 5,
+     "wpm_roll": 235.9,
+     "acc_roll": 92.22
+    },
+    {
+     "week": "2023-09-24",
+     "wpm": 224.5,
+     "acc": 88.38,
+     "consistency": 93.2,
+     "tests": 17,
+     "wpm_roll": 232.1,
+     "acc_roll": 89.75
+    },
+    {
+     "week": "2023-10-22",
+     "wpm": 250.9,
+     "acc": 89.09,
+     "consistency": 88.8,
+     "tests": 9,
+     "wpm_roll": 232.1,
+     "acc_roll": 89.75
+    },
+    {
+     "week": "2023-10-29",
+     "wpm": 236.1,
+     "acc": 90.36,
+     "consistency": 70.0,
+     "tests": 4,
+     "wpm_roll": 226.4,
+     "acc_roll": 89.75
+    },
+    {
+     "week": "2023-11-05",
+     "wpm": 224.8,
+     "acc": 90.35,
+     "consistency": 92.2,
+     "tests": 15,
+     "wpm_roll": 224.6,
+     "acc_roll": 89.72
+    },
+    {
+     "week": "2023-11-19",
+     "wpm": 163.6,
+     "acc": 97.44,
+     "consistency": 76.3,
+     "tests": 4,
+     "wpm_roll": 223.2,
+     "acc_roll": 89.97
+    },
+    {
+     "week": "2024-04-21",
+     "wpm": 212.5,
+     "acc": 86.55,
+     "consistency": 92.4,
+     "tests": 3,
+     "wpm_roll": 223.2,
+     "acc_roll": 90.35
+    },
+    {
+     "week": "2024-05-12",
+     "wpm": 221.6,
+     "acc": 89.58,
+     "consistency": 79.8,
+     "tests": 15,
+     "wpm_roll": 217.0,
+     "acc_roll": 90.78
+    },
+    {
+     "week": "2024-05-19",
+     "wpm": 249.4,
+     "acc": 93.02,
+     "consistency": 74.5,
+     "tests": 32,
+     "wpm_roll": 217.0,
+     "acc_roll": 92.11
+    },
+    {
+     "week": "2024-07-21",
+     "wpm": 197.6,
+     "acc": 91.2,
+     "consistency": 89.1,
+     "tests": 9,
+     "wpm_roll": 221.6,
+     "acc_roll": 91.2
+    },
+    {
+     "week": "2024-07-28",
+     "wpm": 274.4,
+     "acc": 96.11,
+     "consistency": 68.3,
+     "tests": 10,
+     "wpm_roll": 235.5,
+     "acc_roll": 92.11
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": -0.17,
+     "delta": -2.02,
+     "slope_per_month": 2.189,
+     "n": 49
+    },
+    "acc": {
+     "z": -0.91,
+     "delta": -4.31,
+     "slope_per_month": -0.319,
+     "n": 49
+    },
+    "consistency": {
+     "z": -0.98,
+     "delta": -4.21,
+     "slope_per_month": 0.547,
+     "n": 49
+    }
+   }
+  },
+  {
+   "user": "mt_K",
+   "weeks": 48,
+   "span_days": 812,
+   "points": [
+    {
+     "week": "2022-09-18",
+     "wpm": 120.5,
+     "acc": 97.14,
+     "consistency": 71.0,
+     "tests": 11,
+     "wpm_roll": 127.7,
+     "acc_roll": 98.28
+    },
+    {
+     "week": "2022-09-25",
+     "wpm": 132.4,
+     "acc": 98.92,
+     "consistency": 76.4,
+     "tests": 42,
+     "wpm_roll": 124.1,
+     "acc_roll": 97.71
+    },
+    {
+     "week": "2022-10-02",
+     "wpm": 127.7,
+     "acc": 98.28,
+     "consistency": 72.0,
+     "tests": 423,
+     "wpm_roll": 127.7,
+     "acc_roll": 98.28
+    },
+    {
+     "week": "2022-10-09",
+     "wpm": 117.2,
+     "acc": 96.45,
+     "consistency": 76.4,
+     "tests": 4,
+     "wpm_roll": 124.1,
+     "acc_roll": 97.71
+    },
+    {
+     "week": "2022-10-16",
+     "wpm": 146.4,
+     "acc": 100.0,
+     "consistency": 67.1,
+     "tests": 5,
+     "wpm_roll": 122.5,
+     "acc_roll": 97.37
+    },
+    {
+     "week": "2022-10-23",
+     "wpm": 114.4,
+     "acc": 95.5,
+     "consistency": 75.4,
+     "tests": 14,
+     "wpm_roll": 116.8,
+     "acc_roll": 96.23
+    },
+    {
+     "week": "2022-10-30",
+     "wpm": 115.4,
+     "acc": 94.47,
+     "consistency": 70.2,
+     "tests": 5,
+     "wpm_roll": 116.8,
+     "acc_roll": 96.23
+    },
+    {
+     "week": "2022-11-06",
+     "wpm": 116.3,
+     "acc": 96.02,
+     "consistency": 74.1,
+     "tests": 4,
+     "wpm_roll": 117.2,
+     "acc_roll": 96.45
+    },
+    {
+     "week": "2022-11-20",
+     "wpm": 135.4,
+     "acc": 100.0,
+     "consistency": 72.1,
+     "tests": 49,
+     "wpm_roll": 115.8,
+     "acc_roll": 95.81
+    },
+    {
+     "week": "2022-11-27",
+     "wpm": 118.2,
+     "acc": 96.89,
+     "consistency": 78.2,
+     "tests": 4,
+     "wpm_roll": 117.2,
+     "acc_roll": 96.45
+    },
+    {
+     "week": "2023-01-15",
+     "wpm": 113.0,
+     "acc": 95.6,
+     "consistency": 71.4,
+     "tests": 3,
+     "wpm_roll": 117.2,
+     "acc_roll": 96.45
+    },
+    {
+     "week": "2023-01-29",
+     "wpm": 156.3,
+     "acc": 100.0,
+     "consistency": 67.6,
+     "tests": 3,
+     "wpm_roll": 115.6,
+     "acc_roll": 96.24
+    },
+    {
+     "week": "2023-02-05",
+     "wpm": 93.1,
+     "acc": 93.14,
+     "consistency": 64.9,
+     "tests": 5,
+     "wpm_roll": 110.4,
+     "acc_roll": 95.16
+    },
+    {
+     "week": "2023-05-07",
+     "wpm": 107.4,
+     "acc": 94.72,
+     "consistency": 71.7,
+     "tests": 5,
+     "wpm_roll": 110.3,
+     "acc_roll": 95.02
+    },
+    {
+     "week": "2023-05-28",
+     "wpm": 107.9,
+     "acc": 93.33,
+     "consistency": 70.3,
+     "tests": 16,
+     "wpm_roll": 110.3,
+     "acc_roll": 95.02
+    },
+    {
+     "week": "2023-06-04",
+     "wpm": 112.8,
+     "acc": 95.31,
+     "consistency": 74.4,
+     "tests": 59,
+     "wpm_roll": 110.3,
+     "acc_roll": 95.02
+    },
+    {
+     "week": "2023-06-11",
+     "wpm": 117.2,
+     "acc": 96.67,
+     "consistency": 76.8,
+     "tests": 19,
+     "wpm_roll": 115.0,
+     "acc_roll": 95.37
+    },
+    {
+     "week": "2023-06-18",
+     "wpm": 122.4,
+     "acc": 96.68,
+     "consistency": 77.5,
+     "tests": 8,
+     "wpm_roll": 115.0,
+     "acc_roll": 95.37
+    },
+    {
+     "week": "2023-06-25",
+     "wpm": 119.8,
+     "acc": 95.42,
+     "consistency": 74.6,
+     "tests": 11,
+     "wpm_roll": 116.5,
+     "acc_roll": 95.48
+    },
+    {
+     "week": "2023-07-02",
+     "wpm": 110.2,
+     "acc": 94.52,
+     "consistency": 72.9,
+     "tests": 10,
+     "wpm_roll": 116.5,
+     "acc_roll": 95.48
+    },
+    {
+     "week": "2023-07-09",
+     "wpm": 115.8,
+     "acc": 95.54,
+     "consistency": 73.1,
+     "tests": 5,
+     "wpm_roll": 115.0,
+     "acc_roll": 94.97
+    },
+    {
+     "week": "2023-07-16",
+     "wpm": 99.0,
+     "acc": 93.3,
+     "consistency": 67.3,
+     "tests": 10,
+     "wpm_roll": 112.2,
+     "acc_roll": 94.33
+    },
+    {
+     "week": "2023-08-13",
+     "wpm": 114.2,
+     "acc": 94.14,
+     "consistency": 69.8,
+     "tests": 3,
+     "wpm_roll": 110.8,
+     "acc_roll": 94.31
+    },
+    {
+     "week": "2023-08-20",
+     "wpm": 102.4,
+     "acc": 89.39,
+     "consistency": 63.0,
+     "tests": 3,
+     "wpm_roll": 112.8,
+     "acc_roll": 94.31
+    },
+    {
+     "week": "2023-09-03",
+     "wpm": 111.5,
+     "acc": 94.47,
+     "consistency": 69.7,
+     "tests": 6,
+     "wpm_roll": 106.9,
+     "acc_roll": 94.31
+    },
+    {
+     "week": "2023-10-01",
+     "wpm": 147.2,
+     "acc": 100.0,
+     "consistency": 71.3,
+     "tests": 32,
+     "wpm_roll": 111.2,
+     "acc_roll": 94.36
+    },
+    {
+     "week": "2023-10-08",
+     "wpm": 79.4,
+     "acc": 95.44,
+     "consistency": 67.1,
+     "tests": 8,
+     "wpm_roll": 111.2,
+     "acc_roll": 94.84
+    },
+    {
+     "week": "2023-10-15",
+     "wpm": 110.8,
+     "acc": 94.25,
+     "consistency": 72.9,
+     "tests": 5,
+     "wpm_roll": 112.7,
+     "acc_roll": 95.33
+    },
+    {
+     "week": "2023-10-22",
+     "wpm": 114.0,
+     "acc": 95.21,
+     "consistency": 73.7,
+     "tests": 25,
+     "wpm_roll": 112.4,
+     "acc_roll": 95.56
+    },
+    {
+     "week": "2023-10-29",
+     "wpm": 117.5,
+     "acc": 95.69,
+     "consistency": 72.4,
+     "tests": 30,
+     "wpm_roll": 112.4,
+     "acc_roll": 95.35
+    },
+    {
+     "week": "2023-11-05",
+     "wpm": 108.6,
+     "acc": 95.68,
+     "consistency": 75.8,
+     "tests": 13,
+     "wpm_roll": 114.4,
+     "acc_roll": 95.47
+    },
+    {
+     "week": "2023-11-12",
+     "wpm": 114.9,
+     "acc": 95.25,
+     "consistency": 75.9,
+     "tests": 6,
+     "wpm_roll": 114.4,
+     "acc_roll": 95.47
+    },
+    {
+     "week": "2023-11-19",
+     "wpm": 116.4,
+     "acc": 95.82,
+     "consistency": 73.4,
+     "tests": 3,
+     "wpm_roll": 115.6,
+     "acc_roll": 95.69
+    },
+    {
+     "week": "2023-12-17",
+     "wpm": 111.6,
+     "acc": 95.22,
+     "consistency": 75.6,
+     "tests": 11,
+     "wpm_roll": 113.5,
+     "acc_roll": 95.61
+    },
+    {
+     "week": "2023-12-31",
+     "wpm": 117.6,
+     "acc": 96.38,
+     "consistency": 78.2,
+     "tests": 16,
+     "wpm_roll": 113.7,
+     "acc_roll": 95.68
+    },
+    {
+     "week": "2024-01-07",
+     "wpm": 112.2,
+     "acc": 95.54,
+     "consistency": 75.8,
+     "tests": 4,
+     "wpm_roll": 112.3,
+     "acc_roll": 95.68
+    },
+    {
+     "week": "2024-01-14",
+     "wpm": 112.5,
+     "acc": 95.83,
+     "consistency": 76.0,
+     "tests": 14,
+     "wpm_roll": 111.9,
+     "acc_roll": 95.38
+    },
+    {
+     "week": "2024-01-21",
+     "wpm": 91.0,
+     "acc": 94.21,
+     "consistency": 74.0,
+     "tests": 9,
+     "wpm_roll": 108.9,
+     "acc_roll": 94.93
+    },
+    {
+     "week": "2024-01-28",
+     "wpm": 96.6,
+     "acc": 93.2,
+     "consistency": 68.7,
+     "tests": 12,
+     "wpm_roll": 108.9,
+     "acc_roll": 94.93
+    },
+    {
+     "week": "2024-02-11",
+     "wpm": 105.6,
+     "acc": 94.31,
+     "consistency": 73.6,
+     "tests": 6,
+     "wpm_roll": 109.0,
+     "acc_roll": 94.97
+    },
+    {
+     "week": "2024-03-10",
+     "wpm": 119.9,
+     "acc": 95.75,
+     "consistency": 74.3,
+     "tests": 4,
+     "wpm_roll": 112.4,
+     "acc_roll": 94.78
+    },
+    {
+     "week": "2024-03-17",
+     "wpm": 120.4,
+     "acc": 95.62,
+     "consistency": 76.8,
+     "tests": 3,
+     "wpm_roll": 112.4,
+     "acc_roll": 94.78
+    },
+    {
+     "week": "2024-03-31",
+     "wpm": 119.2,
+     "acc": 95.25,
+     "consistency": 81.6,
+     "tests": 3,
+     "wpm_roll": 112.4,
+     "acc_roll": 94.78
+    },
+    {
+     "week": "2024-04-14",
+     "wpm": 92.5,
+     "acc": 93.8,
+     "consistency": 70.7,
+     "tests": 6,
+     "wpm_roll": 111.6,
+     "acc_roll": 95.19
+    },
+    {
+     "week": "2024-09-08",
+     "wpm": 103.9,
+     "acc": 94.12,
+     "consistency": 72.1,
+     "tests": 8,
+     "wpm_roll": 103.9,
+     "acc_roll": 94.63
+    },
+    {
+     "week": "2024-09-15",
+     "wpm": 104.0,
+     "acc": 95.14,
+     "consistency": 69.0,
+     "tests": 3,
+     "wpm_roll": 103.9,
+     "acc_roll": 94.63
+    },
+    {
+     "week": "2024-10-13",
+     "wpm": 91.0,
+     "acc": 93.72,
+     "consistency": 61.3,
+     "tests": 4,
+     "wpm_roll": 103.9,
+     "acc_roll": 94.12
+    },
+    {
+     "week": "2024-12-08",
+     "wpm": 124.8,
+     "acc": 96.89,
+     "consistency": 79.4,
+     "tests": 5,
+     "wpm_roll": 103.9,
+     "acc_roll": 94.63
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": -1.22,
+     "delta": -7.25,
+     "slope_per_month": -1.754,
+     "n": 48
+    },
+    "acc": {
+     "z": -0.33,
+     "delta": -1.6,
+     "slope_per_month": -0.23,
+     "n": 48
+    },
+    "consistency": {
+     "z": 0.04,
+     "delta": 0.14,
+     "slope_per_month": 0.113,
+     "n": 48
+    }
+   }
+  },
+  {
+   "user": "mt_C",
+   "weeks": 27,
+   "span_days": 798,
+   "points": [
+    {
+     "week": "2022-10-02",
+     "wpm": 64.4,
+     "acc": 94.05,
+     "consistency": 75.4,
+     "tests": 6,
+     "wpm_roll": 65.6,
+     "acc_roll": 94.74
+    },
+    {
+     "week": "2022-10-09",
+     "wpm": 65.6,
+     "acc": 94.74,
+     "consistency": 75.3,
+     "tests": 79,
+     "wpm_roll": 66.0,
+     "acc_roll": 94.58
+    },
+    {
+     "week": "2022-10-16",
+     "wpm": 70.3,
+     "acc": 96.15,
+     "consistency": 77.3,
+     "tests": 69,
+     "wpm_roll": 66.4,
+     "acc_roll": 94.74
+    },
+    {
+     "week": "2022-10-23",
+     "wpm": 66.4,
+     "acc": 94.42,
+     "consistency": 75.6,
+     "tests": 34,
+     "wpm_roll": 67.2,
+     "acc_roll": 94.74
+    },
+    {
+     "week": "2022-10-30",
+     "wpm": 68.0,
+     "acc": 94.74,
+     "consistency": 74.1,
+     "tests": 29,
+     "wpm_roll": 68.8,
+     "acc_roll": 94.82
+    },
+    {
+     "week": "2022-11-06",
+     "wpm": 69.5,
+     "acc": 94.9,
+     "consistency": 78.6,
+     "tests": 15,
+     "wpm_roll": 68.8,
+     "acc_roll": 95.09
+    },
+    {
+     "week": "2022-11-13",
+     "wpm": 70.0,
+     "acc": 95.67,
+     "consistency": 75.1,
+     "tests": 30,
+     "wpm_roll": 67.8,
+     "acc_roll": 94.82
+    },
+    {
+     "week": "2022-11-20",
+     "wpm": 64.8,
+     "acc": 95.29,
+     "consistency": 79.1,
+     "tests": 25,
+     "wpm_roll": 68.8,
+     "acc_roll": 94.88
+    },
+    {
+     "week": "2022-11-27",
+     "wpm": 67.6,
+     "acc": 94.11,
+     "consistency": 76.9,
+     "tests": 24,
+     "wpm_roll": 68.6,
+     "acc_roll": 94.88
+    },
+    {
+     "week": "2022-12-04",
+     "wpm": 72.0,
+     "acc": 94.85,
+     "consistency": 76.0,
+     "tests": 7,
+     "wpm_roll": 68.8,
+     "acc_roll": 95.07
+    },
+    {
+     "week": "2023-01-29",
+     "wpm": 64.0,
+     "acc": 94.12,
+     "consistency": 74.5,
+     "tests": 3,
+     "wpm_roll": 66.2,
+     "acc_roll": 95.07
+    },
+    {
+     "week": "2023-02-19",
+     "wpm": 70.0,
+     "acc": 96.24,
+     "consistency": 68.1,
+     "tests": 18,
+     "wpm_roll": 67.0,
+     "acc_roll": 94.48
+    },
+    {
+     "week": "2023-02-26",
+     "wpm": 64.4,
+     "acc": 97.08,
+     "consistency": 74.0,
+     "tests": 12,
+     "wpm_roll": 67.6,
+     "acc_roll": 94.71
+    },
+    {
+     "week": "2023-03-26",
+     "wpm": 66.4,
+     "acc": 93.68,
+     "consistency": 65.2,
+     "tests": 3,
+     "wpm_roll": 67.6,
+     "acc_roll": 94.61
+    },
+    {
+     "week": "2023-04-09",
+     "wpm": 68.8,
+     "acc": 94.57,
+     "consistency": 75.3,
+     "tests": 5,
+     "wpm_roll": 67.6,
+     "acc_roll": 94.61
+    },
+    {
+     "week": "2023-04-16",
+     "wpm": 68.8,
+     "acc": 94.64,
+     "consistency": 75.0,
+     "tests": 6,
+     "wpm_roll": 67.6,
+     "acc_roll": 94.61
+    },
+    {
+     "week": "2023-08-27",
+     "wpm": 66.4,
+     "acc": 91.69,
+     "consistency": 69.3,
+     "tests": 8,
+     "wpm_roll": 68.8,
+     "acc_roll": 94.61
+    },
+    {
+     "week": "2023-12-10",
+     "wpm": 82.4,
+     "acc": 100.0,
+     "consistency": 80.2,
+     "tests": 3,
+     "wpm_roll": 71.0,
+     "acc_roll": 95.39
+    },
+    {
+     "week": "2024-01-07",
+     "wpm": 74.0,
+     "acc": 99.5,
+     "consistency": 76.5,
+     "tests": 4,
+     "wpm_roll": 72.6,
+     "acc_roll": 95.94
+    },
+    {
+     "week": "2024-02-04",
+     "wpm": 73.2,
+     "acc": 96.14,
+     "consistency": 72.2,
+     "tests": 4,
+     "wpm_roll": 73.6,
+     "acc_roll": 96.97
+    },
+    {
+     "week": "2024-03-10",
+     "wpm": 72.0,
+     "acc": 95.74,
+     "consistency": 76.1,
+     "tests": 106,
+     "wpm_roll": 75.4,
+     "acc_roll": 98.17
+    },
+    {
+     "week": "2024-04-28",
+     "wpm": 76.8,
+     "acc": 97.81,
+     "consistency": 76.3,
+     "tests": 10,
+     "wpm_roll": 74.8,
+     "acc_roll": 97.36
+    },
+    {
+     "week": "2024-09-08",
+     "wpm": 78.4,
+     "acc": 98.52,
+     "consistency": 81.7,
+     "tests": 4,
+     "wpm_roll": 74.4,
+     "acc_roll": 97.36
+    },
+    {
+     "week": "2024-11-10",
+     "wpm": 75.6,
+     "acc": 96.91,
+     "consistency": 77.0,
+     "tests": 18,
+     "wpm_roll": 76.2,
+     "acc_roll": 97.36
+    },
+    {
+     "week": "2024-11-24",
+     "wpm": 72.0,
+     "acc": 97.84,
+     "consistency": 76.0,
+     "tests": 50,
+     "wpm_roll": 77.6,
+     "acc_roll": 97.36
+    },
+    {
+     "week": "2024-12-01",
+     "wpm": 78.4,
+     "acc": 96.66,
+     "consistency": 76.1,
+     "tests": 371,
+     "wpm_roll": 78.4,
+     "acc_roll": 96.91
+    },
+    {
+     "week": "2024-12-08",
+     "wpm": 85.6,
+     "acc": 96.64,
+     "consistency": 78.1,
+     "tests": 53,
+     "wpm_roll": 77.0,
+     "acc_roll": 96.78
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": 2.56,
+     "delta": 9.02,
+     "slope_per_month": 2.197,
+     "n": 27
+    },
+    "acc": {
+     "z": 0.41,
+     "delta": 1.97,
+     "slope_per_month": 0.517,
+     "n": 27
+    },
+    "consistency": {
+     "z": 0.19,
+     "delta": 0.73,
+     "slope_per_month": 0.19,
+     "n": 27
+    }
+   }
+  },
+  {
+   "user": "mt_U",
+   "weeks": 54,
+   "span_days": 721,
+   "points": [
+    {
+     "week": "2022-12-11",
+     "wpm": 37.0,
+     "acc": 93.77,
+     "consistency": 53.3,
+     "tests": 23,
+     "wpm_roll": 44.4,
+     "acc_roll": 93.03
+    },
+    {
+     "week": "2022-12-18",
+     "wpm": 44.4,
+     "acc": 92.06,
+     "consistency": 59.3,
+     "tests": 73,
+     "wpm_roll": 44.8,
+     "acc_roll": 92.55
+    },
+    {
+     "week": "2022-12-25",
+     "wpm": 45.2,
+     "acc": 93.03,
+     "consistency": 60.8,
+     "tests": 67,
+     "wpm_roll": 45.2,
+     "acc_roll": 92.06
+    },
+    {
+     "week": "2023-01-01",
+     "wpm": 47.5,
+     "acc": 90.97,
+     "consistency": 62.2,
+     "tests": 32,
+     "wpm_roll": 46.4,
+     "acc_roll": 92.46
+    },
+    {
+     "week": "2023-01-08",
+     "wpm": 50.4,
+     "acc": 91.95,
+     "consistency": 59.3,
+     "tests": 54,
+     "wpm_roll": 49.0,
+     "acc_roll": 92.46
+    },
+    {
+     "week": "2023-01-15",
+     "wpm": 52.2,
+     "acc": 92.86,
+     "consistency": 63.0,
+     "tests": 43,
+     "wpm_roll": 51.3,
+     "acc_roll": 92.77
+    },
+    {
+     "week": "2023-01-22",
+     "wpm": 53.9,
+     "acc": 93.62,
+     "consistency": 65.3,
+     "tests": 27,
+     "wpm_roll": 52.2,
+     "acc_roll": 92.31
+    },
+    {
+     "week": "2023-02-05",
+     "wpm": 53.4,
+     "acc": 92.67,
+     "consistency": 62.6,
+     "tests": 22,
+     "wpm_roll": 52.8,
+     "acc_roll": 92.43
+    },
+    {
+     "week": "2023-02-12",
+     "wpm": 52.2,
+     "acc": 90.88,
+     "consistency": 61.3,
+     "tests": 45,
+     "wpm_roll": 53.6,
+     "acc_roll": 92.43
+    },
+    {
+     "week": "2023-02-19",
+     "wpm": 55.0,
+     "acc": 92.18,
+     "consistency": 61.2,
+     "tests": 53,
+     "wpm_roll": 53.6,
+     "acc_roll": 91.78
+    },
+    {
+     "week": "2023-02-26",
+     "wpm": 55.8,
+     "acc": 91.38,
+     "consistency": 59.9,
+     "tests": 57,
+     "wpm_roll": 52.8,
+     "acc_roll": 91.13
+    },
+    {
+     "week": "2023-03-05",
+     "wpm": 52.3,
+     "acc": 86.43,
+     "consistency": 56.6,
+     "tests": 14,
+     "wpm_roll": 53.6,
+     "acc_roll": 91.13
+    },
+    {
+     "week": "2023-03-12",
+     "wpm": 52.1,
+     "acc": 89.66,
+     "consistency": 59.2,
+     "tests": 14,
+     "wpm_roll": 55.3,
+     "acc_roll": 91.6
+    },
+    {
+     "week": "2023-03-19",
+     "wpm": 58.0,
+     "acc": 92.02,
+     "consistency": 61.7,
+     "tests": 36,
+     "wpm_roll": 55.7,
+     "acc_roll": 91.56
+    },
+    {
+     "week": "2023-03-26",
+     "wpm": 55.6,
+     "acc": 91.82,
+     "consistency": 63.1,
+     "tests": 22,
+     "wpm_roll": 54.8,
+     "acc_roll": 90.78
+    },
+    {
+     "week": "2023-04-02",
+     "wpm": 58.6,
+     "acc": 91.75,
+     "consistency": 64.0,
+     "tests": 19,
+     "wpm_roll": 54.8,
+     "acc_roll": 91.78
+    },
+    {
+     "week": "2023-04-09",
+     "wpm": 54.0,
+     "acc": 89.81,
+     "consistency": 62.2,
+     "tests": 8,
+     "wpm_roll": 54.8,
+     "acc_roll": 91.78
+    },
+    {
+     "week": "2023-04-23",
+     "wpm": 52.8,
+     "acc": 92.15,
+     "consistency": 56.8,
+     "tests": 5,
+     "wpm_roll": 54.5,
+     "acc_roll": 91.78
+    },
+    {
+     "week": "2023-04-30",
+     "wpm": 52.9,
+     "acc": 91.22,
+     "consistency": 57.4,
+     "tests": 24,
+     "wpm_roll": 53.4,
+     "acc_roll": 91.48
+    },
+    {
+     "week": "2023-05-07",
+     "wpm": 55.0,
+     "acc": 94.52,
+     "consistency": 65.0,
+     "tests": 5,
+     "wpm_roll": 53.4,
+     "acc_roll": 91.69
+    },
+    {
+     "week": "2023-05-21",
+     "wpm": 49.4,
+     "acc": 90.29,
+     "consistency": 55.5,
+     "tests": 5,
+     "wpm_roll": 53.9,
+     "acc_roll": 92.64
+    },
+    {
+     "week": "2023-05-28",
+     "wpm": 66.4,
+     "acc": 95.4,
+     "consistency": 60.1,
+     "tests": 3,
+     "wpm_roll": 56.5,
+     "acc_roll": 93.47
+    },
+    {
+     "week": "2023-06-11",
+     "wpm": 57.9,
+     "acc": 93.13,
+     "consistency": 54.9,
+     "tests": 4,
+     "wpm_roll": 57.0,
+     "acc_roll": 93.47
+    },
+    {
+     "week": "2023-06-18",
+     "wpm": 59.2,
+     "acc": 93.81,
+     "consistency": 60.1,
+     "tests": 9,
+     "wpm_roll": 57.9,
+     "acc_roll": 92.96
+    },
+    {
+     "week": "2023-06-25",
+     "wpm": 56.0,
+     "acc": 91.28,
+     "consistency": 59.7,
+     "tests": 6,
+     "wpm_roll": 58.5,
+     "acc_roll": 93.47
+    },
+    {
+     "week": "2023-08-13",
+     "wpm": 57.8,
+     "acc": 92.79,
+     "consistency": 60.2,
+     "tests": 5,
+     "wpm_roll": 58.5,
+     "acc_roll": 92.98
+    },
+    {
+     "week": "2023-11-12",
+     "wpm": 67.8,
+     "acc": 95.75,
+     "consistency": 64.8,
+     "tests": 4,
+     "wpm_roll": 62.4,
+     "acc_roll": 93.33
+    },
+    {
+     "week": "2023-11-19",
+     "wpm": 65.6,
+     "acc": 92.84,
+     "consistency": 66.6,
+     "tests": 24,
+     "wpm_roll": 66.7,
+     "acc_roll": 93.34
+    },
+    {
+     "week": "2023-11-26",
+     "wpm": 69.4,
+     "acc": 94.26,
+     "consistency": 70.0,
+     "tests": 32,
+     "wpm_roll": 67.9,
+     "acc_roll": 94.05
+    },
+    {
+     "week": "2023-12-10",
+     "wpm": 68.0,
+     "acc": 93.83,
+     "consistency": 68.3,
+     "tests": 53,
+     "wpm_roll": 68.7,
+     "acc_roll": 94.05
+    },
+    {
+     "week": "2023-12-17",
+     "wpm": 71.5,
+     "acc": 95.11,
+     "consistency": 66.7,
+     "tests": 10,
+     "wpm_roll": 68.7,
+     "acc_roll": 93.39
+    },
+    {
+     "week": "2023-12-31",
+     "wpm": 69.4,
+     "acc": 92.94,
+     "consistency": 64.5,
+     "tests": 12,
+     "wpm_roll": 68.8,
+     "acc_roll": 94.05
+    },
+    {
+     "week": "2024-01-07",
+     "wpm": 63.6,
+     "acc": 91.28,
+     "consistency": 61.0,
+     "tests": 9,
+     "wpm_roll": 68.1,
+     "acc_roll": 94.02
+    },
+    {
+     "week": "2024-01-14",
+     "wpm": 68.2,
+     "acc": 94.5,
+     "consistency": 69.6,
+     "tests": 16,
+     "wpm_roll": 67.4,
+     "acc_roll": 93.65
+    },
+    {
+     "week": "2024-01-21",
+     "wpm": 66.7,
+     "acc": 94.21,
+     "consistency": 66.9,
+     "tests": 7,
+     "wpm_roll": 67.4,
+     "acc_roll": 93.65
+    },
+    {
+     "week": "2024-02-11",
+     "wpm": 64.5,
+     "acc": 93.08,
+     "consistency": 64.2,
+     "tests": 16,
+     "wpm_roll": 67.3,
+     "acc_roll": 93.84
+    },
+    {
+     "week": "2024-02-18",
+     "wpm": 76.2,
+     "acc": 94.95,
+     "consistency": 71.9,
+     "tests": 5,
+     "wpm_roll": 67.3,
+     "acc_roll": 93.84
+    },
+    {
+     "week": "2024-02-25",
+     "wpm": 68.0,
+     "acc": 93.48,
+     "consistency": 63.5,
+     "tests": 3,
+     "wpm_roll": 66.9,
+     "acc_roll": 93.28
+    },
+    {
+     "week": "2024-03-03",
+     "wpm": 60.4,
+     "acc": 92.38,
+     "consistency": 58.4,
+     "tests": 6,
+     "wpm_roll": 67.6,
+     "acc_roll": 93.19
+    },
+    {
+     "week": "2024-03-17",
+     "wpm": 67.2,
+     "acc": 90.82,
+     "consistency": 67.6,
+     "tests": 15,
+     "wpm_roll": 69.5,
+     "acc_roll": 93.39
+    },
+    {
+     "week": "2024-04-07",
+     "wpm": 71.0,
+     "acc": 93.3,
+     "consistency": 68.0,
+     "tests": 7,
+     "wpm_roll": 68.4,
+     "acc_roll": 92.84
+    },
+    {
+     "week": "2024-04-21",
+     "wpm": 75.2,
+     "acc": 94.0,
+     "consistency": 67.7,
+     "tests": 11,
+     "wpm_roll": 69.9,
+     "acc_roll": 92.84
+    },
+    {
+     "week": "2024-04-28",
+     "wpm": 68.8,
+     "acc": 91.09,
+     "consistency": 60.4,
+     "tests": 3,
+     "wpm_roll": 73.1,
+     "acc_roll": 93.65
+    },
+    {
+     "week": "2024-05-05",
+     "wpm": 78.4,
+     "acc": 95.91,
+     "consistency": 68.5,
+     "tests": 5,
+     "wpm_roll": 75.8,
+     "acc_roll": 94.88
+    },
+    {
+     "week": "2024-05-12",
+     "wpm": 77.8,
+     "acc": 95.75,
+     "consistency": 73.8,
+     "tests": 8,
+     "wpm_roll": 75.8,
+     "acc_roll": 94.88
+    },
+    {
+     "week": "2024-05-19",
+     "wpm": 76.4,
+     "acc": 95.96,
+     "consistency": 69.8,
+     "tests": 3,
+     "wpm_roll": 72.6,
+     "acc_roll": 94.56
+    },
+    {
+     "week": "2024-05-26",
+     "wpm": 68.4,
+     "acc": 92.38,
+     "consistency": 65.5,
+     "tests": 13,
+     "wpm_roll": 72.4,
+     "acc_roll": 94.56
+    },
+    {
+     "week": "2024-06-09",
+     "wpm": 64.2,
+     "acc": 93.38,
+     "consistency": 63.1,
+     "tests": 4,
+     "wpm_roll": 69.2,
+     "acc_roll": 92.88
+    },
+    {
+     "week": "2024-07-21",
+     "wpm": 67.2,
+     "acc": 92.31,
+     "consistency": 72.6,
+     "tests": 9,
+     "wpm_roll": 67.8,
+     "acc_roll": 92.36
+    },
+    {
+     "week": "2024-07-28",
+     "wpm": 70.0,
+     "acc": 92.35,
+     "consistency": 70.5,
+     "tests": 9,
+     "wpm_roll": 67.8,
+     "acc_roll": 92.36
+    },
+    {
+     "week": "2024-10-06",
+     "wpm": 36.8,
+     "acc": 88.46,
+     "consistency": 58.1,
+     "tests": 3,
+     "wpm_roll": 68.6,
+     "acc_roll": 92.86
+    },
+    {
+     "week": "2024-10-20",
+     "wpm": 76.8,
+     "acc": 94.69,
+     "consistency": 70.5,
+     "tests": 5,
+     "wpm_roll": 73.0,
+     "acc_roll": 93.02
+    },
+    {
+     "week": "2024-11-24",
+     "wpm": 85.6,
+     "acc": 98.2,
+     "consistency": 71.2,
+     "tests": 3,
+     "wpm_roll": 76.0,
+     "acc_roll": 93.69
+    },
+    {
+     "week": "2024-12-01",
+     "wpm": 76.0,
+     "acc": 93.69,
+     "consistency": 70.9,
+     "tests": 9,
+     "wpm_roll": 76.4,
+     "acc_roll": 94.19
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": 3.33,
+     "delta": 20.22,
+     "slope_per_month": 2.23,
+     "n": 54
+    },
+    "acc": {
+     "z": 0.02,
+     "delta": 0.11,
+     "slope_per_month": 0.194,
+     "n": 54
+    },
+    "consistency": {
+     "z": 2.9,
+     "delta": 8.92,
+     "slope_per_month": 0.844,
+     "n": 54
+    }
+   }
+  },
+  {
+   "user": "mt_R",
+   "weeks": 33,
+   "span_days": 693,
+   "points": [
+    {
+     "week": "2021-07-04",
+     "wpm": 67.2,
+     "acc": 86.98,
+     "consistency": 72.5,
+     "tests": 27,
+     "wpm_roll": 71.4,
+     "acc_roll": 90.22
+    },
+    {
+     "week": "2021-07-11",
+     "wpm": 71.4,
+     "acc": 90.22,
+     "consistency": 74.4,
+     "tests": 30,
+     "wpm_roll": 76.6,
+     "acc_roll": 91.38
+    },
+    {
+     "week": "2021-07-18",
+     "wpm": 81.8,
+     "acc": 92.53,
+     "consistency": 78.2,
+     "tests": 50,
+     "wpm_roll": 81.8,
+     "acc_roll": 92.53
+    },
+    {
+     "week": "2021-07-25",
+     "wpm": 84.4,
+     "acc": 94.61,
+     "consistency": 77.9,
+     "tests": 13,
+     "wpm_roll": 83.1,
+     "acc_roll": 92.72
+    },
+    {
+     "week": "2021-08-01",
+     "wpm": 85.6,
+     "acc": 92.92,
+     "consistency": 77.8,
+     "tests": 7,
+     "wpm_roll": 85.0,
+     "acc_roll": 93.77
+    },
+    {
+     "week": "2021-08-15",
+     "wpm": 88.6,
+     "acc": 95.25,
+     "consistency": 82.0,
+     "tests": 6,
+     "wpm_roll": 86.0,
+     "acc_roll": 94.93
+    },
+    {
+     "week": "2021-10-10",
+     "wpm": 86.4,
+     "acc": 95.63,
+     "consistency": 78.4,
+     "tests": 7,
+     "wpm_roll": 86.0,
+     "acc_roll": 94.93
+    },
+    {
+     "week": "2021-11-14",
+     "wpm": 87.0,
+     "acc": 95.69,
+     "consistency": 78.2,
+     "tests": 10,
+     "wpm_roll": 86.0,
+     "acc_roll": 95.34
+    },
+    {
+     "week": "2021-11-21",
+     "wpm": 79.2,
+     "acc": 91.07,
+     "consistency": 72.7,
+     "tests": 4,
+     "wpm_roll": 84.6,
+     "acc_roll": 95.34
+    },
+    {
+     "week": "2022-01-09",
+     "wpm": 82.8,
+     "acc": 95.43,
+     "consistency": 76.0,
+     "tests": 7,
+     "wpm_roll": 84.6,
+     "acc_roll": 95.53
+    },
+    {
+     "week": "2022-02-06",
+     "wpm": 82.0,
+     "acc": 94.5,
+     "consistency": 75.9,
+     "tests": 5,
+     "wpm_roll": 84.9,
+     "acc_roll": 95.56
+    },
+    {
+     "week": "2022-04-24",
+     "wpm": 96.8,
+     "acc": 96.51,
+     "consistency": 74.8,
+     "tests": 5,
+     "wpm_roll": 88.2,
+     "acc_roll": 95.97
+    },
+    {
+     "week": "2022-05-01",
+     "wpm": 93.6,
+     "acc": 97.37,
+     "consistency": 78.0,
+     "tests": 5,
+     "wpm_roll": 90.2,
+     "acc_roll": 96.1
+    },
+    {
+     "week": "2022-05-08",
+     "wpm": 95.2,
+     "acc": 97.35,
+     "consistency": 80.1,
+     "tests": 5,
+     "wpm_roll": 91.4,
+     "acc_roll": 96.1
+    },
+    {
+     "week": "2022-06-12",
+     "wpm": 86.8,
+     "acc": 95.69,
+     "consistency": 72.9,
+     "tests": 5,
+     "wpm_roll": 91.4,
+     "acc_roll": 96.79
+    },
+    {
+     "week": "2022-06-19",
+     "wpm": 89.2,
+     "acc": 93.71,
+     "consistency": 72.8,
+     "tests": 4,
+     "wpm_roll": 91.4,
+     "acc_roll": 96.85
+    },
+    {
+     "week": "2022-06-26",
+     "wpm": 88.4,
+     "acc": 97.07,
+     "consistency": 80.2,
+     "tests": 3,
+     "wpm_roll": 88.8,
+     "acc_roll": 96.16
+    },
+    {
+     "week": "2022-07-17",
+     "wpm": 95.2,
+     "acc": 96.64,
+     "consistency": 81.6,
+     "tests": 5,
+     "wpm_roll": 88.8,
+     "acc_roll": 95.84
+    },
+    {
+     "week": "2022-08-07",
+     "wpm": 83.6,
+     "acc": 93.22,
+     "consistency": 74.8,
+     "tests": 3,
+     "wpm_roll": 89.6,
+     "acc_roll": 96.32
+    },
+    {
+     "week": "2022-08-28",
+     "wpm": 90.0,
+     "acc": 96.0,
+     "consistency": 73.7,
+     "tests": 4,
+     "wpm_roll": 90.0,
+     "acc_roll": 96.7
+    },
+    {
+     "week": "2022-09-04",
+     "wpm": 90.0,
+     "acc": 96.77,
+     "consistency": 75.3,
+     "tests": 10,
+     "wpm_roll": 90.2,
+     "acc_roll": 96.7
+    },
+    {
+     "week": "2022-11-06",
+     "wpm": 92.4,
+     "acc": 97.99,
+     "consistency": 76.7,
+     "tests": 8,
+     "wpm_roll": 90.0,
+     "acc_roll": 96.38
+    },
+    {
+     "week": "2022-11-13",
+     "wpm": 90.4,
+     "acc": 98.3,
+     "consistency": 74.2,
+     "tests": 4,
+     "wpm_roll": 90.0,
+     "acc_roll": 96.38
+    },
+    {
+     "week": "2022-11-20",
+     "wpm": 88.0,
+     "acc": 93.31,
+     "consistency": 79.0,
+     "tests": 5,
+     "wpm_roll": 89.6,
+     "acc_roll": 97.04
+    },
+    {
+     "week": "2022-11-27",
+     "wpm": 89.2,
+     "acc": 95.75,
+     "consistency": 79.1,
+     "tests": 10,
+     "wpm_roll": 89.7,
+     "acc_roll": 96.53
+    },
+    {
+     "week": "2023-02-05",
+     "wpm": 87.2,
+     "acc": 97.32,
+     "consistency": 79.0,
+     "tests": 3,
+     "wpm_roll": 88.6,
+     "acc_roll": 95.41
+    },
+    {
+     "week": "2023-02-26",
+     "wpm": 90.2,
+     "acc": 93.64,
+     "consistency": 77.0,
+     "tests": 6,
+     "wpm_roll": 88.6,
+     "acc_roll": 95.41
+    },
+    {
+     "week": "2023-04-02",
+     "wpm": 82.8,
+     "acc": 95.08,
+     "consistency": 74.8,
+     "tests": 7,
+     "wpm_roll": 89.6,
+     "acc_roll": 95.41
+    },
+    {
+     "week": "2023-04-09",
+     "wpm": 90.0,
+     "acc": 96.23,
+     "consistency": 77.4,
+     "tests": 5,
+     "wpm_roll": 88.7,
+     "acc_roll": 94.97
+    },
+    {
+     "week": "2023-04-16",
+     "wpm": 93.2,
+     "acc": 94.86,
+     "consistency": 80.0,
+     "tests": 3,
+     "wpm_roll": 90.1,
+     "acc_roll": 94.31
+    },
+    {
+     "week": "2023-04-23",
+     "wpm": 87.4,
+     "acc": 93.61,
+     "consistency": 73.3,
+     "tests": 10,
+     "wpm_roll": 88.7,
+     "acc_roll": 94.31
+    },
+    {
+     "week": "2023-04-30",
+     "wpm": 91.6,
+     "acc": 93.77,
+     "consistency": 75.2,
+     "tests": 9,
+     "wpm_roll": 90.0,
+     "acc_roll": 93.77
+    },
+    {
+     "week": "2023-05-28",
+     "wpm": 48.6,
+     "acc": 90.59,
+     "consistency": 42.0,
+     "tests": 3,
+     "wpm_roll": 89.5,
+     "acc_roll": 93.69
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": 0.87,
+     "delta": 3.71,
+     "slope_per_month": 0.491,
+     "n": 33
+    },
+    "acc": {
+     "z": 0.12,
+     "delta": 0.55,
+     "slope_per_month": 0.296,
+     "n": 33
+    },
+    "consistency": {
+     "z": -0.49,
+     "delta": -1.92,
+     "slope_per_month": -0.795,
+     "n": 33
+    }
+   }
+  },
+  {
+   "user": "mt_O",
+   "weeks": 25,
+   "span_days": 476,
+   "points": [
+    {
+     "week": "2023-09-10",
+     "wpm": 78.6,
+     "acc": 96.32,
+     "consistency": 74.1,
+     "tests": 9,
+     "wpm_roll": 79.6,
+     "acc_roll": 96.77
+    },
+    {
+     "week": "2023-09-17",
+     "wpm": 79.6,
+     "acc": 96.77,
+     "consistency": 75.2,
+     "tests": 51,
+     "wpm_roll": 80.2,
+     "acc_roll": 97.17
+    },
+    {
+     "week": "2023-09-24",
+     "wpm": 88.1,
+     "acc": 97.58,
+     "consistency": 76.4,
+     "tests": 16,
+     "wpm_roll": 80.9,
+     "acc_roll": 96.84
+    },
+    {
+     "week": "2023-10-01",
+     "wpm": 80.9,
+     "acc": 98.46,
+     "consistency": 74.7,
+     "tests": 16,
+     "wpm_roll": 81.3,
+     "acc_roll": 96.81
+    },
+    {
+     "week": "2023-10-08",
+     "wpm": 82.5,
+     "acc": 96.84,
+     "consistency": 73.7,
+     "tests": 6,
+     "wpm_roll": 82.2,
+     "acc_roll": 96.81
+    },
+    {
+     "week": "2023-10-29",
+     "wpm": 81.8,
+     "acc": 96.05,
+     "consistency": 72.0,
+     "tests": 6,
+     "wpm_roll": 85.0,
+     "acc_roll": 97.21
+    },
+    {
+     "week": "2024-02-04",
+     "wpm": 87.4,
+     "acc": 95.63,
+     "consistency": 75.5,
+     "tests": 4,
+     "wpm_roll": 84.3,
+     "acc_roll": 97.47
+    },
+    {
+     "week": "2024-02-25",
+     "wpm": 91.2,
+     "acc": 98.3,
+     "consistency": 79.9,
+     "tests": 8,
+     "wpm_roll": 85.0,
+     "acc_roll": 97.46
+    },
+    {
+     "week": "2024-04-07",
+     "wpm": 86.0,
+     "acc": 98.1,
+     "consistency": 74.0,
+     "tests": 7,
+     "wpm_roll": 86.7,
+     "acc_roll": 98.09
+    },
+    {
+     "week": "2024-04-14",
+     "wpm": 83.9,
+     "acc": 98.08,
+     "consistency": 72.9,
+     "tests": 11,
+     "wpm_roll": 87.7,
+     "acc_roll": 98.12
+    },
+    {
+     "week": "2024-04-21",
+     "wpm": 88.1,
+     "acc": 98.36,
+     "consistency": 77.4,
+     "tests": 16,
+     "wpm_roll": 88.3,
+     "acc_roll": 98.22
+    },
+    {
+     "week": "2024-04-28",
+     "wpm": 88.5,
+     "acc": 98.14,
+     "consistency": 78.4,
+     "tests": 26,
+     "wpm_roll": 88.3,
+     "acc_roll": 98.12
+    },
+    {
+     "week": "2024-05-05",
+     "wpm": 105.8,
+     "acc": 100.0,
+     "consistency": 82.7,
+     "tests": 7,
+     "wpm_roll": 91.4,
+     "acc_roll": 98.11
+    },
+    {
+     "week": "2024-07-28",
+     "wpm": 98.3,
+     "acc": 96.98,
+     "consistency": 70.7,
+     "tests": 4,
+     "wpm_roll": 94.0,
+     "acc_roll": 97.95
+    },
+    {
+     "week": "2024-09-01",
+     "wpm": 94.3,
+     "acc": 97.38,
+     "consistency": 73.0,
+     "tests": 15,
+     "wpm_roll": 94.0,
+     "acc_roll": 97.57
+    },
+    {
+     "week": "2024-09-08",
+     "wpm": 93.7,
+     "acc": 97.76,
+     "consistency": 76.2,
+     "tests": 19,
+     "wpm_roll": 94.1,
+     "acc_roll": 97.57
+    },
+    {
+     "week": "2024-09-15",
+     "wpm": 88.6,
+     "acc": 96.72,
+     "consistency": 70.7,
+     "tests": 4,
+     "wpm_roll": 94.1,
+     "acc_roll": 97.57
+    },
+    {
+     "week": "2024-09-22",
+     "wpm": 93.8,
+     "acc": 98.72,
+     "consistency": 74.4,
+     "tests": 6,
+     "wpm_roll": 94.1,
+     "acc_roll": 97.95
+    },
+    {
+     "week": "2024-10-13",
+     "wpm": 94.7,
+     "acc": 98.14,
+     "consistency": 75.3,
+     "tests": 4,
+     "wpm_roll": 93.9,
+     "acc_roll": 98.29
+    },
+    {
+     "week": "2024-10-20",
+     "wpm": 99.1,
+     "acc": 98.53,
+     "consistency": 81.1,
+     "tests": 4,
+     "wpm_roll": 93.9,
+     "acc_roll": 98.38
+    },
+    {
+     "week": "2024-10-27",
+     "wpm": 94.0,
+     "acc": 98.44,
+     "consistency": 73.5,
+     "tests": 7,
+     "wpm_roll": 93.9,
+     "acc_roll": 98.38
+    },
+    {
+     "week": "2024-11-03",
+     "wpm": 93.2,
+     "acc": 98.33,
+     "consistency": 74.9,
+     "tests": 3,
+     "wpm_roll": 94.4,
+     "acc_roll": 98.31
+    },
+    {
+     "week": "2024-11-10",
+     "wpm": 92.6,
+     "acc": 98.28,
+     "consistency": 78.6,
+     "tests": 17,
+     "wpm_roll": 94.5,
+     "acc_roll": 98.31
+    },
+    {
+     "week": "2024-11-17",
+     "wpm": 94.9,
+     "acc": 97.67,
+     "consistency": 73.5,
+     "tests": 13,
+     "wpm_roll": 94.0,
+     "acc_roll": 98.28
+    },
+    {
+     "week": "2024-12-29",
+     "wpm": 97.8,
+     "acc": 96.56,
+     "consistency": 73.7,
+     "tests": 3,
+     "wpm_roll": 94.0,
+     "acc_roll": 97.97
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": 2.69,
+     "delta": 12.23,
+     "slope_per_month": 2.925,
+     "n": 25
+    },
+    "acc": {
+     "z": 0.31,
+     "delta": 1.5,
+     "slope_per_month": 0.186,
+     "n": 25
+    },
+    "consistency": {
+     "z": -0.09,
+     "delta": -0.34,
+     "slope_per_month": 0.044,
+     "n": 25
+    }
+   }
+  },
+  {
+   "user": "mt_N",
+   "weeks": 41,
+   "span_days": 350,
+   "points": [
+    {
+     "week": "2023-12-31",
+     "wpm": 113.2,
+     "acc": 96.91,
+     "consistency": 81.9,
+     "tests": 22,
+     "wpm_roll": 101.2,
+     "acc_roll": 96.91
+    },
+    {
+     "week": "2024-01-07",
+     "wpm": 101.2,
+     "acc": 97.03,
+     "consistency": 78.5,
+     "tests": 12,
+     "wpm_roll": 107.2,
+     "acc_roll": 96.97
+    },
+    {
+     "week": "2024-01-14",
+     "wpm": 96.7,
+     "acc": 91.86,
+     "consistency": 76.3,
+     "tests": 8,
+     "wpm_roll": 113.2,
+     "acc_roll": 96.91
+    },
+    {
+     "week": "2024-01-28",
+     "wpm": 124.1,
+     "acc": 100.0,
+     "consistency": 72.2,
+     "tests": 27,
+     "wpm_roll": 114.0,
+     "acc_roll": 96.97
+    },
+    {
+     "week": "2024-02-04",
+     "wpm": 122.5,
+     "acc": 95.45,
+     "consistency": 78.0,
+     "tests": 45,
+     "wpm_roll": 118.7,
+     "acc_roll": 98.51
+    },
+    {
+     "week": "2024-02-18",
+     "wpm": 114.8,
+     "acc": 100.0,
+     "consistency": 80.7,
+     "tests": 122,
+     "wpm_roll": 123.1,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-02-25",
+     "wpm": 128.0,
+     "acc": 100.0,
+     "consistency": 76.3,
+     "tests": 178,
+     "wpm_roll": 123.8,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-03-03",
+     "wpm": 123.6,
+     "acc": 100.0,
+     "consistency": 79.2,
+     "tests": 56,
+     "wpm_roll": 123.1,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-03-10",
+     "wpm": 130.9,
+     "acc": 100.0,
+     "consistency": 77.8,
+     "tests": 42,
+     "wpm_roll": 125.8,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-03-17",
+     "wpm": 120.9,
+     "acc": 96.92,
+     "consistency": 76.1,
+     "tests": 18,
+     "wpm_roll": 125.8,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-03-31",
+     "wpm": 129.6,
+     "acc": 95.74,
+     "consistency": 71.1,
+     "tests": 15,
+     "wpm_roll": 122.2,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-04-14",
+     "wpm": 117.3,
+     "acc": 100.0,
+     "consistency": 69.5,
+     "tests": 14,
+     "wpm_roll": 125.2,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-04-21",
+     "wpm": 109.7,
+     "acc": 100.0,
+     "consistency": 82.3,
+     "tests": 31,
+     "wpm_roll": 121.0,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-04-28",
+     "wpm": 135.1,
+     "acc": 100.0,
+     "consistency": 87.7,
+     "tests": 12,
+     "wpm_roll": 123.1,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-05-05",
+     "wpm": 121.1,
+     "acc": 100.0,
+     "consistency": 81.9,
+     "tests": 12,
+     "wpm_roll": 123.1,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-05-12",
+     "wpm": 125.1,
+     "acc": 97.87,
+     "consistency": 78.1,
+     "tests": 13,
+     "wpm_roll": 126.1,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-05-19",
+     "wpm": 127.0,
+     "acc": 100.0,
+     "consistency": 75.0,
+     "tests": 47,
+     "wpm_roll": 126.1,
+     "acc_roll": 99.06
+    },
+    {
+     "week": "2024-05-26",
+     "wpm": 132.2,
+     "acc": 98.11,
+     "consistency": 80.5,
+     "tests": 22,
+     "wpm_roll": 125.4,
+     "acc_roll": 99.06
+    },
+    {
+     "week": "2024-06-02",
+     "wpm": 108.3,
+     "acc": 98.11,
+     "consistency": 75.9,
+     "tests": 10,
+     "wpm_roll": 125.4,
+     "acc_roll": 99.06
+    },
+    {
+     "week": "2024-06-09",
+     "wpm": 125.7,
+     "acc": 100.0,
+     "consistency": 82.3,
+     "tests": 7,
+     "wpm_roll": 125.2,
+     "acc_roll": 99.06
+    },
+    {
+     "week": "2024-06-16",
+     "wpm": 124.7,
+     "acc": 100.0,
+     "consistency": 67.0,
+     "tests": 9,
+     "wpm_roll": 118.0,
+     "acc_roll": 98.11
+    },
+    {
+     "week": "2024-07-14",
+     "wpm": 111.2,
+     "acc": 97.11,
+     "consistency": 81.9,
+     "tests": 4,
+     "wpm_roll": 115.6,
+     "acc_roll": 97.61
+    },
+    {
+     "week": "2024-07-21",
+     "wpm": 109.7,
+     "acc": 95.72,
+     "consistency": 77.2,
+     "tests": 4,
+     "wpm_roll": 122.3,
+     "acc_roll": 97.65
+    },
+    {
+     "week": "2024-08-11",
+     "wpm": 120.0,
+     "acc": 95.47,
+     "consistency": 81.1,
+     "tests": 16,
+     "wpm_roll": 122.3,
+     "acc_roll": 97.65
+    },
+    {
+     "week": "2024-08-18",
+     "wpm": 124.5,
+     "acc": 98.18,
+     "consistency": 78.6,
+     "tests": 10,
+     "wpm_roll": 122.3,
+     "acc_roll": 97.65
+    },
+    {
+     "week": "2024-09-01",
+     "wpm": 131.5,
+     "acc": 100.0,
+     "consistency": 87.4,
+     "tests": 14,
+     "wpm_roll": 126.9,
+     "acc_roll": 98.58
+    },
+    {
+     "week": "2024-09-08",
+     "wpm": 129.3,
+     "acc": 98.98,
+     "consistency": 70.3,
+     "tests": 4,
+     "wpm_roll": 129.3,
+     "acc_roll": 99.49
+    },
+    {
+     "week": "2024-09-15",
+     "wpm": 129.3,
+     "acc": 100.0,
+     "consistency": 77.9,
+     "tests": 20,
+     "wpm_roll": 130.4,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-09-22",
+     "wpm": 134.3,
+     "acc": 100.0,
+     "consistency": 72.0,
+     "tests": 36,
+     "wpm_roll": 132.1,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-09-29",
+     "wpm": 132.7,
+     "acc": 100.0,
+     "consistency": 71.3,
+     "tests": 23,
+     "wpm_roll": 131.5,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-10-06",
+     "wpm": 143.3,
+     "acc": 100.0,
+     "consistency": 83.8,
+     "tests": 15,
+     "wpm_roll": 133.2,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-10-13",
+     "wpm": 130.2,
+     "acc": 100.0,
+     "consistency": 74.7,
+     "tests": 23,
+     "wpm_roll": 133.2,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-10-20",
+     "wpm": 133.6,
+     "acc": 100.0,
+     "consistency": 77.8,
+     "tests": 4,
+     "wpm_roll": 132.3,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-10-27",
+     "wpm": 125.2,
+     "acc": 100.0,
+     "consistency": 80.2,
+     "tests": 15,
+     "wpm_roll": 131.1,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-11-03",
+     "wpm": 131.9,
+     "acc": 100.0,
+     "consistency": 75.2,
+     "tests": 19,
+     "wpm_roll": 127.7,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-11-10",
+     "wpm": 122.3,
+     "acc": 96.89,
+     "consistency": 79.8,
+     "tests": 12,
+     "wpm_roll": 126.5,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-11-17",
+     "wpm": 124.6,
+     "acc": 100.0,
+     "consistency": 69.4,
+     "tests": 16,
+     "wpm_roll": 126.5,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-11-24",
+     "wpm": 127.8,
+     "acc": 100.0,
+     "consistency": 83.8,
+     "tests": 14,
+     "wpm_roll": 126.2,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-12-01",
+     "wpm": 139.7,
+     "acc": 100.0,
+     "consistency": 74.1,
+     "tests": 6,
+     "wpm_roll": 123.4,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-12-08",
+     "wpm": 116.3,
+     "acc": 97.67,
+     "consistency": 83.2,
+     "tests": 8,
+     "wpm_roll": 124.6,
+     "acc_roll": 100.0
+    },
+    {
+     "week": "2024-12-15",
+     "wpm": 117.3,
+     "acc": 100.0,
+     "consistency": 82.9,
+     "tests": 4,
+     "wpm_roll": 122.6,
+     "acc_roll": 100.0
+    }
+   ],
+   "drift": {
+    "wpm": {
+     "z": 0.77,
+     "delta": 6.23,
+     "slope_per_month": 1.505,
+     "n": 41
+    },
+    "acc": {
+     "z": 0.3,
+     "delta": 1.49,
+     "slope_per_month": 0.228,
+     "n": 41
+    },
+    "consistency": {
+     "z": 0.45,
+     "delta": 1.75,
+     "slope_per_month": 0.064,
+     "n": 41
+    }
+   }
+  }
+ ],
+ "cmu": {
+  "sessions": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "hold_mean": [
+   86.6,
+   89.5,
+   88.8,
+   89.2,
+   89.4,
+   92.1,
+   92.1,
+   93.0
+  ],
+  "flight_mean": [
+   314.1,
+   272.3,
+   259.6,
+   243.8,
+   234.8,
+   226.2,
+   219.7,
+   219.3
+  ],
+  "speed_kps": [
+   4.08,
+   4.56,
+   4.81,
+   5.12,
+   5.27,
+   5.43,
+   5.55,
+   5.65
+  ],
+  "subjects": 51,
+  "flight_change_pct_median": -28.0,
+  "hold_change_pct_median": 5.3,
+  "identity_holdout": {
+   "random_split": 0.524,
+   "train_s1_4_test_s5_8": 0.366
+  }
+ },
+ "team": [
+  {
+   "user": "Akkshar Ranjan",
+   "days": [
+    {
+     "day": "2026-09-06",
+     "n": 20,
+     "hold_mean": 118.8,
+     "flight_mean": 161.8,
+     "speed_kps": 6.27
+    },
+    {
+     "day": "earlier",
+     "n": 5,
+     "hold_mean": 111.2,
+     "flight_mean": 169.6,
+     "speed_kps": 5.97
+    }
+   ]
+  },
+  {
+   "user": "Akshaj Munjal",
+   "days": [
+    {
+     "day": "2026-09-06",
+     "n": 7,
+     "hold_mean": 115.5,
+     "flight_mean": 171.7,
+     "speed_kps": 5.91
+    },
+    {
+     "day": "earlier",
+     "n": 5,
+     "hold_mean": 123.0,
+     "flight_mean": 200.0,
+     "speed_kps": 5.07
+    }
+   ]
+  },
+  {
+   "user": "Shourya",
+   "days": [
+    {
+     "day": "2026-09-06",
+     "n": 10,
+     "hold_mean": 87.6,
+     "flight_mean": 327.6,
+     "speed_kps": 3.09
+    },
+    {
+     "day": "earlier",
+     "n": 5,
+     "hold_mean": 83.0,
+     "flight_mean": 381.5,
+     "speed_kps": 2.65
+    }
+   ]
+  },
+  {
+   "user": "Utkarsh",
+   "days": [
+    {
+     "day": "2026-09-06",
+     "n": 10,
+     "hold_mean": 75.8,
+     "flight_mean": 210.7,
+     "speed_kps": 4.81
+    },
+    {
+     "day": "earlier",
+     "n": 5,
+     "hold_mean": 77.5,
+     "flight_mean": 223.6,
+     "speed_kps": 4.53
+    }
+   ]
+  }
+ ]
+}

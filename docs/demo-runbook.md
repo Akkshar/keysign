@@ -27,26 +27,29 @@ Terminal 2, backend (no auto-reload during the demo):
 
     uv run python -m backend --no-reload
 
-Terminal 3, dashboard:
+Terminal 3, dashboard (the team UI):
 
-    npm --prefix dashboard run dev
+    npm --prefix ui run dev
 
 Open two Chrome windows side by side, or one on the projector and one on
 the laptop screen:
 
-- http://localhost:5173 — the dashboard. This goes on the projector.
+- http://localhost:5173 — the dashboard (team UI). This goes on the projector.
+  Fallback: `npm --prefix dashboard run dev` gives the minimal dashboard on http://localhost:5175.
 - http://localhost:8080 — the capture page. This stays on the laptop.
 
 On the capture page: User = `Akkshar Ranjan`, tick **Live**. The status
-should read `streaming · session …` and the dashboard header should say
-**backend connected**.
+should read `streaming · session …`. On the dashboard, the header pill should
+read **Live · on-device backend** and the user selector should show
+`Akkshar Ranjan · 25 samples`. Typing directly into the dashboard also
+streams to the backend, so either window can be the typing surface.
 
 ## Pre-flight checklist (2 minutes)
 
 - [ ] http://localhost:8000/ shows `"alerts": "ntfy"` (topic picked up). If it
       says `log-only`, the env var isn't set in that terminal: close it, open a
       new one, start the backend again.
-- [ ] Dashboard Threat panel tag reads **push → phone**.
+- [ ] http://localhost:8000/api/alerts shows `"channel":"ntfy"` (the team UI has no channel tag; the lite dashboard does).
 - [ ] A types one sentence: distance settles near 1σ, Identity shows
       Akkshar Ranjan, State shows deep focus / engaged.
 - [ ] Phone test: `curl -d "KeySign check" https://ntfy.sh/<topic>` buzzes.
@@ -66,13 +69,14 @@ baseline is drifting. Nothing leaves this laptop."
 **0:20 — Beat 1, calm (A types, 30 s).** A types the prompt on the capture
 page at a normal pace. Point at the dashboard:
 
-- Deviation: ~1σ, green.
-- Identity: `Akkshar Ranjan`, 90%+.
-- State: deep focus or engaged, "notifications: DEFER / OK".
-- Threat: OK.
+- Identity view: `Akkshar Ranjan`, confidence 90%+, "~1σ from Akkshar Ranjan's calm baseline".
+- State view: cognitive load low, focus high, interruption shield on.
+- Threats view: ALL CLEAR, Level 0.
 
 Say: "This is Akkshar's normal. One sigma means: exactly like the 25 calm
-samples he recorded. The system already knows it's him."
+samples he recorded. The system already knows it's him." (Keep the Identity
+view up for beats 1 and 3, State view for beat 2, Threats view when the alert
+lands; the sidebar switches instantly.)
 
 **0:50 — Beat 2, load (interrupter + A, 40 s).** Interrupter stands
 behind A, starts a loud 20-second countdown and talks over them; A keeps
@@ -90,17 +94,19 @@ A types with both hands faster than comfortable. It lifts within 5 seconds.
 keeps typing the same prompt. Don't touch the user field. Within two
 ticks:
 
-- Identity flips to `Shourya` (or UNKNOWN USER if B is stressed).
-- Deviation jumps to 3-4σ, red.
-- Threat goes warn → **ALERT · intruder** on the third tick.
+- Identity flips to `Shourya` (or UNKNOWN USER if B is stressed), 3-4σ.
+- Threats view: Level 1 Caution, then **DURESS DETECTED** on the third tick;
+  the duress modal pops on the dashboard (dismiss it, it's the operator's view).
 - The phone buzzes: "KeySign: possible intruder". Hold it up.
 
 Say: "The declared user is still Akkshar. The keyboard says otherwise. The
 alert is silent on the screen: the person at the keyboard sees nothing.
 That's the duress case too, when it IS you, typing under pressure."
 
-**2:00 — Beat 4, drift (narrator, 30 s).** Scroll the dashboard to the
-Drift panel. Pick `mt_U`.
+**2:00 — Beat 4, drift (narrator, 30 s).** The real drift chart lives on the
+lite dashboard: have http://localhost:5175 open in a second tab (start it with
+`npm --prefix dashboard run dev`), scroll to the Drift panel, pick `mt_U`. The
+team UI's Drift view is illustrative only.
 
 Say: "Fourth question: is the baseline moving over months? We don't have
 years of our own data yet, so this is public data: 22 people, 15,000
@@ -132,7 +138,7 @@ on this laptop. Questions."
 
 | Symptom | Fix |
 |---------|-----|
-| Dashboard says "no backend" | Terminal 2 died. Restart `uv run python -m backend --no-reload`; the dashboard reconnects on its own. |
+| Dashboard pill says "No backend on :8000" | Terminal 2 died. Restart `uv run python -m backend --no-reload`; the dashboard reconnects on its own. |
 | Capture page status "disconnected" | Untick and re-tick **Live**. |
 | Nothing moves when typing | Cursor isn't in the textarea, or Live is off. Click into the box. |
 | Identity says UNKNOWN for A | A is typing far from calm (nervous). Take a breath, type one slow sentence; it settles in 5 s. Or say "and that's the open-set rule working" and move on. |

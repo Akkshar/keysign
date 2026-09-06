@@ -24,7 +24,32 @@
       "port": 8000
     },
     {
-      "name": "dashboard",
+      "name": "ui",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "ui",
+        "run",
+        "dev"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "ui-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "ui",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5176"
+      ],
+      "port": 5176
+    },
+    {
+      "name": "dashboard-lite",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
@@ -32,23 +57,7 @@
         "run",
         "dev"
       ],
-      "port": 5173
-    },
-    {
-      "name": "dashboard-preview",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "--prefix",
-        "dashboard",
-        "vite",
-        "--port",
-        "5174",
-        "--strictPort",
-        "--config",
-        "dashboard/vite.config.js",
-        "dashboard"
-      ],
-      "port": 5174
+      "port": 5175
     }
   ]
 }

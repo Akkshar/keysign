@@ -154,8 +154,9 @@ person on it, done first.
 1. DONE — Browser capture page (`capture/index.html`, serve with `node capture/serve.js`).
 2. DONE — Feature extractor (`pipeline/features.py`, `FEATURE_NAMES`).
 3. DONE — Baseline builder (`pipeline/baseline.py`, JSON per user in `data/baselines/`).
-4. Backend + dashboard skeleton: WebSocket in, windowed features + baseline
-   distance out, live chart. (`backend/`, `dashboard/`)
+4. DONE — Backend + dashboards. `backend/` (WebSocket in, features + baseline
+   distance + heads out), `ui/` (the team's dashboard, live-wired, :5173),
+   `dashboard/` (minimal fallback, :5175).
 5. Heads, one per person, as backend plug-ins: identity -> state -> threat.
    Drift is a chart only.
 

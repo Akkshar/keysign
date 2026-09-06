@@ -11,7 +11,8 @@ See [CLAUDE.md](CLAUDE.md) for the full brief, architecture, and 48h plan.
     capture/     Browser capture page (build-order step 1). Zero deps. serve.js hosts it.
     pipeline/    Python feature extractor + baseline builder (step 2-3).
     backend/     FastAPI + WebSocket stream (step 4).
-    dashboard/   React dashboard (step 4).
+    ui/          The demo dashboard (team design, live-wired). npm --prefix ui run dev
+    dashboard/   Minimal fallback dashboard on :5175.
     data/        Exported samples land in data/samples/ (gitignored).
     docs/        Data format spec, demo runbook (docs/demo-runbook.md).
     analyze.py   Pre-hackathon viability check. Reads a capture export, reports
