@@ -7,7 +7,7 @@ interface StabilityCardProps {
 }
 
 export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) => {
-  const { isTyping, liveConfidence } = useBiometrics();
+  const { isTyping, liveConfidence, live } = useBiometrics();
   const [randomHeights, setRandomHeights] = useState<number[]>([]);
 
   // 28 baseline rhythmic frequency bar heights
@@ -26,7 +26,8 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
     }
   }, [isTyping]);
 
-  const score = Math.round(liveConfidence > 0 ? liveConfidence * 0.92 : 92);
+  const d = live.tick?.distance ?? null;   // sigma-distance from the declared user's calm baseline
+  const score = d != null ? Math.round(Math.min(100, Math.max(0, 100 - d * 20))) : Math.round(liveConfidence > 0 ? liveConfidence * 0.92 : 92);
   const radius = 40;
   const circumference = 2 * Math.PI * radius; // ~251.2
   const offset = circumference - (score / 100) * circumference;

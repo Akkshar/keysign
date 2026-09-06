@@ -66,7 +66,10 @@ interface BiometricsContextType {
   onKeyAction: (action: 'down' | 'up', e?: KeyboardEvent) => void;
   isTyping: boolean;
   live: LiveState;
+  stateTimeline: StateTimelineEvent[];
 }
+
+export interface StateTimelineEvent { num: number; time: string; title: string; color: string; textColor: string; desc: string }
 
 const USER_KEY = 'keysign.ui.user';
 
@@ -221,7 +224,7 @@ function deriveFromTick(tick: Tick, declared: string, baselineDoc: BaselineDoc |
 const BiometricsContext = createContext<BiometricsContextType | undefined>(undefined);
 
 export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeArea, setActiveArea] = useState<DetectionArea>('overview');
+  const [activeArea, setActiveArea] = useState<DetectionArea>('monitoring');   // land on the live lab, not the roadmap
   const [demoMode, setDemoMode] = useState<boolean>(true);
   const [activePreset, setActivePreset] = useState<StressPreset>('baseline');
   const [userProfile, setUserProfile] = useState<UserProfile>(defaultProfile);
@@ -244,6 +247,8 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [connected, setConnected] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [tick, setTick] = useState<Tick | null>(null);
+  const [stateTimeline, setStateTimeline] = useState<StateTimelineEvent[]>([]);
+  const lastLabel = useRef<string | null>(null);
   const [users, setUsers] = useState<BaselineInfo[]>([]);
   const [declaredUser, setDeclaredUserState] = useState<string>(() => {
     try { return localStorage.getItem(USER_KEY) || ''; } catch { return ''; }
@@ -269,6 +274,24 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setTick(m);
       if (!m.features) return;
       const dv = deriveFromTick(m, declaredRef.current, baselineRef.current, usersRef.current);
+      const label = m.heads?.state?.label;
+      if (label && label !== lastLabel.current) {
+        lastLabel.current = label;
+        const styles: Record<string, [string, string]> = {
+          'deep focus': ['bg-primary text-on-primary', 'text-primary'],
+          'engaged': ['bg-secondary text-on-secondary', 'text-secondary'],
+          'high load': ['bg-tertiary text-on-tertiary', 'text-tertiary'],
+        };
+        const [color, textColor] = styles[label] || styles['engaged'];
+        const drivers = (m.heads?.state?.drivers || []).slice(0, 2).map(([f, v]) => `${f} ${v > 0 ? '+' : ''}${v.toFixed(1)}`).join(', ');
+        setStateTimeline((prev) => [...prev.slice(-11), {
+          num: prev.length + 1,
+          time: new Date(m.ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          title: label.replace(/w/g, (c) => c.toUpperCase()),
+          color, textColor,
+          desc: `${m.user}: load ${Math.round((m.heads?.state?.load ?? 0) * 100)}/100${drivers ? ' · ' + drivers : ''} · ${m.heads?.state?.advice === 'defer' ? 'defer notifications' : 'ok to interrupt'}`,
+        }]);
+      }
       setActivePreset(dv.preset);
       setUserProfile(dv.profile);
       setCognitiveState((prev) => ({ ...dv.cognitive, flowDurationMins: prev.flowDurationMins }));
@@ -397,7 +420,7 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         activeArea, setActiveArea, demoMode, setDemoMode, activePreset, setPreset,
         userProfile, cognitiveState, setCognitiveState, neuromotorGauges, eventsPerSec,
         liveConfidence, liveWpm, liveDwell, liveFlight, liveJitter, recentPulses,
-        terminalLogs, clearTerminal, duressModalOpen, setDuressModalOpen, onKeyAction, isTyping, live,
+        terminalLogs, clearTerminal, duressModalOpen, setDuressModalOpen, onKeyAction, isTyping, live, stateTimeline,
       }}
     >
       {children}

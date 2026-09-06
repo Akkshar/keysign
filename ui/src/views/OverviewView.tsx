@@ -103,10 +103,10 @@ export const OverviewView: React.FC = () => {
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <h2 className="font-serif text-lg font-medium text-slate-900 dark:text-slate-100">
-                Monitored Health Signals
+                Research roadmap · candidate signals
               </h2>
               <span className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-                (6 Biomarker Suites)
+                (illustrative · not computed from your data)
               </span>
             </div>
             <button

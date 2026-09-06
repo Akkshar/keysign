@@ -35,13 +35,16 @@ really typing from the rhythm alone.
 | Identity: name, samples, dwell / flight stats, confidence gauge | live (`/api/baseline/<user>` for the means) |
 | Identity: digraph matrix, audit table | illustrative (mock data) |
 | State: load, focus, interruption shield, variance figures | live |
-| State: timeline events | illustrative |
+| State: timeline events | live (one entry per label change this session; mock until the first tick) |
 | Threats: engine status, level, the four gauges | live (scaled from z-scores) |
-| Threats: audit archive | illustrative |
-| Overview: stability ring | live (from identity confidence) |
-| Overview / Health Signals: six condition cards | illustrative, mock-only |
-| Drift view | illustrative; real series are in `public/drift.json` (the lite dashboard charts them) |
+| Threats: audit archive | live (`/api/alerts`, refreshed every 10 s and on each new alert) |
+| Overview: stability ring | live (sigma-distance from the declared user's baseline) |
+| Overview / Health Signals: six condition cards | illustrative; labelled "Research roadmap", never computed from data |
+| Drift view | live from `public/drift.json` (Monkeytype weekly series, CMU sessions, our own days) |
 | History, Privacy | static copy |
+
+The app lands on Live Monitoring. The Overview's condition cards are a
+roadmap; keep the disclaimer with them.
 
 The mapping from live features to the gauge scales is in `deriveFromTick`.
 Icons are bundled locally (`material-symbols`) so the demo survives no wifi;

@@ -3,7 +3,8 @@ import { useBiometrics } from '../context/BiometricsContext';
 import { mockStateTimelineEvents } from '../data/mockState';
 
 export const StateView: React.FC = () => {
-  const { cognitiveState, setCognitiveState } = useBiometrics();
+  const { cognitiveState, setCognitiveState, stateTimeline } = useBiometrics();
+  const timeline = stateTimeline.length ? stateTimeline.slice(-3) : mockStateTimelineEvents;
   const [timelinePeriod, setTimelinePeriod] = useState<'60m' | 'day' | 'week'>('60m');
 
   const toggleInterruption = () => {
@@ -344,7 +345,7 @@ export const StateView: React.FC = () => {
 
           {/* Event Cards Embedded on Graph */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md mt-space-md pt-space-md bg-surface-container-lowest/80 backdrop-blur-md rounded-lg p-space-md border border-surface-container">
-            {mockStateTimelineEvents.map((evt) => (
+            {timeline.map((evt) => (
               <div key={evt.num} className="flex items-start gap-space-sm">
                 <div className={`w-6 h-6 rounded-full ${evt.color} flex items-center justify-center font-telemetry text-xs flex-shrink-0 mt-0.5 font-bold shadow-sm`}>
                   {evt.num}

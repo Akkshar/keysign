@@ -28,7 +28,7 @@ export const HealthSignalsView: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-indigo-500" />
           <span className="text-xs font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 font-semibold">
-            Clinical Behavioral Biomarkers
+            Research roadmap · illustrative, not computed from your data
           </span>
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-slate-900 dark:text-slate-100">

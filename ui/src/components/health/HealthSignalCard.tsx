@@ -62,7 +62,7 @@ export const HealthSignalCard: React.FC<HealthSignalCardProps> = ({ condition, o
                 : 'text-slate-600 dark:text-slate-300'
             }`}
           >
-            {condition.status}
+            Roadmap
           </span>
         </div>
         <span className="text-xs text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-transform">

@@ -1,16 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
-import { mockThreatAuditArchive } from '../data/mockThreats';
+import { fetchAlerts } from '../lib/keysign';
 import { DuressModal } from '../components/telemetry/DuressModal';
 
 export const ThreatsView: React.FC = () => {
   const {
+    live,
     neuromotorGauges,
     setDuressModalOpen,
     liveDwell,
     liveFlight,
     onKeyAction,
   } = useBiometrics();
+
+  // Real silent alerts raised by the Threat head (backend/notify.py), newest first.
+  const alertsTotal = live.tick?.heads?.threat?.alerts_total ?? 0;
+  const [alerts, setAlerts] = useState<any[]>([]);
+  useEffect(() => {
+    let stop = false;
+    const load = () => fetchAlerts(20).then((a) => { if (!stop) setAlerts([...a].reverse()); }).catch(() => {});
+    load();
+    const id = setInterval(load, 10000);
+    return () => { stop = true; clearInterval(id); };
+  }, [alertsTotal, live.connected]);
+  const rows = alerts.map((a) => ({
+    timestamp: new Date(a.ts * 1000).toLocaleString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short' }),
+    classification: a.kind === 'intruder' ? 'Intruder · identity mismatch' : 'Duress · sustained deviation',
+    signature: (a.drivers || []).map(([f, z]: [string, number]) => `${f} ${z > 0 ? '+' : ''}${z.toFixed(1)}σ`).join(' · ') || 'sustained deviation from baseline',
+    score: `${(a.distance ?? 0).toFixed(1)}σ · ${a.sustained_ticks ?? 0} ticks`,
+    scoreColor: 'text-error',
+    dotColor: a.kind === 'intruder' ? 'bg-error' : 'bg-tertiary',
+    evaluation: a.identity ? `typing matched ${a.identity} (${Math.round((a.identity_confidence ?? 0) * 100)}%)` : 'declared user',
+    evalIcon: a.kind === 'intruder' ? 'person_off' : 'rotating_light',
+    raw: a,
+  }));
 
   return (
     <div className="flex flex-col w-full gap-space-2xl">
@@ -434,7 +457,7 @@ export const ThreatsView: React.FC = () => {
           <div className="flex items-center gap-space-xs">
             <button
               type="button"
-              onClick={() => alert('Exporting encrypted forensic anomaly log...')}
+              onClick={() => window.open('http://localhost:8000/api/alerts', '_blank')}
               className="px-space-md py-space-xs rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-headline text-xs transition-colors border border-surface-container font-semibold"
             >
               Export Forensic Log
@@ -458,7 +481,10 @@ export const ThreatsView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container/60 font-body text-xs">
-              {mockThreatAuditArchive.map((row, i) => (
+              {rows.length === 0 && (
+                <tr><td colSpan={6} className="py-space-lg px-space-lg text-on-surface-variant font-body text-xs">No silent alerts yet this session. They appear here the moment the engine escalates to Level 3.</td></tr>
+              )}
+              {rows.map((row, i) => (
                 <tr key={i} className="hover:bg-surface-container-low/50 transition-colors">
                   <td className="py-space-lg px-space-lg font-telemetry text-on-surface font-medium whitespace-nowrap">
                     {row.timestamp}
@@ -484,7 +510,7 @@ export const ThreatsView: React.FC = () => {
                   <td className="py-space-lg px-space-lg text-right">
                     <button
                       type="button"
-                      onClick={() => alert(`Inspecting vector signatures for ${row.classification}`)}
+                      onClick={() => alert(JSON.stringify(row.raw, null, 2))}
                       className="font-headline text-xs text-primary font-semibold hover:underline"
                     >
                       Inspect Vector
