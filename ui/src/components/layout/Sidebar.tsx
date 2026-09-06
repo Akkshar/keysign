@@ -1,37 +1,33 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useBiometrics } from '../../context/BiometricsContext';
-import { useTheme } from '../../context/ThemeContext';
 import { DetectionArea } from '../../types/biometrics';
-import { LineSidebar } from './LineSidebar';
 
 interface NavItem {
   id: DetectionArea;
   label: string;
+  icon: string;
 }
 
 // One pipeline, four heads: Identity, State, Threats live; Drift is the roadmap chart.
 const navItems: NavItem[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'monitoring', label: 'Live Monitoring' },
-  { id: 'identity', label: 'Identity' },
-  { id: 'state', label: 'State' },
-  { id: 'threats', label: 'Threats' },
-  { id: 'drift', label: 'Drift' },
-  { id: 'health-signals', label: 'Health Signals' },
-  { id: 'history', label: 'History' },
-  { id: 'privacy', label: 'Privacy & Architecture' },
+  { id: 'overview', label: 'Overview', icon: 'dashboard' },
+  { id: 'monitoring', label: 'Live Monitoring', icon: 'monitor_heart' },
+  { id: 'identity', label: 'Identity', icon: 'fingerprint' },
+  { id: 'state', label: 'State', icon: 'psychology' },
+  { id: 'threats', label: 'Threats', icon: 'gpp_maybe' },
+  { id: 'drift', label: 'Drift', icon: 'trending_up' },
+  { id: 'health-signals', label: 'Health Signals', icon: 'vital_signs' },
+  { id: 'history', label: 'History', icon: 'history' },
+  { id: 'privacy', label: 'Privacy & Architecture', icon: 'verified_user' },
 ];
 
 export const Sidebar: React.FC = () => {
   const { activeArea, setActiveArea } = useBiometrics();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-
-  const activeIndex = navItems.findIndex((item) => item.id === activeArea);
 
   return (
     <aside
-      className="fixed left-0 top-0 h-full w-64 shrink-0 flex flex-col justify-between py-7 px-5 border-r border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md select-none z-50 theme-transition"
+      className="fixed left-0 top-0 h-full w-64 shrink-0 flex flex-col justify-between py-7 px-5 border-r border-slate-200/60 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/60 backdrop-blur-md select-none z-50 theme-transition"
       data-purpose="main-sidebar"
     >
       <div className="space-y-8">
@@ -58,28 +54,43 @@ export const Sidebar: React.FC = () => {
           </p>
         </div>
 
-        {/* React Bits LineSidebar Navigation */}
-        <div className="pt-2">
-          <LineSidebar
-            items={navItems.map((item) => item.label)}
-            defaultActive={activeIndex >= 0 ? activeIndex : 0}
-            onItemClick={(idx) => {
-              if (navItems[idx]) {
-                setActiveArea(navItems[idx].id);
-              }
-            }}
-            accentColor={isDark ? '#38bdf8' : '#4f46e5'}
-            textColor={isDark ? '#94a3b8' : '#64748b'}
-            markerColor={isDark ? '#334155' : '#cbd5e1'}
-            showIndex={true}
-            showMarker={true}
-            markerLength={30}
-            proximityRadius={100}
-            maxShift={18}
-            itemGap={14}
-            fontSize={0.9}
-          />
-        </div>
+        {/* Navigation Items */}
+        <nav aria-label="Primary Dashboard Navigation" className="space-y-1.5">
+          {navItems.map((item) => {
+            const isActive = activeArea === item.id;
+            return (
+              <motion.button
+                key={item.id}
+                onClick={() => setActiveArea(item.id)}
+                whileHover={{ x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${
+                  isActive
+                    ? 'text-indigo-700 dark:text-indigo-300 font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-800/40'
+                }`}
+              >
+                {/* Active Indicator Sliding Pill */}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeNavBackground"
+                    className="absolute inset-0 bg-indigo-50/90 dark:bg-indigo-950/60 border border-indigo-100/80 dark:border-indigo-800/50 rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)] z-0"
+                    transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  />
+                )}
+
+                <span
+                  className={`material-symbols-outlined text-[19px] relative z-10 transition-colors ${
+                    isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
+                  }`}
+                >
+                  {item.icon}
+                </span>
+                <span className="relative z-10 font-body text-xs lg:text-sm tracking-tight">{item.label}</span>
+              </motion.button>
+            );
+          })}
+        </nav>
       </div>
 
       {/* Bottom Brand Footnote */}
@@ -93,5 +104,4 @@ export const Sidebar: React.FC = () => {
     </aside>
   );
 };
-
 
