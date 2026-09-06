@@ -49,8 +49,33 @@ Three public datasets converted into the same sample shape (see
 Our own captures stay the primary data; these are for pretraining, benchmarks
 and the pitch ("identity holds at 51 users, not just our four").
 
-## Step 3: baseline (`baseline.py`)  — next
+## Step 3: baseline (`baseline.py`)  — done
 
-Aggregate a user's calm samples into per-feature mean/std (robust: median/MAD),
-and score a new vector as a z-distance from that baseline. This is what the
-Threat and State heads compare against.
+    uv run python -m pipeline.baseline build data/features.csv -o data/baselines   # one JSON per user
+    uv run python -m pipeline.baseline score data/baselines/<user>.json data/features.csv
+
+- `build_baseline(df, user)` — per-feature median and MAD (x1.4826) from the
+  user's calm rows. Scale is floored so constant features can't explode.
+- `Baseline.zscores(x)`, `.distance(x)` (RMS of clipped z, ~1 = typical,
+  3+ = clearly off), `.explain(x)` (top moved features, signed).
+- `Baseline.save/load` — JSON in `data/baselines/` (gitignored: personal data).
+- `score_frame(baseline, df)` — adds `distance` and `z_<feature>` columns.
+- `BASELINE_FEATURES` drops length-dependent features (`n_keys`,
+  `duration_s`, `pause_count`, `longest_pause_ms`) and the digraph timings
+  (too few occurrences per sample to estimate a spread; they hurt the distance).
+
+Baselines need enough calm samples. Measured on the CMU set: with 5 samples a
+held-out same-person sample scores 1.3 (should be ~1.0), with 10 it is 1.03,
+with 20 it is 0.94. Collect 10 minimum, 20 comfortable, per person.
+
+What the baseline is for, per head (measured on the 4-teammate set):
+
+- **Threat**: `distance()` is the anomaly score. Symmetric: anything unlike
+  the calm baseline. Needs the bigger sample counts above to be reliable.
+- **State**: distance alone is weak (pooled AUC 0.54) because stress has a
+  *direction*: faster, more errors, more pauses, more key overlap. A
+  RandomForest on per-user z-scores (`score_frame` z columns), trained across
+  users, gets AUC 0.82 leave-one-user-out. Build the State head that way.
+- **Identity**: nearest-baseline is a fallback (72% on 4 users); the
+  RandomForest on raw features is better (92%). Use the classifier, and use
+  distance-to-claimed-baseline only for the "unknown user" decision.
