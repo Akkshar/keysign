@@ -193,6 +193,17 @@ async def broadcast(msg: dict) -> None:
         dashboards.discard(ws)
 
 
+@app.get("/")
+def index():
+    from backend import explain, notify
+    return {"service": "KeySign backend", "ok": True,
+            "endpoints": ["/health", "/api/users", "/api/baseline/{user}", "/api/state", "/api/alerts",
+                          "WS /ws/capture", "WS /ws/dashboard"],
+            "heads": list(HEADS),
+            "alerts": notify.channel(), "explainer": "gemini" if explain.enabled() else "template",
+            "dashboard": "http://localhost:5173", "capture": "http://localhost:8080"}
+
+
 @app.get("/health")
 def health():
     return {"ok": True, "sessions": len(sessions), "dashboards": len(dashboards),
