@@ -3,7 +3,8 @@
 Build-order step 4. FastAPI + WebSockets. Keystrokes in, live features and
 head outputs out. Localhost only; nothing leaves the machine.
 
-    uv run uvicorn backend.app:app --port 8000 --reload --reload-dir backend --reload-dir pipeline --reload-exclude "*/tests/*"
+    uv run python -m backend            # http://localhost:8000, auto-reloads on edits
+    uv run python -m backend --no-reload   # for the demo itself
     uv run python -m pytest backend/tests -q
 
 Endpoints:

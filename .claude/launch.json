@@ -17,17 +17,9 @@
         "run",
         "--python",
         "3.12",
-        "uvicorn",
-        "backend.app:app",
-        "--port",
-        "8000",
-        "--reload",
-        "--reload-dir",
-        "backend",
-        "--reload-dir",
-        "pipeline",
-        "--reload-exclude",
-        "*/tests/*"
+        "python",
+        "-m",
+        "backend"
       ],
       "port": 8000
     },

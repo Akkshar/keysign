@@ -8,7 +8,7 @@ per head (identity, state, threat). Reconnects on its own.
     npm install          # once
     npm run dev          # http://localhost:5173
 
-Needs the backend running (`uv run uvicorn backend.app:app --port 8000`) and
+Needs the backend running (`uv run python -m backend`) and
 the capture page in Live mode (`node capture/serve.js`, tick "Live").
 Point it elsewhere with `VITE_KEYSIGN_WS=ws://host:8000/ws/dashboard`.
 
