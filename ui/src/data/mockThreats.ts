@@ -1,32 +1,5 @@
-export const mockThreatAuditArchive = [
-  {
-    timestamp: 'Yesterday, 16:42:08',
-    classification: 'Slight Cadence Jitter',
-    signature: 'Extended flight duration between shift transitions; non-erratic deceleration',
-    score: '14%',
-    scoreColor: 'text-tertiary',
-    dotColor: 'bg-tertiary',
-    evaluation: 'Fatigue (Dismissed)',
-    evalIcon: 'bedtime',
-  },
-  {
-    timestamp: '3 Days Ago, 10:14:22',
-    classification: 'Rapid Correction Burst',
-    signature: 'Back-to-back backspace repetitions with constant rhythm; standard muscle habit',
-    score: '8%',
-    scoreColor: 'text-secondary',
-    dotColor: 'bg-secondary',
-    evaluation: 'Typo Recovery (Normal)',
-    evalIcon: 'check_circle',
-  },
-  {
-    timestamp: 'May 12, 19:28:44',
-    classification: 'Peripheral Key Delay',
-    signature: 'Numeric pad input deviation from standard alphanumeric alpha sequence',
-    score: '5%',
-    scoreColor: 'text-secondary',
-    dotColor: 'bg-secondary',
-    evaluation: 'Keyboard Modality Shift',
-    evalIcon: 'check_circle',
-  },
-];
+/**
+ * The Threat view has no mock rows. Its log is the real silent-alert log
+ * (GET /api/alerts, written by backend/notify.py). Kept so imports resolve.
+ */
+export const mockThreatAuditArchive: never[] = [];

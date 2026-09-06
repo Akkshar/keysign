@@ -1,75 +1,57 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
+/**
+ * A research-roadmap signal. Nothing here is computed from the typist's data:
+ * every card carries the same neutral "Roadmap" status, never a verdict.
+ */
 export interface HealthCondition {
   id: string;
   name: string;
-  nameLine2?: string;
-  status: 'Stable' | 'Observation Suggested' | 'Monitor' | 'Observation';
+  /** One sentence: what the signal would watch in the timing features. */
+  watches: string;
+  /** One sentence: what the published evidence is, hedged honestly. */
+  evidence: string;
+  /** One sentence: what a person should do with it (see a physician). */
+  action: string;
+  /** The teammate's non-diagnostic notice, shown on the detail pane. */
+  clinicalNotice: string;
   iconSvg: React.ReactNode;
-  iconBgClass: string;
-  iconTextClass: string;
-  iconBorderClass: string;
-  description: string;
-  clinicalNotice?: string;
-  biomarkers: string[];
-  sampleDriftPct: string;
 }
 
 interface HealthSignalCardProps {
   condition: HealthCondition;
   onClick?: () => void;
+  selected?: boolean;
 }
 
-export const HealthSignalCard: React.FC<HealthSignalCardProps> = ({ condition, onClick }) => {
-  const isMonitor = condition.status === 'Monitor' || condition.status === 'Observation' || condition.status === 'Observation Suggested';
-
+export const HealthSignalCard: React.FC<HealthSignalCardProps> = ({ condition, onClick, selected = false }) => {
   return (
-    <motion.div
-      whileHover={{ y: -3, transition: { duration: 0.15 } }}
+    <button
+      type="button"
       onClick={onClick}
-      className="group bg-white/90 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 border border-slate-200/70 dark:border-slate-800/80 hover:border-indigo-200/90 dark:hover:border-indigo-800/80 rounded-2xl p-4 transition-all duration-200 hover:shadow-md flex flex-col justify-between min-h-[160px] cursor-pointer"
+      aria-pressed={selected}
       data-purpose="signal-card"
+      className={`group w-full text-left rounded-2xl p-4 border transition-colors duration-200 flex flex-col justify-between min-h-[140px] bg-surface-container-lowest ${
+        selected
+          ? 'border-primary/50'
+          : 'border-outline-variant/60 hover:border-outline'
+      }`}
     >
       <div className="space-y-3">
-        {/* Soft Pastel Glyph */}
-        <div
-          className={`w-9 h-9 rounded-xl ${condition.iconBgClass} ${condition.iconTextClass} flex items-center justify-center border ${condition.iconBorderClass}`}
-        >
+        <div className="w-9 h-9 rounded-xl bg-surface-container-low text-on-surface-variant flex items-center justify-center">
           {condition.iconSvg}
         </div>
-        <h3 className="text-xs font-serif font-medium text-slate-800 dark:text-slate-100 leading-snug">
+        <h3 className="text-sm font-serif font-medium text-on-surface leading-snug">
           {condition.name}
-          {condition.nameLine2 && (
-            <>
-              <br />
-              {condition.nameLine2}
-            </>
-          )}
         </h3>
       </div>
 
-      <div className="flex items-center justify-between pt-2">
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              isMonitor ? 'bg-amber-400 animate-pulse' : 'bg-emerald-500'
-            }`}
-          />
-          <span
-            className={`text-[11px] font-medium ${
-              isMonitor
-                ? 'text-amber-700 dark:text-amber-400'
-                : 'text-slate-600 dark:text-slate-300'
-            }`}
-          >
-            {condition.status}
-          </span>
-        </div>
-        <span className="text-xs text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-transform">
-          ›
+      <div className="flex items-center justify-between pt-3">
+        <span className="text-[11px] font-telemetry uppercase tracking-wider text-on-surface-variant">
+          Roadmap
         </span>
+        <span className="text-xs text-on-surface-variant/60 group-hover:text-primary transition-colors">›</span>
       </div>
-    </motion.div>
+    </button>
   );
 };

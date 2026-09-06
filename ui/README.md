@@ -36,17 +36,21 @@ really typing from the rhythm alone.
 
 | View / element | Source |
 |---|---|
-| Header pill, user selector, Reset | live |
-| Identity: name, samples, dwell / flight stats, confidence gauge | live (`/api/baseline/<user>` for the means) |
-| Identity: digraph matrix, audit table | illustrative (mock data) |
-| State: load, focus, interruption shield, variance figures | live |
-| State: timeline events | live (one entry per label change this session; mock until the first tick) |
-| Threats: engine status, level, the four gauges | live (scaled from z-scores) |
-| Threats: audit archive | live (`/api/alerts`, refreshed every 10 s and on each new alert) |
-| Overview: stability ring | live (sigma-distance from the declared user's baseline) |
-| Overview / Health Signals: six condition cards | illustrative; labelled "Research roadmap", never computed from data |
-| Drift view | live from `public/drift.json` (Monkeytype weekly series, CMU sessions, our own days) |
-| History, Privacy | static copy |
+| Header: connection pill, declared-user selector, Reset, rhythm strip | live (the strip is your last 40 real inter-key intervals) |
+| Overview: four-heads strip, stability ring, connection line | live |
+| Overview / Health Signals: six screening cards | illustrative; labelled "Research roadmap", never computed from data |
+| Live Monitoring: hold, gap, wpm, sigma, per-key table, "what the backend saw", waveform, waterfall | live (`recentPulses` are this window's real timings; ticks from the backend) |
+| Live Monitoring: judge presets disclosure | illustrative, disabled while a backend is connected |
+| Identity: name, declared vs detected, confidence, probabilities per user, what moved, baseline vs now | live |
+| Identity: digraph card | illustrative (labelled) |
+| State: load, label, explanation, advice, drivers, load-over-session strip, timeline | live (timeline shows a labelled sketch until the first label change) |
+| Threats: level, kind, clocks, top drivers, channel, alert log | live (`/api/alerts`, refreshed every 10 s and on each new alert) |
+| Drift | public longitudinal data from `public/drift.json` plus our own days; roadmap |
+| Privacy | factual description of the running architecture |
+| History | illustrative sketch (labelled) |
+| Settings | declared user, reset, theme are real; the rest is read-only and labelled "coming later" |
+
+Design rules and the motion budget are in `DESIGN.md`.
 
 The app lands on Live Monitoring. The Overview's condition cards are a
 roadmap; keep the disclaimer with them.

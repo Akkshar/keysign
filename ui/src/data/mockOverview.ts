@@ -1,77 +1,23 @@
-import { VerificationEvent } from '../types/biometrics';
+/**
+ * Illustrative data only. Nothing here comes from a backend tick or a file on
+ * disk; it exists so the History view can show the shape of a session log
+ * before one is summarised from data/sessions/*.jsonl.
+ */
 
-export const mockVerificationEvents: VerificationEvent[] = [
-  {
-    id: 'evt-1',
-    timestamp: '14:28:42.108',
-    eventType: 'Session Continuous Re-auth',
-    temporalSignature: 'Dwell: 81ms | Flight: 122ms',
-    confidenceScore: 99.6,
-    duressIndex: 0.01,
-    duressLabel: 'Nominal',
-    statusText: 'PASS • AUTHORIZED',
-    statusType: 'success',
-  },
-  {
-    id: 'evt-2',
-    timestamp: '14:27:15.894',
-    eventType: 'Cadence Shift (Flow State)',
-    temporalSignature: 'Dwell: 76ms | Flight: 108ms',
-    confidenceScore: 98.8,
-    duressIndex: 0.03,
-    duressLabel: 'Nominal',
-    statusText: 'ACCELERATION • VALID',
-    statusType: 'info',
-  },
-  {
-    id: 'evt-3',
-    timestamp: '14:24:02.441',
-    eventType: 'Baseline Synchronization',
-    temporalSignature: 'Window: 5,000 vectors',
-    confidenceScore: 99.4,
-    duressIndex: 0.01,
-    duressLabel: 'Nominal',
-    statusText: 'SYNCED • LEVEL 0',
-    statusType: 'success',
-  },
-  {
-    id: 'evt-4',
-    timestamp: '14:19:50.012',
-    eventType: 'Rhythm Fluctuation',
-    temporalSignature: 'Dwell: 94ms | Flight: 156ms',
-    confidenceScore: 93.2,
-    duressIndex: 0.08,
-    duressLabel: 'Benign',
-    statusText: 'CAUTION • MONITORED',
-    statusType: 'warning',
-  },
-  {
-    id: 'evt-5',
-    timestamp: '14:15:33.729',
-    eventType: 'Session Continuous Re-auth',
-    temporalSignature: 'Dwell: 83ms | Flight: 125ms',
-    confidenceScore: 99.7,
-    duressIndex: 0.02,
-    duressLabel: 'Nominal',
-    statusText: 'PASS • AUTHORIZED',
-    statusType: 'success',
-  },
-  {
-    id: 'evt-6',
-    timestamp: '14:11:18.004',
-    eventType: 'Keyboard Modality Check',
-    temporalSignature: 'Dwell: 82ms | Flight: 114ms',
-    confidenceScore: 99.1,
-    duressIndex: 0.01,
-    duressLabel: 'Nominal',
-    statusText: 'PASS • AUTHORIZED',
-    statusType: 'success',
-  }
-];
+export interface IllustrativeSession {
+  id: string;
+  /** Relative day label, deliberately vague: "Today", "Yesterday". */
+  when: string;
+  /** What happened, in one plain sentence. No numbers that could read as measured. */
+  note: string;
+  /** Which head the note belongs to, or 'session' for a plain start/stop. */
+  head: 'session' | 'identity' | 'state' | 'threat';
+}
 
-export const mockOverviewPillars = [
-  { label: 'Identity Score', value: '99.4% Auth Match', status: 'verified', dotColor: 'bg-secondary' },
-  { label: 'Cognitive State', value: 'Optimal Flow (78/100)', status: 'flow', dotColor: 'bg-secondary' },
-  { label: 'Threat Radar', value: '0 Duress Signals', status: 'clear', dotColor: 'bg-secondary' },
-  { label: 'Motor Baseline', value: 'Synchronized (±1.2%)', status: 'sync', dotColor: 'bg-primary' },
+export const illustrativeSessions: IllustrativeSession[] = [
+  { id: 'i-1', when: 'Today, afternoon', note: 'Typed for most of an hour; rhythm stayed close to baseline.', head: 'session' },
+  { id: 'i-2', when: 'Today, morning', note: 'Load rose during a long stretch of edits, then settled.', head: 'state' },
+  { id: 'i-3', when: 'Yesterday', note: 'Someone else took the keyboard mid-sentence; identity went to unknown.', head: 'identity' },
+  { id: 'i-4', when: 'Two days ago', note: 'A sustained deviation raised one silent alert; it cleared within the minute.', head: 'threat' },
+  { id: 'i-5', when: 'Three days ago', note: 'Short session, nothing to note.', head: 'session' },
 ];

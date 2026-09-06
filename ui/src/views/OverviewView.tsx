@@ -1,5 +1,4 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
 import { useTheme } from '../context/ThemeContext';
 import { Interactive3DTypewriter } from '../components/3d/Interactive3DTypewriter';
@@ -8,31 +7,72 @@ import { HealthSignalCard } from '../components/health/HealthSignalCard';
 import { MedicalDisclaimer } from '../components/health/MedicalDisclaimer';
 import { mockHealthConditions } from '../data/healthConditions';
 import { StrokeText } from '../components/motion/StrokeText';
+import { Reveal, Swap } from '../components/motion/Reveal';
+import { HoverBorderGradient } from '../components/motion/HoverBorderGradient';
+import { AnimatedCounter } from '../components/common/AnimatedCounter';
+import { DetectionArea } from '../types/biometrics';
 
 export const OverviewView: React.FC = () => {
-  const { setActiveArea } = useBiometrics();
+  const { setActiveArea, live, userProfile, cognitiveState } = useBiometrics();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const headsRef = useRef<HTMLElement>(null);
+
+  const stateLabel = live.tick?.heads?.state?.label;
+  const threatLevel = live.tick?.heads?.threat?.level ?? 'none';
+
+  // One line per head, from the latest tick. Plain words, no fake precision.
+  // `key` is the verdict label: the line cross-fades when the verdict changes, not on every tick.
+  const heads: { area: DetectionArea; name: string; question: string; key: string; live: React.ReactNode; tone: string }[] = [
+    {
+      area: 'identity',
+      name: 'Identity',
+      question: 'Who is typing?',
+      key: live.tick ? userProfile.name : 'waiting',
+      live: live.tick ? userProfile.name : 'Waiting for typing',
+      tone: 'text-primary dark:text-primary-dark',
+    },
+    {
+      area: 'state',
+      name: 'State',
+      question: 'What state are they in?',
+      key: stateLabel ?? 'waiting',
+      live: stateLabel ? (
+        <>
+          {stateLabel.charAt(0).toUpperCase() + stateLabel.slice(1)} · load{' '}
+          <AnimatedCounter value={cognitiveState.cognitiveLoad} className="text-on-surface" />
+          /100
+        </>
+      ) : 'Waiting for typing',
+      tone: 'text-tertiary dark:text-tertiary-dark',
+    },
+    {
+      area: 'threats',
+      name: 'Threat',
+      question: 'Is something wrong right now?',
+      key: live.tick ? threatLevel : 'waiting',
+      live: threatLevel === 'alert' ? 'Alert raised silently' : threatLevel === 'warn' ? 'Caution' : live.tick ? 'All clear' : 'Waiting for typing',
+      tone: 'text-error dark:text-error-dark',
+    },
+    {
+      area: 'drift',
+      name: 'Drift',
+      question: 'Is the baseline moving over weeks?',
+      key: 'roadmap',
+      live: 'Roadmap · needs weeks of data',
+      tone: 'text-on-surface-variant',
+    },
+  ];
 
   return (
-    <div className="flex flex-col w-full gap-8 lg:gap-10 pb-12 select-none">
-      {/* 1. Grand Hero Section with Full-Width Spacious Typewriter Arena Box */}
+    <Reveal className="flex flex-col w-full gap-8 pb-12">
+      {/* Thesis */}
       <section
-        className="relative bg-gradient-to-br from-white/95 via-slate-50/85 to-indigo-50/40 dark:from-slate-900/95 dark:via-slate-900/80 dark:to-indigo-950/30 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 sm:p-8 lg:p-10 overflow-hidden shadow-sm backdrop-blur-sm theme-transition space-y-8"
+        className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 sm:p-8 lg:p-10"
         data-purpose="hero-section"
       >
-        {/* Subtle Ambient Radial Glows */}
-        <div className="absolute -right-24 -top-24 w-[32rem] h-[32rem] bg-indigo-300/20 dark:bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-20 -bottom-20 w-[28rem] h-[28rem] bg-sky-200/20 dark:bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Top Header: Editorial Headline, Mission & Quick Actions */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 relative z-10 border-b border-slate-200/60 dark:border-slate-800/60 pb-8">
-          <div className="space-y-4 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50/90 dark:bg-indigo-950/70 border border-indigo-200/60 dark:border-indigo-800/60 text-indigo-700 dark:text-indigo-300 text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400 animate-pulse" />
-              <span>Neurological & Mental Health Behavioral Biomarkers</span>
-            </div>
-
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="space-y-5 max-w-2xl">
             <div className="w-52 sm:w-64 -ml-1">
               <StrokeText
                 text="KEYSIGN"
@@ -45,91 +85,101 @@ export const OverviewView: React.FC = () => {
               />
             </div>
 
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-slate-900 dark:text-slate-100 leading-[1.15]">
-              More than words.
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-on-surface leading-[1.1]">
+              Your typing is a signature. KeySign reads it.
             </h1>
 
-            <p className="font-body text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-              We screen subtle variations in typing kinetics to highlight potential motor and cognitive patterns — privately and in real time, so you can consult a physician early.
+            <p className="font-body text-sm sm:text-base text-on-surface-variant leading-relaxed">
+              Everyone types with a rhythm: how long each key is held, the gap to the next one, where the
+              pauses fall. KeySign turns that rhythm into one signal and asks it four questions: who is
+              typing, what state they are in, whether something is wrong right now, and whether the pattern
+              is drifting over time. Everything runs on this machine. Only timings are measured, never the words.
             </p>
+          </div>
 
-            <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 font-body">
-              <span className="material-symbols-outlined text-[16px] text-emerald-600 dark:text-emerald-400">
-                lock
-              </span>
-              <span>Keystroke content is never recorded • 100% On-Device Enclave</span>
+          <div className="flex flex-col items-start lg:items-end gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <HoverBorderGradient
+                onClick={() => setActiveArea('monitoring')}
+                className="px-6 py-3 bg-primary text-white font-body font-medium text-sm flex items-center gap-2"
+              >
+                <span>Open the live lab</span>
+                <span className="material-symbols-outlined text-[17px]">arrow_forward</span>
+              </HoverBorderGradient>
+              <button
+                onClick={() => headsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="px-6 py-3 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface border border-outline-variant/40 font-body font-medium text-sm transition-colors cursor-pointer"
+              >
+                See the four heads
+              </button>
             </div>
-          </div>
-
-          {/* Action CTAs */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveArea('monitoring')}
-              className="px-6 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-medium text-sm shadow-sm shadow-indigo-600/25 flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <span>Live Keystroke Lab</span>
-              <span className="material-symbols-outlined text-[17px]">arrow_forward</span>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveArea('health-signals')}
-              className="px-6 py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/80 font-medium text-sm transition-colors cursor-pointer"
-            >
-              Explore Signals
-            </motion.button>
-          </div>
-        </div>
-
-        {/* The Grand Typewriter Box: Expansive, Full-Width Luxury Showcase */}
-        <div className="relative z-10 space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <span className="font-serif text-base font-medium text-slate-800 dark:text-slate-200">
-                Kinematic Typewriter Arena
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-medium">
-                Full QWERTY Physical Synchronization
-              </span>
-            </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-serif italic hidden sm:inline">
-              Type on your keyboard to strike keys & ink the rolled paper
-            </span>
-          </div>
-
-          {/* Grand Box Container */}
-          <div className="relative w-full min-h-[560px] sm:min-h-[640px] lg:min-h-[720px] xl:min-h-[760px] rounded-3xl bg-gradient-to-b from-slate-100/70 via-slate-50/50 to-indigo-50/30 dark:from-slate-800/60 dark:via-slate-900/60 dark:to-slate-950/70 border border-slate-200/90 dark:border-slate-800/90 shadow-lg shadow-indigo-950/5 overflow-hidden flex items-center justify-center">
-            <Interactive3DTypewriter className="w-full h-full" />
+            <p className="font-body text-xs text-on-surface-variant flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 rounded-full ${live.connected ? 'bg-secondary' : 'bg-outline-variant'}`} />
+              <Swap value={String(live.connected)}>
+                {live.connected ? 'Backend connected · scoring on this machine' : 'Start the backend: uv run python -m backend'}
+              </Swap>
+            </p>
           </div>
         </div>
       </section>
 
-      {/* 2. Main Dashboard Section: Stability Ring & 6 Health Condition Signals */}
+      {/* The environment */}
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between px-1">
+          <h2 className="font-serif text-lg font-medium text-on-surface">The KeySign environment</h2>
+          <span className="font-body text-xs text-on-surface-variant">
+            Type anywhere: every key you press is scored on this machine
+          </span>
+        </div>
+        <div className="relative w-full h-[480px] rounded-3xl bg-surface-container-low border border-outline-variant/40 overflow-hidden [&>div>div:first-child]:!h-[480px]">
+          <Interactive3DTypewriter className="w-full" />
+        </div>
+      </section>
+
+      {/* One pipeline, four heads */}
+      <section ref={headsRef} className="space-y-3 scroll-mt-28">
+        <div className="px-1">
+          <h2 className="font-serif text-lg font-medium text-on-surface">One signal, four questions</h2>
+          <p className="font-body text-xs text-on-surface-variant">
+            The same features feed four heads. Each line below is the latest verdict from the backend.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {heads.map((h) => (
+            <button
+              key={h.area}
+              onClick={() => setActiveArea(h.area)}
+              className="text-left bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-5 hover:bg-surface-container-low transition-colors cursor-pointer space-y-2"
+            >
+              <span className={`font-telemetry text-[11px] uppercase tracking-wider ${h.tone}`}>{h.name}</span>
+              <p className="font-serif text-base font-medium text-on-surface leading-snug">{h.question}</p>
+              <Swap value={h.key} className="font-body text-xs text-on-surface-variant">
+                {h.live}
+              </Swap>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Stability (live) and screening signals (illustrative) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-        {/* Left Column (5 cols): Stability Card */}
         <div className="lg:col-span-5">
-          <StabilityCard />
+          <StabilityCard className="h-full" />
         </div>
 
-        {/* Right Column (7 cols): Health Condition Signal Cards Grid */}
         <div className="lg:col-span-7 flex flex-col space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <h2 className="font-serif text-lg font-medium text-slate-900 dark:text-slate-100">
-                Monitored Screening Signals
-              </h2>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+          <div className="flex items-baseline justify-between px-1 gap-4">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <h2 className="font-serif text-lg font-medium text-on-surface">Screening signals</h2>
+              <span className="font-body text-xs text-on-surface-variant">
                 (roadmap · illustrative, not computed from your data)
               </span>
             </div>
             <button
               onClick={() => setActiveArea('health-signals')}
-              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+              className="font-body text-xs font-medium text-primary dark:text-primary-dark hover:underline flex items-center gap-0.5 cursor-pointer shrink-0"
             >
-              <span>View details</span>
+              <span>Details</span>
               <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
             </button>
           </div>
@@ -144,60 +194,15 @@ export const OverviewView: React.FC = () => {
             ))}
           </div>
 
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 italic px-1">
-            * Screening signals indicate statistical timing fluctuations. They are not medical diagnoses. If unusual patterns persist, formal clinical testing with a healthcare professional is strongly recommended.
+          <p className="font-body text-[11px] text-on-surface-variant px-1">
+            These are the kinds of long-term shifts the drift head is meant to surface once there is
+            weeks of data. They are a screening idea, not a diagnosis, and nothing here is measured from
+            you today.
           </p>
         </div>
       </section>
 
-      {/* 3. Zero-Knowledge Privacy Architecture Pillar */}
-      <section className="relative rounded-2xl p-6 sm:p-8 bg-white/70 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800/70 backdrop-blur-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-1.5 max-w-xl">
-            <p className="text-[11px] font-mono uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-semibold">
-              Zero-Knowledge Verification
-            </p>
-            <h3 className="font-serif text-xl font-medium text-slate-900 dark:text-slate-100">
-              Private by Design • Zero Keystroke Logging
-            </h3>
-            <p className="font-body text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-              Your keystroke content (words, passwords, messages) is never captured, stored, or sent to any server. KeySign only measures micro-timing flight and dwell latencies in volatile device memory.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap sm:flex-nowrap gap-3 shrink-0">
-            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-[18px]">
-                memory
-              </span>
-              <div className="text-left">
-                <div className="text-[11px] font-medium text-slate-800 dark:text-slate-200">Local Enclave</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">100% On-Device</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-              <span className="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-[18px]">
-                timer
-              </span>
-              <div className="text-left">
-                <div className="text-[11px] font-medium text-slate-800 dark:text-slate-200">Timing Deltas Only</div>
-                <div className="text-[10px] text-slate-500 dark:text-slate-400">Hold & Flight Δt</div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setActiveArea('privacy')}
-              className="px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 text-xs font-medium transition-colors cursor-pointer"
-            >
-              Inspect Specs ›
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Clinical Statutory Disclaimer */}
-      <MedicalDisclaimer />
-    </div>
+      <MedicalDisclaimer onLearnMore={() => setActiveArea('privacy')} />
+    </Reveal>
   );
 };

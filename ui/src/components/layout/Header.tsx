@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBiometrics } from '../../context/BiometricsContext';
 import { useTheme } from '../../context/ThemeContext';
-import { AnimatedCounter } from '../common/AnimatedCounter';
+import { RhythmStrip } from '../common/RhythmStrip';
 
 export const Header: React.FC = () => {
   const { activeArea, isTyping, live } = useBiometrics();
@@ -47,20 +47,13 @@ export const Header: React.FC = () => {
 
       {/* Right: Monitoring Pill, Theme Switcher & User Profile */}
       <div className="flex items-center gap-4 lg:gap-6">
-        {/* Live Keystroke Telemetry Pulse */}
-        <AnimatePresence>
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 text-[11px] font-medium text-indigo-700 dark:text-indigo-300"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping"></span>
-              <span>Signal Stream Active</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* The signature: your last keystrokes as a rhythm strip. Beats while you type. */}
+        <div className="hidden md:flex items-center gap-3 pr-2 mr-2 border-r border-slate-200/70 dark:border-slate-700/60">
+          <RhythmStrip />
+          <span className={`hidden lg:inline whitespace-nowrap text-[11px] font-medium transition-colors ${isTyping ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-400 dark:text-slate-500'}`}>
+            {isTyping ? 'typing' : 'your rhythm'}
+          </span>
+        </div>
 
         {/* Live Status Pill: reflects the local backend, not a decoration */}
         <div

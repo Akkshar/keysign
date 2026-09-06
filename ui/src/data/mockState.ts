@@ -1,26 +1,31 @@
+/**
+ * Illustrative timeline shown only until the State head has emitted a label.
+ * Same shape and wording as the live events the backend produces, so the
+ * panel does not change character when the real ones arrive.
+ */
 export const mockStateTimelineEvents = [
   {
     num: 1,
-    time: '14:15',
-    title: 'Deep Focus Transition',
-    color: 'bg-primary text-on-primary',
-    textColor: 'text-primary',
-    desc: 'Entered Deep Focus during Rust refactoring. Harmonic keystroke flight consistency reached 96%.',
+    time: '14:15:02',
+    title: 'Engaged',
+    color: 'bg-secondary text-on-secondary',
+    textColor: 'text-secondary',
+    desc: 'load 38/100 · ok to interrupt',
   },
   {
     num: 2,
-    time: '14:48',
-    title: 'Syntax Deliberation',
-    color: 'bg-tertiary text-on-tertiary',
-    textColor: 'text-tertiary',
-    desc: 'Brief pause cluster (+1.2s flight avg). High structural planning phase, non-erratic, load +12%.',
+    time: '14:21:40',
+    title: 'Deep Focus',
+    color: 'bg-primary text-on-primary',
+    textColor: 'text-primary',
+    desc: 'load 18/100 · rhythm variance -1.1, corrections -0.8 · defer notifications',
   },
   {
     num: 3,
-    time: '15:02 Live',
-    title: 'Optimal Flow State',
-    color: 'bg-secondary text-on-secondary',
-    textColor: 'text-secondary',
-    desc: 'Equilibrium reached. Inter-key flight cadence variance compressed to ±3.1ms. Interruption shield engaged.',
+    time: '14:48:11',
+    title: 'High Load',
+    color: 'bg-tertiary text-on-tertiary',
+    textColor: 'text-tertiary',
+    desc: 'load 76/100 · typing speed +1.6, corrections +1.3 · defer notifications',
   },
 ];

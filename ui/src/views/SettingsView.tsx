@@ -1,111 +1,106 @@
-import React, { useState } from 'react';
-import { PrivacyBadge } from '../components/common/PrivacyBadge';
+import React from 'react';
+import { useBiometrics } from '../context/BiometricsContext';
+import { useTheme } from '../context/ThemeContext';
+import { Reveal } from '../components/motion/Reveal';
 
+/**
+ * Settings. Only controls that change something on this dashboard live here
+ * (who the baseline is measured against, the window reset, the theme). What
+ * the backend tunes is listed as read-only with where it is set, so nobody
+ * mistakes a slider for a security control.
+ */
 export const SettingsView: React.FC = () => {
-  const [sampleHz, setSampleHz] = useState('1000');
-  const [stepUpKeystrokes, setStepUpKeystrokes] = useState(15);
-  const [lockoutThreshold, setLockoutThreshold] = useState(40);
-  const [localRamOnly, setLocalRamOnly] = useState(true);
+  const { live } = useBiometrics();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="flex flex-col w-full gap-space-2xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md p-space-md bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container">
-        <div className="flex items-center gap-space-md">
-          <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary flex-shrink-0 border border-surface-container">
-            <span className="material-symbols-outlined text-[24px]">tune</span>
-          </div>
+    <Reveal className="flex flex-col w-full gap-8 pb-12">
+      <div className="space-y-2">
+        <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">Settings</h1>
+        <p className="font-body text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
+          Three things this dashboard can change. Everything else is a constant in the backend and is listed below
+          so you know where to look.
+        </p>
+      </div>
+
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <span className="font-headline text-sm font-bold text-on-surface">Zero-Trust Local Engine Settings</span>
-            <p className="font-body text-xs text-on-surface-variant">
-              Manage on-device inference sensitivity, sensor frequency, and biometric security boundaries.
+            <label htmlFor="settings-user" className="text-sm font-medium text-on-surface">Measure against</label>
+            <p className="text-xs text-on-surface-variant">
+              Whose baseline the distance and the threat rule use. Baselines found on disk:{' '}
+              <span className="font-telemetry">{live.users.length}</span>.
             </p>
           </div>
-        </div>
-        <PrivacyBadge variant="pill" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
-        <div className="lg:col-span-8 bg-surface-container-lowest p-space-xl rounded-xl shadow-sm border border-surface-container flex flex-col gap-space-lg">
-          <h2 className="font-headline text-base font-bold text-on-surface">Biometric Sensitivity &amp; Thresholds</h2>
-
-          <div className="flex flex-col gap-space-md">
-            <div className="flex flex-col gap-space-xs p-space-md bg-surface-container-low rounded-lg border border-surface-container">
-              <div className="flex justify-between items-center text-xs font-headline font-semibold text-on-surface">
-                <span>Step-Up Evaluation Grace Window</span>
-                <span className="font-telemetry text-primary">{stepUpKeystrokes} Keystrokes</span>
-              </div>
-              <input
-                type="range"
-                min="5"
-                max="30"
-                value={stepUpKeystrokes}
-                onChange={(e) => setStepUpKeystrokes(Number(e.target.value))}
-                className="w-full accent-primary"
-              />
-              <span className="font-body text-[11px] text-on-surface-variant">
-                Minimum consecutive anomalous keystrokes required before triggering an interactive FIDO2 verification prompt.
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-space-xs p-space-md bg-surface-container-low rounded-lg border border-surface-container">
-              <div className="flex justify-between items-center text-xs font-headline font-semibold text-on-surface">
-                <span>Lockout Confidence Margin</span>
-                <span className="font-telemetry text-error font-bold">&lt; {lockoutThreshold}% Match</span>
-              </div>
-              <input
-                type="range"
-                min="20"
-                max="60"
-                value={lockoutThreshold}
-                onChange={(e) => setLockoutThreshold(Number(e.target.value))}
-                className="w-full accent-error"
-              />
-              <span className="font-body text-[11px] text-on-surface-variant">
-                Threshold below which the operating system session is instantly secured and token memory zeroed.
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-space-md bg-surface-container-low rounded-lg border border-surface-container">
-              <div>
-                <span className="font-headline text-xs font-semibold text-on-surface">Zero-Disk Ephemeral Enclave</span>
-                <p className="font-body text-[11px] text-on-surface-variant">
-                  Enforces strict RAM-only vector operations. Tensors are scrubbed upon process termination.
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={localRamOnly}
-                onChange={(e) => setLocalRamOnly(e.target.checked)}
-                className="w-5 h-5 accent-primary cursor-pointer rounded"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-space-sm pt-space-xs">
-            <button
-              onClick={() => alert('Settings saved to local Secure Enclave.')}
-              className="px-space-lg py-space-sm rounded-lg bg-primary hover:bg-primary-dark text-white font-headline text-xs font-bold transition-all shadow-sm"
-            >
-              Save Configuration
-            </button>
-          </div>
+          <select
+            id="settings-user"
+            value={live.declaredUser}
+            onChange={(e) => live.setDeclaredUser(e.target.value)}
+            className="bg-surface-container-low border border-outline-variant/60 rounded-lg px-3 py-2 text-sm text-on-surface font-body min-w-[14rem]"
+          >
+            <option value="">No one selected</option>
+            {live.users.map((u) => (
+              <option key={u.user} value={u.user}>
+                {u.user} · {u.n_samples} samples
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="lg:col-span-4 bg-surface-container-lowest p-space-xl rounded-xl shadow-sm border border-surface-container flex flex-col justify-between">
-          <div className="flex flex-col gap-space-sm">
-            <h3 className="font-headline text-base font-bold text-on-surface">Cryptographic Model Info</h3>
-            <div className="p-space-sm bg-surface-container-low rounded-lg border border-surface-container text-xs font-telemetry flex flex-col gap-1">
-              <div><span className="text-on-surface-variant">Engine:</span> KeySign Neural Enclave v2.4a</div>
-              <div><span className="text-on-surface-variant">HID Interface:</span> CoreHID Monotonic (1,000Hz)</div>
-              <div><span className="text-on-surface-variant">Hash Function:</span> SHA-256 Vector Digest</div>
-              <div><span className="text-on-surface-variant">Outbound Traffic:</span> <span className="text-secondary font-bold">DISABLED (0 bytes/s)</span></div>
-            </div>
-            <p className="font-body text-xs text-on-surface-variant mt-2">
-              All neural inference computations occur inside host processor registers without leaving the operating system boundary.
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+          <div>
+            <span className="text-sm font-medium text-on-surface">Start a fresh window</span>
+            <p className="text-xs text-on-surface-variant">
+              Clears the backend's 10-second buffer for this session. Use it when someone new sits down.
             </p>
           </div>
+          <button
+            type="button"
+            onClick={live.reset}
+            disabled={!live.connected}
+            className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Reset window
+          </button>
         </div>
-      </div>
-    </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+          <div>
+            <span className="text-sm font-medium text-on-surface">Theme</span>
+            <p className="text-xs text-on-surface-variant">Currently {theme}.</p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors"
+          >
+            Switch to {theme === 'dark' ? 'light' : 'dark'}
+          </button>
+        </div>
+      </section>
+
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="font-serif text-xl font-medium text-on-surface">Set on the backend</h2>
+          <p className="text-xs text-on-surface-variant">
+            Read-only here. A UI for these is coming later; for now they are constants or environment variables.
+          </p>
+        </div>
+        <dl className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-3 text-sm">
+          <dt className="text-on-surface">Backend address</dt>
+          <dd className="font-telemetry text-xs text-on-surface-variant">
+            {live.connected ? 'localhost:8000 · connected' : 'localhost:8000 · not connected'}
+          </dd>
+          <dt className="text-on-surface">Phone alert topic</dt>
+          <dd className="font-telemetry text-xs text-on-surface-variant">KEYSIGN_NTFY_TOPIC (env)</dd>
+          <dt className="text-on-surface">Session recording</dt>
+          <dd className="font-telemetry text-xs text-on-surface-variant">KEYSIGN_RECORD=0 to disable (env)</dd>
+          <dt className="text-on-surface">Threat thresholds and the unknown-user distance</dt>
+          <dd className="font-telemetry text-xs text-on-surface-variant">backend/heads.py</dd>
+          <dt className="text-on-surface">Window length and tick rate</dt>
+          <dd className="font-telemetry text-xs text-on-surface-variant">backend/app.py</dd>
+        </dl>
+      </section>
+    </Reveal>
   );
 };

@@ -1,149 +1,135 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { MedicalDisclaimer } from '../components/health/MedicalDisclaimer';
+import { Reveal } from '../components/motion/Reveal';
+import { CardSpotlight } from '../components/motion/CardSpotlight';
+
+/**
+ * Privacy, stated as what the code does. Sources: ui/src/lib/keysign.ts
+ * (what the browser sends), backend/app.py and backend/heads.py (what the
+ * backend computes and writes), backend/README.md (alerts, recording, Gemini).
+ */
+
+const stages = [
+  {
+    title: 'Browser',
+    sub: 'this page, or capture/index.html',
+    lines: [
+      'Listens to keydown and keyup.',
+      'Sends key name, key code and a millisecond timestamp per event, batched every 250 ms.',
+      'Only to ws://localhost:8000. Nothing else is contacted from the page.',
+    ],
+  },
+  {
+    title: 'Backend',
+    sub: 'FastAPI on localhost:8000',
+    lines: [
+      'Keeps the last 10 seconds of events per session and turns them into 28 timing features.',
+      'Measures distance to your baseline; runs the identity model (a scikit-learn RandomForest on 22 timing features), the state score and the threat rule.',
+      'Broadcasts one tick per session to this dashboard over the same local socket.',
+    ],
+  },
+  {
+    title: 'Disk',
+    sub: 'the repo\'s data/ folder',
+    lines: [
+      'data/baselines/<user>.json: one baseline per person (feature means and spreads).',
+      'data/sessions/<date>_<session>.jsonl: every live session, raw events plus each tick. KEYSIGN_RECORD=0 turns this off.',
+      'data/alerts.jsonl: silent alerts the threat head raised.',
+    ],
+  },
+];
 
 export const PrivacyView: React.FC = () => {
   return (
-    <div className="flex flex-col w-full gap-8 pb-12 select-none">
-      {/* Page Header */}
+    <Reveal className="flex flex-col w-full gap-8 pb-12">
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-indigo-500" />
-          <span className="text-xs font-mono tracking-wider uppercase text-indigo-600 dark:text-indigo-400 font-semibold">
-            Privacy By Design
-          </span>
-        </div>
-        <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-slate-900 dark:text-slate-100">
-          Privacy Architecture & Cryptographic Isolation
+        <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">
+          Keystrokes never leave this machine
         </h1>
-        <p className="font-body text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          KeySign is architected from the ground up so that it is mathematically impossible to reconstruct typed messages, words, or credentials from stored telemetry.
+        <p className="font-body text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
+          There is no cloud in the loop. The browser talks to a backend on localhost, the backend writes plain
+          files into the repo, and the two optional outbound messages carry a label and a number, never a key.
+          This page lists exactly what moves where.
         </p>
       </div>
 
-      {/* Key Principle Banner */}
-      <section className="bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-8 sm:p-10 shadow-lg relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <span className="text-xs font-mono tracking-widest text-indigo-300 uppercase font-semibold">
-            Foundational Commitment
-          </span>
-          <h2 className="font-serif text-2xl sm:text-3xl font-medium leading-snug">
-            Your words are yours alone. Only relative timing intervals are evaluated.
-          </h2>
-          <p className="text-sm text-indigo-200/90 leading-relaxed pt-2">
-            The moment a key is pressed, its letter, symbol, or glyph is discarded. We retain only two floating-point millisecond timestamps: the press time and the release time.
-          </p>
-        </div>
-      </section>
-
-      {/* 4 Pillars Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {[
-          {
-            icon: 'delete_sweep',
-            title: '1. Immediate Payload Stripping',
-            desc: 'The OS keyboard interrupt delivers character symbols. KeySign immediately sets character values to null and drops them from memory before processing.',
-            code: 'keyEvent.char = null; keyEvent.code = null;',
-          },
-          {
-            icon: 'memory',
-            title: '2. 100% On-Device Local Processing',
-            desc: 'Inference runs inside a local client-side enclave. No biometric timing vectors, baseline models, or logs are uploaded to any external server or cloud provider.',
-            code: 'enclave.processLocally({ network: "DISCONNECTED" });',
-          },
-          {
-            icon: 'graphic_eq',
-            title: '3. Spectral Wavelet Transformation',
-            desc: 'Timing series are transformed into 28 frequency distribution bins. This irreversible mathematical transform destroys word-length patterns while preserving motor rhythm.',
-            code: 'spectrum = FFT(deltaTimes.normalize());',
-          },
-          {
-            icon: 'lock',
-            title: '4. Differential Privacy Noise Injection',
-            desc: 'Calibrated Laplace noise is added to long-term drift baselines, ensuring mathematical zero-knowledge against fingerprinting or reconstruction attacks.',
-            code: 'baselineVector += LaplaceNoise(scale = epsilon);',
-          },
-        ].map((pillar, idx) => (
-          <div
-            key={idx}
-            className="p-6 rounded-2xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800/70 shadow-sm space-y-3"
-          >
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-900/50">
-              <span className="material-symbols-outlined text-[20px]">{pillar.icon}</span>
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-0">
+        {stages.map((s, i) => (
+          <div key={s.title} className="relative flex">
+            <div className="flex-1 bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-5 space-y-3">
+              <div>
+                <h2 className="font-serif text-xl font-medium text-on-surface">{s.title}</h2>
+                <p className="text-xs text-on-surface-variant font-telemetry">{s.sub}</p>
+              </div>
+              <ul className="space-y-2">
+                {s.lines.map((l) => (
+                  <li key={l} className="font-body text-sm text-on-surface leading-relaxed pl-3 border-l border-outline-variant/60">
+                    {l}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <h3 className="font-serif text-base font-medium text-slate-900 dark:text-slate-100">
-              {pillar.title}
-            </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-body">
-              {pillar.desc}
-            </p>
-            <div className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800/70 font-mono text-[11px] text-slate-700 dark:text-slate-300">
-              {pillar.code}
-            </div>
+            {i < stages.length - 1 && (
+              <div className="hidden md:flex items-center px-2 text-on-surface-variant/60 select-none" aria-hidden>
+                →
+              </div>
+            )}
           </div>
         ))}
       </section>
 
-      {/* Comparison Table */}
-      <section className="bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
-        <h3 className="font-serif text-xl font-medium text-slate-900 dark:text-slate-100">
-          Architecture Comparison
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 font-mono uppercase">
-                <th className="py-3 px-4">Telemetry Dimension</th>
-                <th className="py-3 px-4 text-rose-500">Commercial Keyloggers</th>
-                <th className="py-3 px-4 text-emerald-600 dark:text-emerald-400">
-                  KeySign Enclave
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-body">
-              <tr>
-                <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                  Typed Alphanumeric Text
-                </td>
-                <td className="py-3 px-4 text-rose-600">Recorded & Logged</td>
-                <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-medium">
-                  Zero Capture (Discarded)
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                  Passwords & Sensitive Fields
-                </td>
-                <td className="py-3 px-4 text-rose-600">Stored in cleartext/hash</td>
-                <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-medium">
-                  Never Intercepted
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                  Relative Microsecond Timing (t_down, t_up)
-                </td>
-                <td className="py-3 px-4 text-slate-400">Ignored</td>
-                <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-medium">
-                  Extracted for Motor Screening
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                  Network Transmission
-                </td>
-                <td className="py-3 px-4 text-rose-600">Continuous cloud sync</td>
-                <td className="py-3 px-4 text-emerald-600 dark:text-emerald-400 font-medium">
-                  100% In-Browser / On-Device
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <CardSpotlight className="bg-surface-container-lowest border border-outline-variant/60">
+          <div className="p-6 space-y-4">
+            <h2 className="font-serif text-xl font-medium text-on-surface">What can leave the machine</h2>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Both are off unless an environment variable is set on the backend. Neither carries keystrokes or text.
+            </p>
+            <dl className="space-y-4">
+              <div>
+                <dt className="text-sm font-medium text-on-surface">Silent phone alert (ntfy)</dt>
+                <dd className="text-sm text-on-surface-variant leading-relaxed">
+                  Needs <code className="font-telemetry text-xs">KEYSIGN_NTFY_TOPIC</code>. The push carries the alert kind
+                  (intruder or duress), the user label, the baseline distance and the time. At most one per minute per
+                  session, after three consecutive ticks above threshold.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-on-surface">State explanation (Gemini)</dt>
+                <dd className="text-sm text-on-surface-variant leading-relaxed">
+                  Needs <code className="font-telemetry text-xs">GEMINI_API_KEY</code>. Sends the state label, the load
+                  number and the names of the features that moved, at most every 20 seconds, to get one plain sentence
+                  back. Without a key a template sentence is used.
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </CardSpotlight>
 
-      {/* Statutory Medical Disclaimer */}
-      <MedicalDisclaimer />
-    </div>
+        <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-4">
+          <h2 className="font-serif text-xl font-medium text-on-surface">What we don't do</h2>
+          <ul className="space-y-2.5">
+            {[
+              'No account, no login, no server outside this machine.',
+              'No upload of keystrokes, features, baselines or session files, ever.',
+              'No deep learning and no remote model: the identity model is a RandomForest trained from a CSV in the repo.',
+              'No encryption claims. The files are plain JSON on your disk, protected by your OS and nothing else.',
+              'No reading of what you type in other apps. Capture is the page you have open and the capture page only.',
+              'No diagnosis. Health signals are a research roadmap and are not computed.',
+            ].map((l) => (
+              <li key={l} className="font-body text-sm text-on-surface leading-relaxed pl-3 border-l border-outline-variant/60">
+                {l}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <p className="text-xs text-on-surface-variant leading-relaxed max-w-3xl">
+        One thing worth knowing: the backend receives key names, not just timings, and the session recording keeps
+        them. That is what makes a misjudged demo run reusable as training data, and it also means what you typed in
+        a live session can be read back from your own <code className="font-telemetry">data/sessions/</code> folder.
+        Delete the file, or set <code className="font-telemetry">KEYSIGN_RECORD=0</code>, if you don't want that.
+      </p>
+    </Reveal>
   );
 };
