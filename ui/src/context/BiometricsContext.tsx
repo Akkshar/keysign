@@ -287,7 +287,7 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setStateTimeline((prev) => [...prev.slice(-11), {
           num: prev.length + 1,
           time: new Date(m.ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          title: label.replace(/w/g, (c) => c.toUpperCase()),
+          title: label.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
           color, textColor,
           desc: `${m.user}: load ${Math.round((m.heads?.state?.load ?? 0) * 100)}/100${drivers ? ' · ' + drivers : ''} · ${m.heads?.state?.advice === 'defer' ? 'defer notifications' : 'ok to interrupt'}`,
         }]);

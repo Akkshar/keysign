@@ -206,10 +206,15 @@ export const StateView: React.FC = () => {
               <span className="font-telemetry text-xs text-on-surface-variant">Local State Engine</span>
             </div>
             <h2 className="font-headline text-base font-bold text-on-surface mt-space-2xs">
-              Smart Interruption Management: Deep Focus Active
+              Smart Interruption Management: {cognitiveState.cognitiveLoad >= 50 ? 'High Load' : cognitiveState.cognitiveLoad < 25 ? 'Deep Focus' : 'Engaged'} {cognitiveState.smartInterruptionActive ? '· deferring' : '· open'}
             </h2>
             <p className="font-body text-xs text-on-surface-variant mt-space-2xs max-w-2xl leading-relaxed">
-              The typist appears to be in uninterrupted deep focus. Non-critical notifications can be automatically buffered locally to safeguard cognitive flow.
+              {cognitiveState.cognitiveLoad >= 50
+                ? 'The typist is under load: faster, sloppier, keys overlapping. Non-critical notifications are held back until the rhythm settles.'
+                : cognitiveState.cognitiveLoad < 25
+                ? 'The typist appears to be in uninterrupted deep focus. Non-critical notifications can be automatically buffered locally to safeguard cognitive flow.'
+                : 'Normal working rhythm. Notifications can go through.'}
+              {' '}Other apps read this from <code className="font-telemetry">GET /api/state</code>.
             </p>
           </div>
         </div>
