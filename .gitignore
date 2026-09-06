@@ -35,3 +35,6 @@ data/models/
 
 # ad-hoc replay files
 capture/replay*.json
+
+# Silent alert log (personal)
+data/alerts*.jsonl

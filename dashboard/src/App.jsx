@@ -171,11 +171,19 @@ function ThreatPanel({ tick }) {
   const th = tick?.heads?.threat;
   const lvl = th?.level || 'none';
   const cls = lvl === 'alert' ? 'alert' : lvl === 'warn' ? 'warn' : lvl === 'ok' ? 'ok' : 'muted';
+  const last = th?.last_alert;
   return (
     <div className="panel">
-      <h2>Threat <span className="muted">· duress (silent)</span></h2>
-      <div className={`big ${cls}`} style={{ fontSize: 28 }}>{lvl.toUpperCase()}</div>
+      <div className="head"><h2>Threat <span className="muted">· silent alert</span></h2>
+        {th?.channel && <span className="tag">{th.channel === 'ntfy' ? 'push → phone' : 'local log only'}</span>}</div>
+      <div className={`big ${cls}`} style={{ fontSize: 28 }}>{lvl.toUpperCase()}{th?.kind && lvl !== 'ok' ? <span className="u">{th.kind}</span> : null}</div>
+      {th && lvl !== 'none' && (
+        <div className="note">
+          {th.distance?.toFixed(2)}σ · {th.sustained_ticks}/3 ticks above 3σ{th.identity_mismatch ? ' · identity mismatch' : ''}
+        </div>
+      )}
       {th?.drivers && <div className="drivers">{th.drivers.map(([f, z]) => <span key={f} className="chip">{f} {z > 0 ? '+' : ''}{z.toFixed(1)}σ</span>)}</div>}
+      {last && <div className="note alert">silent alert #{th.alerts_total} ({last.kind}) {last.sent ? 'pushed to phone' : 'logged'} at {new Date(last.ts * 1000).toLocaleTimeString()}</div>}
       {th?.reason && <div className="note">{th.reason}</div>}
     </div>
   );

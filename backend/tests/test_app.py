@@ -31,6 +31,13 @@ def typed(n, t0=0.0, flight=120.0, hold=60.0):
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(backend, "BASELINE_DIR", tmp_path)   # isolate baselines
     monkeypatch.setattr(backend, "TICK_MS", 0)               # no rate limit in tests
+    from backend import heads
+    monkeypatch.setattr(heads, "_alert_log_path", tmp_path / "alerts.jsonl")   # don't write real alerts
+    monkeypatch.delenv("KEYSIGN_NTFY_TOPIC", raising=False)
+    # never pick up models trained on the real team data
+    monkeypatch.setattr(heads, "MODEL_PATH", tmp_path / "no-identity.joblib")
+    monkeypatch.setattr(heads, "STATE_MODEL_PATH", tmp_path / "no-state.joblib")
+    heads._model_cache.clear(); heads._state_cache.clear()
     backend._baseline_cache.clear()
     backend.sessions.clear()
     backend.dashboards.clear()
@@ -94,7 +101,11 @@ def test_capture_with_baseline_scores_and_runs_heads(client, tmp_path):
         tick = cap.receive_json()
         assert tick["n_keys"] == 40                                      # reset cleared the buffer (40 x 200 ms fits the 10 s window)
         assert tick["distance"] > 3.0
-        assert tick["heads"]["threat"]["level"] == "alert"
+        assert tick["heads"]["threat"]["level"] == "warn"               # one tick is not enough
+        for i in range(1, 3):                                            # sustained -> alert
+            cap.send_json({"type": "events", "events": typed(10, t0=58_000 + i * 2_000, flight=200, hold=150)})
+            tick = cap.receive_json()
+        assert tick["heads"]["threat"]["level"] == "alert" and tick["heads"]["threat"]["kind"] in ("duress", "intruder")
 
 
 def test_dashboard_hello_lists_sessions_and_heads(client):

@@ -69,7 +69,8 @@ def register_head(name: str, fn: Head) -> None:
 
 
 def run_heads(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
-    out = {}
+    out: dict = {}
+    ctx["heads_so_far"] = out                        # later heads can read earlier heads' output
     for name, fn in HEADS.items():
         try:
             out[name] = fn(features, baseline, ctx)
@@ -207,6 +208,13 @@ def users():
 def baseline(user: str):
     b = load_baseline(user)
     return b.to_dict() if b else {"error": "no baseline", "user": user}
+
+
+@app.get("/api/alerts")
+def alerts_api(n: int = 20):
+    """Silent alerts raised by the Threat head, newest last. Local log; pushed to a phone if KEYSIGN_NTFY_TOPIC is set."""
+    from backend import notify
+    return {"channel": notify.channel(), "alerts": notify.recent(n)}
 
 
 @app.get("/api/state")

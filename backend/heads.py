@@ -13,11 +13,12 @@ Register at the bottom. One head per teammate, keep them independent.
 """
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import numpy as np
 
-from backend import explain
+from backend import explain, notify
 from backend.app import ROOT, load_baseline, register_head
 from pipeline.baseline import Baseline
 from pipeline.identity import IdentityModel
@@ -70,18 +71,54 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     }
 
 # ---------------------------------------------------------------------------
-# Threat (placeholder): plain distance threshold. Owner: replace with the real head.
+# Threat: is something wrong right now? Sustained deviation from the person's
+# baseline, classified with the other heads' outputs (identity mismatch ->
+# intruder, right person but abnormal and loaded -> duress). Fires a SILENT
+# alert (backend/notify.py) with a cooldown. Runs after identity and state.
 # ---------------------------------------------------------------------------
-THREAT_WARN = 2.0
-THREAT_ALERT = 3.0
+THREAT_WARN = 2.0            # single-tick distance for "warn"
+THREAT_ALERT = 3.0           # distance that must be sustained for "alert"
+THREAT_PERSIST = 3           # consecutive ticks (>= 1.5 s of typing) above THREAT_ALERT
+THREAT_COOLDOWN_S = 60.0     # minimum gap between pushes per session
+_alert_log_path = None       # tests point this at a temp file
 
 
 def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
+    st = ctx.setdefault("threat", {"hist": [], "level": "ok", "last_alert_at": 0.0, "alerts": 0, "last_alert": None})
     if baseline is None:
-        return {"level": "none", "reason": "no baseline"}
+        return {"level": "none", "kind": None, "reason": "no baseline for this user yet"}
     d = float(baseline.distance(features))
-    level = "alert" if d >= THREAT_ALERT else "warn" if d >= THREAT_WARN else "ok"
-    return {"level": level, "distance": round(d, 2), "drivers": baseline.explain(features, top=2)}
+    st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
+    sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
+    others = ctx.get("heads_so_far") or {}
+    idn, state = others.get("identity") or {}, others.get("state") or {}
+    mismatch = bool(idn.get("unknown")) or (idn.get("user") is not None and idn.get("matches_declared") is False)
+    kind = "intruder" if mismatch else "duress"
+
+    if sustained >= THREAT_PERSIST:
+        level = "alert"
+    elif d >= THREAT_WARN or sustained > 0 or mismatch:
+        level = "warn"
+    else:
+        level = "ok"
+
+    out = {"level": level, "kind": kind if level != "ok" else None, "distance": round(d, 2),
+           "sustained_ticks": sustained, "identity_mismatch": mismatch, "load": state.get("load"),
+           "drivers": [[f, round(z, 2)] for f, z in baseline.explain(features, top=2)],
+           "alerts_total": st["alerts"], "last_alert": st["last_alert"], "channel": notify.channel()}
+
+    now = time.time()
+    entering = level == "alert" and st["level"] != "alert"
+    if entering and now - st["last_alert_at"] >= THREAT_COOLDOWN_S:
+        alert = {"ts": now, "session": ctx.get("session"), "user": ctx.get("user") or baseline.user, "kind": kind,
+                 "distance": round(d, 2), "sustained_ticks": sustained, "identity": idn.get("user"),
+                 "identity_confidence": idn.get("confidence"), "load": state.get("load"), "drivers": out["drivers"]}
+        res = notify.send(alert, _alert_log_path)
+        st["last_alert_at"], st["alerts"] = now, st["alerts"] + 1
+        st["last_alert"] = {"ts": now, "kind": kind, **res}
+        out["alerts_total"], out["last_alert"] = st["alerts"], st["last_alert"]
+    st["level"] = level
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -139,6 +176,7 @@ def state_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     }
 
 
+# Order matters: threat reads identity and state from ctx["heads_so_far"].
 register_head("identity", identity_head)
-register_head("threat", threat_head)
 register_head("state", state_head)
+register_head("threat", threat_head)
