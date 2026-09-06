@@ -133,6 +133,19 @@ def test_session_is_recorded_and_exportable(client, tmp_path):
     assert samples[0]["events"][0]["t"] == 0                    # re-based per sample
 
 
+def test_harvest_labels_turns_by_nearest_baseline(client, tmp_path):
+    from backend import sessions as rec
+    make_baseline(tmp_path)                                       # "Test User", typed(40) style
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "hv1"}); cap.receive_json()
+        for i in range(4):                                        # one settled turn of the baseline typist
+            cap.send_json({"type": "events", "events": typed(12, t0=i * 1_500)}); cap.receive_json()
+    files = list((tmp_path / "sessions").glob("*_hv1.jsonl"))
+    samples = rec.harvest(files, max_distance=2.5)          # synthetic typing has zero jitter, which reads as odd
+    assert len(samples) == 1 and samples[0]["user"] == "Test User" and samples[0]["n_keydowns"] == 48
+    assert samples[0]["meta"]["page_version"] == "live-turn" and samples[0]["meta"]["distance"] < 2.5
+
+
 def test_recording_can_be_disabled(client, tmp_path, monkeypatch):
     monkeypatch.setattr(backend, "RECORD", False)
     with client.websocket_connect("/ws/capture") as cap:

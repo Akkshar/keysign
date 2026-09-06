@@ -12,6 +12,14 @@ them to record anything.
     uv run python -m backend.sessions list
     uv run python -m backend.sessions export data/sessions/<file>.jsonl --user Stranger -o data/samples/stranger.json
     uv run python -m backend.sessions score  data/sessions/<file>.jsonl        # distance per tick, per baseline
+    uv run python -m backend.sessions harvest -o data/samples/live_turns.json  # teammates' own live turns as samples
+
+`harvest` labels each typing turn (events separated by > 6 s pauses) with the
+teammate whose calm baseline is clearly nearest on the settled half of the
+turn (distance <= 1.4, margin >= 0.4 over the next person) and writes those
+turns as calm samples. Live typing runs hotter than enrolment, so training
+identity on it raises everyone's live confidence. Unsettled turns (strangers,
+nervous typing) are skipped.
 """
 from __future__ import annotations
 
@@ -70,6 +78,47 @@ def _sample(events: list[dict], user: str, i: int) -> dict:
             "meta": {"page_version": "session-recording"}}
 
 
+def harvest(paths: list[Path], max_distance: float = 1.4, min_margin: float = 0.4, min_keys: int = 30) -> list[dict]:
+    """Confidently-labelled teammate turns from recordings, as capture-style calm samples."""
+    from backend.app import list_baselines, load_baseline
+    bases = {b["user"]: load_baseline(b["user"]) for b in list_baselines()}
+    out: list[dict] = []
+    for f in paths:
+        recs = read(f)
+        evmsgs = [r for r in recs if r.get("type") == "events" and r.get("events")]
+        ticks = [r for r in recs if r.get("type") == "tick" and r.get("features")]
+        groups: list[list[dict]] = []
+        cur: list[dict] = []
+        for r in evmsgs:
+            if cur and r["ts"] - cur[-1]["ts"] > 6:
+                groups.append(cur); cur = []
+            cur.append(r)
+        if cur:
+            groups.append(cur)
+        for g in groups:
+            t0, t1 = g[0]["ts"], g[-1]["ts"] + 1.0
+            tk = [r for r in ticks if t0 <= r["ts"] <= t1 and r["n_keys"] >= 20]
+            ev = sorted([e for r in g for e in r["events"] if e.get("type") in ("down", "up")], key=lambda e: e["t"])
+            n_keys = sum(1 for e in ev if e["type"] == "down")
+            if len(tk) < 3 or n_keys < min_keys:
+                continue
+            tail = tk[-max(3, len(tk) // 2):]
+            import numpy as np
+            dmed = {u: float(np.median([b.distance(r["features"]) for r in tail])) for u, b in bases.items() if b is not None}
+            if not dmed:
+                continue
+            order = sorted(dmed, key=dmed.get)
+            best = order[0]
+            margin = dmed[order[1]] - dmed[order[0]] if len(order) > 1 else float("inf")
+            if dmed[best] > max_distance or margin < min_margin:
+                continue
+            s = _sample(ev, best, len(out))
+            s["id"] = f"live_{Path(f).stem}_{int(t0)}"
+            s["meta"] = {"page_version": "live-turn", "distance": round(dmed[best], 2), "margin": round(margin, 2)}
+            out.append(s)
+    return out
+
+
 def _main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="KeySign session recordings")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -77,6 +126,7 @@ def _main(argv: list[str] | None = None) -> int:
     ex = sub.add_parser("export"); ex.add_argument("recording"); ex.add_argument("--user", required=True)
     ex.add_argument("-o", "--out", required=True); ex.add_argument("--chunk-s", type=float, default=20.0)
     sc = sub.add_parser("score"); sc.add_argument("recording")
+    hv = sub.add_parser("harvest"); hv.add_argument("--dir", default=str(DEFAULT_DIR)); hv.add_argument("-o", "--out", required=True)
     a = p.parse_args(argv)
     if a.cmd == "list":
         for f in sorted(Path(a.dir).glob("*.jsonl")):
@@ -87,6 +137,14 @@ def _main(argv: list[str] | None = None) -> int:
             called = {u: ids.count(u) for u in set(ids) if u}
             n_keys = sum(1 for e in events_of(recs) if e["type"] == "down")
             print(f"{f.name:40s} declared {hello.get('user', '?'):16s} {n_keys:5d} keys {len(ticks):4d} ticks  called {called}")
+    elif a.cmd == "harvest":
+        samples = harvest(sorted(Path(a.dir).glob("*.jsonl")))
+        Path(a.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(a.out).write_text(json.dumps(samples), encoding="utf-8")
+        counts: dict[str, int] = {}
+        for s in samples:
+            counts[s["user"]] = counts.get(s["user"], 0) + 1
+        print(f"{len(samples)} live turns -> {a.out}  {counts}")
     elif a.cmd == "export":
         samples = to_samples(read(a.recording), a.user, a.chunk_s)
         Path(a.out).parent.mkdir(parents=True, exist_ok=True)

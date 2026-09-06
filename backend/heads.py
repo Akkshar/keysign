@@ -30,11 +30,12 @@ from pipeline.state import StateModel, rule_load
 # (build that CSV from the enrolment exports PLUS data/samples/strangers.json, see CLAUDE.md)
 # ---------------------------------------------------------------------------
 MODEL_PATH = ROOT / "data" / "models" / "identity.joblib"
-UNKNOWN_CONF = 0.70      # classifier confidence below this on most of the last VOTES windows -> unknown.
-                         # Measured on the recorded turns (5-window majority): a stranger who was
-                         # called Akshaj at 84% is flagged 90% of the time at 0.70, at a cost of 8% of
-                         # Akkshar's windows and none of the others'. 0.85 would flag him 100% but also
-                         # Utkarsh 74%, Akshaj 23%, Akkshar 18% of the time.
+UNKNOWN_CONF = 0.85      # classifier confidence below this on most of the last VOTES windows -> unknown.
+                         # Team decision (2026-09-07): a stranger must never be shown as a teammate, so
+                         # the bar is 85%. Measured cost on held-out live windows with the live turns in
+                         # training: Utkarsh is shown unknown ~48% of the time, Akkshar ~28%, Akshaj and
+                         # Shourya ~0%. At 0.70 it would be 19% / 9% / 0 / 0 but a stranger called
+                         # Shourya at 77% would pass. Fix for Utkarsh: more calm samples on the demo laptop.
 UNKNOWN_DIST = 3.0       # distance to the predicted user's baseline above this -> unknown
                          # (measured on 10 s windows with >= 25 keys: own-baseline p90 2.0-2.6,
                          # other people's median 2.9-3.6)
@@ -87,7 +88,9 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     enrolled = {u: p for u, p in pred["probs"].items() if not is_non_user(u)}
     closest = max(enrolled, key=enrolled.get) if enrolled else None
     lc = st.get("low_conf", [])
-    low_conf = len(lc) >= 2 and sum(lc) * 2 > len(lc)            # most of the recent windows under UNKNOWN_CONF
+    low_conf = len(lc) >= 1 and sum(lc) * 2 > len(lc)            # most of the recent windows under UNKNOWN_CONF
+                                                                  # (the first voting window already counts:
+                                                                  # a stranger may only type 20 keys)
     unknown = is_non_user(voted) or low_conf or \
               (n_keys >= UNKNOWN_MIN_KEYS and d is not None and d > UNKNOWN_DIST)
     return {

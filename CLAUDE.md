@@ -92,8 +92,13 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
   then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`,
   then retrain identity on live-shaped windows (NOT on features.csv), including
   the known non-users file:
-  `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json data/samples/strangers.json --windows -o data/features_windows.csv`
+  `uv run python -m backend.sessions harvest -o data/samples/live_turns.json` (teammates' own
+  live turns from recorded sessions; live typing runs hotter than enrolment), then
+  `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json data/samples/strangers.json data/samples/live_turns.json --windows -o data/features_windows.csv`
   and `uv run python -m pipeline.identity train data/features_windows.csv`.
+  Unknown-user bar is 85% classifier confidence (team decision): a stranger is
+  never shown as a teammate, at the cost of Utkarsh being shown unknown about
+  half the time until he records more calm samples on the demo laptop.
   `data/samples/strangers.json` holds people recorded on the dashboard whose
   typing sits inside a teammate's calm spread (one so far, "Stranger 1", the
   third party who kept being called Utkarsh). The identity head reports any
