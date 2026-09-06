@@ -72,6 +72,22 @@ def test_alert_needs_sustained_deviation(baseline, alert_log):
     assert out["level"] == "ok" and out["kind"] is None
 
 
+def test_thin_windows_never_alert(baseline, alert_log):
+    """The first seconds of a session (few keys in the window) are noise for everyone: they
+    neither count towards an alert nor carry an earlier streak over."""
+    ctx = ctx_with()
+    thin = backend.extract_features(typed(heads.THREAT_MIN_KEYS - 1, flight=400, hold=150))
+    for _ in range(heads.THREAT_PERSIST * 2):
+        out = heads.threat_head(thin, baseline, ctx)
+    assert out["level"] == "ok" and out["sustained_ticks"] == 0 and out["warming_up"] is True
+    # a streak that is interrupted by a thin window starts over
+    for _ in range(heads.THREAT_PERSIST - 1):
+        heads.threat_head(odd_features(), baseline, ctx)
+    heads.threat_head(thin, baseline, ctx)
+    out = heads.threat_head(odd_features(), baseline, ctx)
+    assert out["level"] == "warn" and out["sustained_ticks"] == 1 and ctx["threat"]["alerts"] == 0
+
+
 def test_kind_is_intruder_on_identity_mismatch(baseline, alert_log):
     ctx = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "unknown": False})
     out = None

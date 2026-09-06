@@ -102,9 +102,11 @@ def test_capture_with_baseline_scores_and_runs_heads(client, tmp_path):
         assert tick["n_keys"] == 40                                      # reset cleared the buffer (40 x 200 ms fits the 10 s window)
         assert tick["distance"] > 3.0
         assert tick["heads"]["threat"]["level"] == "warn"               # one tick is not enough
-        for i in range(1, 3):                                            # sustained -> alert
+        from backend import heads
+        for i in range(1, heads.THREAT_PERSIST):                         # sustained -> alert
             cap.send_json({"type": "events", "events": typed(10, t0=58_000 + i * 2_000, flight=200, hold=150)})
             tick = cap.receive_json()
+            assert tick["n_keys"] >= heads.THREAT_MIN_KEYS
         assert tick["heads"]["threat"]["level"] == "alert" and tick["heads"]["threat"]["kind"] in ("duress", "intruder")
 
 
@@ -188,10 +190,18 @@ def test_identity_head_recognises_and_rejects(client, monkeypatch, tmp_path):
         idn = cap.receive_json()["heads"]["identity"]
         assert idn["user"] == "fast" and idn["unknown"] is False and idn["matches_declared"] is True
         # someone unlike either known typist sits down: classifier still picks one, distance rule says unknown
+        # (80 keys at 350 ms so the 10 s window holds >= UNKNOWN_MIN_KEYS; the rule is gated on window size)
         cap.send_json({"type": "reset"})
-        cap.send_json({"type": "events", "events": typed(40, t0=90_000, flight=600, hold=30)})
-        idn = cap.receive_json()["heads"]["identity"]
+        cap.send_json({"type": "events", "events": typed(80, t0=90_000, flight=350, hold=30)})
+        tick = cap.receive_json()
+        idn = tick["heads"]["identity"]
+        assert tick["n_keys"] >= heads.UNKNOWN_MIN_KEYS
         assert idn["unknown"] is True and idn["distance"] > heads.UNKNOWN_DIST
+        # a thin window (first seconds of a session) is never enough to call someone unknown
+        cap.send_json({"type": "reset"})
+        cap.send_json({"type": "events", "events": typed(10, t0=200_000, flight=350, hold=30)})
+        idn = cap.receive_json()["heads"]["identity"]
+        assert idn["warming_up"] is True and idn["user"] is None and idn["unknown"] is False
 
 
 # ---- state head + API ----

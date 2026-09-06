@@ -18,6 +18,7 @@ export interface IdentityOut {
   confidence?: number;
   distance?: number | null;
   unknown?: boolean | null;
+  warming_up?: boolean;            // too few keys in the window to vote yet
   matches_declared?: boolean;
   probs?: Record<string, number>;
   reason?: string;

@@ -53,4 +53,7 @@ minute per session. The push carries kind, user label, distance and time only.
 
 Baselines are read from `data/baselines/<slug>.json`; build them with
 `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`.
+Retrain identity on 10 s windows, the shape the backend actually scores:
+`uv run python -m pipeline.features <exports...> --windows -o data/features_windows.csv`
+then `uv run python -m pipeline.identity train data/features_windows.csv`.
 The file is re-read when it changes, no restart needed.

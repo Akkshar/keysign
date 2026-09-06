@@ -7,8 +7,14 @@ Open-set decision ("unknown user") is made in the backend head by combining
 the classifier's confidence with the distance to the predicted user's
 baseline; this module only does the closed-set part.
 
-    uv run python -m pipeline.identity train data/features.csv -o data/models/identity.joblib
-    uv run python -m pipeline.identity eval  data/features.csv
+    uv run python -m pipeline.features <exports...> --windows -o data/features_windows.csv
+    uv run python -m pipeline.identity train data/features_windows.csv -o data/models/identity.joblib
+    uv run python -m pipeline.identity eval  data/features_windows.csv
+
+Train on the *windows* file: the backend scores 10 s windows, and a model
+trained on whole 70-key samples misreads short or unusually fast windows
+(measured: Shourya's fast windows were called Utkarsh 17-33% of the time;
+window-trained, held out by sample, that drops to 0-10%).
 
     from pipeline.identity import IdentityModel
     m = IdentityModel.load("data/models/identity.joblib")
@@ -25,7 +31,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.model_selection import GroupKFold, StratifiedKFold, cross_val_predict
 
 from pipeline.features import FEATURE_NAMES
 
@@ -53,7 +59,8 @@ class IdentityModel:
         X = df[self.features].to_numpy(dtype=float)
         y = df["user"].astype(str).to_numpy()
         if evaluate:
-            self.cv_accuracy = cross_val_accuracy(X, y, self.features)
+            groups = df["sample_id"].to_numpy() if "sample_id" in df else None
+            self.cv_accuracy = cross_val_accuracy(X, y, self.features, groups=groups)
         self.clf.fit(X, y)
         self.users = list(self.clf.classes_)
         self.n_train = len(df)
@@ -98,13 +105,21 @@ class IdentityModel:
         return m
 
 
-def cross_val_accuracy(X: np.ndarray, y: np.ndarray, features: list[str], folds: int = 5) -> float:
-    """Stratified k-fold accuracy; k shrinks to the smallest class if needed."""
+def cross_val_accuracy(X: np.ndarray, y: np.ndarray, features: list[str], folds: int = 5,
+                       groups: np.ndarray | None = None) -> float:
+    """
+    Stratified k-fold accuracy; k shrinks to the smallest class if needed.
+    With `groups` (sample ids) and more rows than groups, whole samples are
+    held out together so windows of one sample can't leak into the test fold.
+    """
     counts = pd.Series(y).value_counts()
     k = int(max(2, min(folds, counts.min())))
-    cv = StratifiedKFold(k, shuffle=True, random_state=0)
     clf = RandomForestClassifier(n_estimators=300, random_state=0, class_weight="balanced", n_jobs=-1)
-    pred = cross_val_predict(clf, X, y, cv=cv)
+    if groups is not None and len(set(groups)) < len(groups):
+        k = int(max(2, min(folds, len(set(groups)))))
+        pred = cross_val_predict(clf, X, y, cv=GroupKFold(k), groups=groups)
+    else:
+        pred = cross_val_predict(clf, X, y, cv=StratifiedKFold(k, shuffle=True, random_state=0))
     return float((pred == y).mean())
 
 

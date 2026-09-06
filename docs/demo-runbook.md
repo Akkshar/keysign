@@ -91,11 +91,13 @@ If the State meter stays under 50: A is too calm. Interrupter gets louder,
 A types with both hands faster than comfortable. It lifts within 5 seconds.
 
 **1:30 — Beat 3, chair swap (B, 30 s).** Mid-sentence, B slides in and
-keeps typing the same prompt. Don't touch the user field. Within two
-ticks:
+keeps typing the same prompt. Don't touch the user field. Within about
+two seconds:
 
 - Identity flips to `Shourya` (or UNKNOWN USER if B is stressed), 3-4σ.
-- Threats view: Level 1 Caution, then **DURESS DETECTED** on the third tick;
+- Threats view: Level 1 Caution at once, then **DURESS DETECTED** after
+  three seconds of sustained deviation (six ticks; the first seconds of any
+  session never count, so B must keep typing);
   the duress modal pops on the dashboard (dismiss it, it's the operator's view).
 - The phone buzzes: "KeySign: possible intruder". Hold it up.
 
@@ -142,7 +144,7 @@ on this laptop. Questions."
 | Capture page status "disconnected" | Untick and re-tick **Live**. |
 | Nothing moves when typing | Cursor isn't in the textarea, or Live is off. Click into the box. |
 | Identity says UNKNOWN for A | A is typing far from calm (nervous). Take a breath, type one slow sentence; it settles in 5 s. Or say "and that's the open-set rule working" and move on. |
-| Threat never reaches ALERT | Needs 3 consecutive ticks over 3σ (~2 s of B typing). B keeps typing. |
+| Threat never reaches ALERT | Needs 6 consecutive ticks over 3σ (~3 s) with 25+ keys in the 10 s window. B keeps typing; do not press reset. |
 | Phone silent | Wifi. Say "the alert is in the local log" and open http://localhost:8000/api/alerts. |
 | Anything else | Replay. Capture page → Replay row → pick a sample → Replay. It streams a real recording at its original pace: `Shourya · stress` for the chair swap, `Akkshar Ranjan · calm` to reset. |
 

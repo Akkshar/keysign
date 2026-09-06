@@ -26,13 +26,17 @@ from pipeline.state import StateModel, rule_load
 
 # ---------------------------------------------------------------------------
 # Identity: who is typing? RandomForest (pipeline/identity.py) + open-set rule.
-# Train with:  uv run python -m pipeline.identity train data/features.csv
+# Train with:  uv run python -m pipeline.identity train data/features_windows.csv
 # ---------------------------------------------------------------------------
 MODEL_PATH = ROOT / "data" / "models" / "identity.joblib"
 UNKNOWN_CONF = 0.45      # classifier confidence below this -> unknown
-UNKNOWN_DIST = 2.5       # distance to the predicted user's baseline above this -> unknown
-                         # (measured: own-baseline medians 0.8-1.6, other-people 1.8-4.1)
+UNKNOWN_DIST = 3.0       # distance to the predicted user's baseline above this -> unknown
+                         # (measured on 10 s windows with >= 25 keys: own-baseline p90 2.0-2.6,
+                         # other people's median 2.9-3.6)
 VOTES = 5                # majority vote over the last N ticks so the label doesn't flicker
+IDENTITY_MIN_KEYS = 15   # windows thinner than this don't vote (measured: 8-12-key windows are
+                         # right only 50-90% of the time, 21+ keys 85-100%)
+UNKNOWN_MIN_KEYS = 25    # the distance rule needs a window this big; thin windows sit at 2+ for everyone
 _model_cache: dict[str, tuple[float, IdentityModel]] = {}
 
 
@@ -55,11 +59,19 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     pred = m.predict(features)
     b = load_baseline(pred["user"])
     d = float(b.distance(features)) if b is not None else None
+    n_keys = int(features.get("n_keys", 0))
     st = ctx.setdefault("identity", {"history": []})
-    st["history"] = (st["history"] + [pred["user"]])[-VOTES:]
+    if n_keys >= IDENTITY_MIN_KEYS:
+        st["history"] = (st["history"] + [pred["user"]])[-VOTES:]
+    if not st["history"]:                                   # first ticks of a session: too thin to call
+        return {"user": None, "confidence": round(pred["confidence"], 3),
+                "distance": round(d, 2) if d is not None else None,
+                "unknown": False, "matches_declared": None, "probs": pred["probs"], "votes": {},
+                "warming_up": True, "reason": f"need {IDENTITY_MIN_KEYS} keys in the window to identify"}
     votes = {u: st["history"].count(u) for u in set(st["history"])}
     voted = max(votes, key=votes.get)
-    unknown = pred["confidence"] < UNKNOWN_CONF or (d is not None and d > UNKNOWN_DIST)
+    unknown = (n_keys >= IDENTITY_MIN_KEYS and pred["confidence"] < UNKNOWN_CONF) or \
+              (n_keys >= UNKNOWN_MIN_KEYS and d is not None and d > UNKNOWN_DIST)
     return {
         "user": voted,
         "confidence": round(pred["confidence"], 3),
@@ -68,6 +80,7 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         "matches_declared": voted == ctx.get("user"),
         "probs": pred["probs"],
         "votes": votes,
+        "warming_up": False,
     }
 
 # ---------------------------------------------------------------------------
@@ -78,7 +91,11 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
 # ---------------------------------------------------------------------------
 THREAT_WARN = 2.0            # single-tick distance for "warn"
 THREAT_ALERT = 3.0           # distance that must be sustained for "alert"
-THREAT_PERSIST = 3           # consecutive ticks (>= 1.5 s of typing) above THREAT_ALERT
+THREAT_PERSIST = 6           # consecutive ticks (>= 3 s of typing) above THREAT_ALERT
+THREAT_MIN_KEYS = 25         # windows thinner than this can't count towards an alert: the first seconds
+                             # of any session sit at distance 2-2.5 for everyone (features are noise on
+                             # 8-15 keys). Replaying the team's calm samples: the old 8-key / 3-tick rule
+                             # false-alarmed on 15% of them, this rule on 4%, intruders still 63%.
 THREAT_COOLDOWN_S = 60.0     # minimum gap between pushes per session
 _alert_log_path = None       # tests point this at a temp file
 
@@ -88,7 +105,11 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     if baseline is None:
         return {"level": "none", "kind": None, "reason": "no baseline for this user yet"}
     d = float(baseline.distance(features))
-    st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
+    n_keys = int(features.get("n_keys", 0))
+    if n_keys >= THREAT_MIN_KEYS:
+        st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
+    else:                                     # warm-up: thin windows neither count nor carry over
+        st["hist"] = []
     sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
     others = ctx.get("heads_so_far") or {}
     idn, state = others.get("identity") or {}, others.get("state") or {}
@@ -97,13 +118,14 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
 
     if sustained >= THREAT_PERSIST:
         level = "alert"
-    elif d >= THREAT_WARN or sustained > 0 or mismatch:
-        level = "warn"
+    elif (d >= THREAT_WARN and n_keys >= THREAT_MIN_KEYS) or sustained > 0 or mismatch:
+        level = "warn"                        # a thin window's distance is noise: no warn on it alone
     else:
         level = "ok"
 
     out = {"level": level, "kind": kind if level != "ok" else None, "distance": round(d, 2),
            "sustained_ticks": sustained, "identity_mismatch": mismatch, "load": state.get("load"),
+           "warming_up": n_keys < THREAT_MIN_KEYS,
            "drivers": [[f, round(z, 2)] for f, z in baseline.explain(features, top=2)],
            "alerts_total": st["alerts"], "last_alert": st["last_alert"], "channel": notify.channel()}
 

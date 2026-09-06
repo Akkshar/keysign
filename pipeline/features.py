@@ -17,6 +17,7 @@ Usage from the shell:
     python -m pipeline.features data/samples/keysign_<date>.json
     python -m pipeline.features export.json -o data/features.csv
     python -m pipeline.features a.json b.json "keystrokes (1).json" -o data/features.csv   # merged
+    python -m pipeline.features a.json b.json --windows -o data/features_windows.csv     # 10 s windows, for identity
 
 Feature names are stable and listed in FEATURE_NAMES. Add new features at the
 END of that list so older CSVs stay column-compatible.
@@ -200,6 +201,29 @@ def samples_to_frame(samples: Iterable[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=cols)
 
 
+def windows_to_frame(samples: Iterable[dict], window_ms: float = 10_000, step_ms: float = 2_000,
+                     min_keys: int = 8, include_whole: bool = True) -> pd.DataFrame:
+    """
+    Capture export -> DataFrame with one row per live-shaped window (plus the
+    whole sample when include_whole). Same columns as samples_to_frame, with
+    `sample_id` shared by all windows of a sample so evaluation can hold out
+    whole samples. Train identity on this: the backend scores 10 s windows,
+    and a model trained on whole 70-key samples misreads short/fast windows.
+    """
+    rows = []
+    for i, s in enumerate(samples):
+        meta = {"sample_id": s.get("id", f"sample_{i}"), "user": s.get("user", ""),
+                "condition": s.get("condition", ""), "started_at": s.get("started_at", "")}
+        ev = [e for e in s.get("events", []) if e.get("type") in ("down", "up")]
+        for w in sliding_windows(ev, window_ms, step_ms):
+            if sum(1 for e in w if e["type"] == "down") >= min_keys:
+                rows.append({**meta, **extract_features(w)})
+        if include_whole and ev:
+            rows.append({**meta, **extract_features(ev)})
+    cols = ["sample_id", "user", "condition", "started_at", *FEATURE_NAMES]
+    return pd.DataFrame(rows, columns=cols)
+
+
 def sliding_windows(events: list[dict], window_ms: float = 10_000, step_ms: float = 2_000) -> Iterator[list[dict]]:
     """
     Yield event slices for live use (step 4: the backend streams one feature
@@ -226,6 +250,8 @@ def _main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="KeySign: extract features from a capture export.")
     p.add_argument("input", nargs="+", help="one or more JSON exports from capture/index.html (merged)")
     p.add_argument("-o", "--out", help="write features CSV here")
+    p.add_argument("--windows", action="store_true",
+                   help="one row per 10 s sliding window (live-shaped, for training identity) instead of per sample")
     args = p.parse_args(argv)
 
     samples = []
@@ -238,7 +264,7 @@ def _main(argv: list[str] | None = None) -> int:
         print("No samples in file.", file=sys.stderr)
         return 1
 
-    df = samples_to_frame(samples)
+    df = windows_to_frame(samples) if args.windows else samples_to_frame(samples)
 
     pd.set_option("display.width", 160)
     pd.set_option("display.float_format", lambda x: f"{x:8.1f}")

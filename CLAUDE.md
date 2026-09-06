@@ -89,7 +89,10 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
   older ones. `data/samples/all_new_page.json` is the merged, de-duplicated,
   name-normalised file. Re-run when more samples land:
   `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json -o data/features.csv`
-  then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`.
+  then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`,
+  then retrain identity on live-shaped windows (NOT on features.csv):
+  `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json --windows -o data/features_windows.csv`
+  and `uv run python -m pipeline.identity train data/features_windows.csv`.
 - **h0-h7 — live stream end-to-end.** DONE: backend, dashboard, capture Live
   mode, and all four heads (Identity, State, Threat live; Drift chart).
   Demo script: `docs/demo-runbook.md`.

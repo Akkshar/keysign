@@ -155,7 +155,8 @@ function deriveFromTick(tick: Tick, declared: string, baselineDoc: BaselineDoc |
   const profile: UserProfile = {
     id: slug(name || 'unknown'),
     name: idn?.unknown ? 'UNKNOWN USER' : name,
-    role: idn?.unknown ? `Does not match anyone enrolled (closest: ${idn?.user})`
+    role: idn?.warming_up ? 'Identifying · keep typing'
+      : idn?.unknown ? `Does not match anyone enrolled (closest: ${idn?.user})`
       : idn && idn.matches_declared === false ? `Typing under ${declared || tick.user}'s name`
       : 'Enrolled · baseline on this device',
     title: d == null ? 'No baseline for the declared user yet'

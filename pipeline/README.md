@@ -53,6 +53,8 @@ and the pitch ("identity holds at 51 users, not just our four").
 
     uv run python -m pipeline.baseline build data/features.csv -o data/baselines   # one JSON per user
     uv run python -m pipeline.baseline score data/baselines/<user>.json data/features.csv
+    uv run python -m pipeline.features <exports...> --windows -o data/features_windows.csv  # 10 s windows
+    uv run python -m pipeline.identity train data/features_windows.csv               # identity model
 
 - `build_baseline(df, user)` — per-feature median and MAD (x1.4826) from the
   user's calm rows. Scale is floored so constant features can't explode.
