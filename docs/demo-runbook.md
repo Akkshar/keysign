@@ -143,6 +143,7 @@ on this laptop. Questions."
 | Dashboard pill says "No backend on :8000" | Terminal 2 died. Restart `uv run python -m backend --no-reload`; the dashboard reconnects on its own. |
 | Capture page status "disconnected" | Untick and re-tick **Live**. |
 | Nothing moves when typing | Cursor isn't in the textarea, or Live is off. Click into the box. |
+| Stranger is called a teammate | The distance rule passes people whose timing sits inside that teammate's calm spread. Fix after the demo: `uv run python -m backend.sessions export` their recording as `Stranger N`, merge into `data/samples/strangers.json`, rebuild windows, retrain. |
 | Identity says UNKNOWN for A | A is typing far from calm (nervous). Take a breath, type one slow sentence; it settles in 5 s. Or say "and that's the open-set rule working" and move on. |
 | Threat never reaches ALERT | Needs 6 consecutive ticks over 3σ (~3 s) with 25+ keys in the 10 s window. B keeps typing; do not press reset. |
 | Phone silent | Wifi. Say "the alert is in the local log" and open http://localhost:8000/api/alerts. |

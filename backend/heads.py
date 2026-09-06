@@ -27,6 +27,7 @@ from pipeline.state import StateModel, rule_load
 # ---------------------------------------------------------------------------
 # Identity: who is typing? RandomForest (pipeline/identity.py) + open-set rule.
 # Train with:  uv run python -m pipeline.identity train data/features_windows.csv
+# (build that CSV from the enrolment exports PLUS data/samples/strangers.json, see CLAUDE.md)
 # ---------------------------------------------------------------------------
 MODEL_PATH = ROOT / "data" / "models" / "identity.joblib"
 UNKNOWN_CONF = 0.45      # classifier confidence below this -> unknown
@@ -34,6 +35,14 @@ UNKNOWN_DIST = 3.0       # distance to the predicted user's baseline above this 
                          # (measured on 10 s windows with >= 25 keys: own-baseline p90 2.0-2.6,
                          # other people's median 2.9-3.6)
 VOTES = 5                # majority vote over the last N ticks so the label doesn't flicker
+NON_USER_PREFIX = "stranger"   # classes named "Stranger ..." are known NON-users: people recorded on
+                               # the dashboard (backend/sessions.py export) whose typing sits inside a
+                               # teammate's calm spread, so the distance rule can't reject them. The
+                               # classifier learns them as their own class and the head reports unknown.
+
+
+def is_non_user(name: str | None) -> bool:
+    return bool(name) and name.strip().lower().startswith(NON_USER_PREFIX)
 IDENTITY_MIN_KEYS = 15   # windows thinner than this don't vote (measured: 8-12-key windows are
                          # right only 50-90% of the time, 21+ keys 85-100%)
 UNKNOWN_MIN_KEYS = 25    # the distance rule needs a window this big; thin windows sit at 2+ for everyone
@@ -70,10 +79,14 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
                 "warming_up": True, "reason": f"need {IDENTITY_MIN_KEYS} keys in the window to identify"}
     votes = {u: st["history"].count(u) for u in set(st["history"])}
     voted = max(votes, key=votes.get)
-    unknown = (n_keys >= IDENTITY_MIN_KEYS and pred["confidence"] < UNKNOWN_CONF) or \
+    enrolled = {u: p for u, p in pred["probs"].items() if not is_non_user(u)}
+    closest = max(enrolled, key=enrolled.get) if enrolled else None
+    unknown = is_non_user(voted) or \
+              (n_keys >= IDENTITY_MIN_KEYS and pred["confidence"] < UNKNOWN_CONF) or \
               (n_keys >= UNKNOWN_MIN_KEYS and d is not None and d > UNKNOWN_DIST)
     return {
         "user": voted,
+        "closest": closest,                      # nearest enrolled teammate (differs from user for a known non-user)
         "confidence": round(pred["confidence"], 3),
         "distance": round(d, 2) if d is not None else None,
         "unknown": bool(unknown),

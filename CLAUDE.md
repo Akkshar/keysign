@@ -90,9 +90,17 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
   name-normalised file. Re-run when more samples land:
   `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json -o data/features.csv`
   then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`,
-  then retrain identity on live-shaped windows (NOT on features.csv):
-  `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json --windows -o data/features_windows.csv`
+  then retrain identity on live-shaped windows (NOT on features.csv), including
+  the known non-users file:
+  `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json data/samples/strangers.json --windows -o data/features_windows.csv`
   and `uv run python -m pipeline.identity train data/features_windows.csv`.
+  `data/samples/strangers.json` holds people recorded on the dashboard whose
+  typing sits inside a teammate's calm spread (one so far, "Stranger 1", the
+  third party who kept being called Utkarsh). The identity head reports any
+  class named "Stranger ..." as unknown. Add another with
+  `uv run python -m backend.sessions export data/sessions/<file>.jsonl --user "Stranger 2" -o data/samples/stranger2.json`
+  and merge into strangers.json. Strangers never go into features.csv, so
+  they get no baseline.
   Every live session is recorded to `data/sessions/` (see `backend/sessions.py`):
   when the demo misjudges someone, their typing is already on disk to score or
   export, no separate recording needed.

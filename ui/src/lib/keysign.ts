@@ -15,6 +15,7 @@ export const CAPTURE_WS = (import.meta as any).env?.VITE_KEYSIGN_CAPTURE_WS || '
 
 export interface IdentityOut {
   user: string | null;
+  closest?: string | null;         // nearest enrolled teammate (user may be a known non-user class)
   confidence?: number;
   distance?: number | null;
   unknown?: boolean | null;

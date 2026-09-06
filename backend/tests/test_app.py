@@ -238,6 +238,28 @@ def test_identity_head_recognises_and_rejects(client, monkeypatch, tmp_path):
 
 # ---- state head + API ----
 
+def test_known_non_user_class_is_reported_unknown(client, monkeypatch, tmp_path):
+    """A class named 'Stranger ...' (someone recorded on the dashboard, not enrolled) -> unknown,
+    with the nearest real teammate in `closest`."""
+    import pandas as pd
+    from backend import heads
+    from pipeline.identity import IdentityModel
+    rows = []
+    rng = np.random.default_rng(2)
+    for user, (fl, ho) in {"fast": (110, 55), "Stranger 1": (150, 90), "slow": (260, 140)}.items():
+        for _ in range(15):
+            rows.append({"user": user, **backend.extract_features(typed(40, flight=fl + rng.normal(0, 6), hold=ho + rng.normal(0, 4)))})
+    IdentityModel().fit(pd.DataFrame(rows), evaluate=False).save(tmp_path / "identity.joblib")
+    monkeypatch.setattr(heads, "MODEL_PATH", tmp_path / "identity.joblib"); heads._model_cache.clear()
+    assert heads.is_non_user("Stranger 1") and heads.is_non_user("stranger") and not heads.is_non_user("Utkarsh")
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "fast", "session": "s6"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(40, flight=150, hold=90)})
+        idn = cap.receive_json()["heads"]["identity"]
+        assert idn["user"] == "Stranger 1" and idn["unknown"] is True and idn["matches_declared"] is False
+        assert idn["closest"] in ("fast", "slow")
+
+
 def test_state_head_rule_fallback_smooths_and_advises(client, tmp_path, monkeypatch):
     from backend import heads
     monkeypatch.setattr(heads, "STATE_MODEL_PATH", tmp_path / "missing.joblib")

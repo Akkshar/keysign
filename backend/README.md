@@ -40,7 +40,9 @@ Keep state in `ctx["identity"]`. Your dict shows up in `tick["heads"]["identity"
 on the dashboard. A head that raises is reported as `{"error": ...}` and the
 stream keeps going, so you cannot break someone else's demo.
 
-Three heads are in there: `identity` (RandomForest + open-set rule), `state`
+Three heads are in there: `identity` (RandomForest + open-set rule; classes
+named `Stranger ...` are known non-users recorded on the dashboard and are
+reported as unknown), `state`
 (directional load score, see pipeline/README.md) and `threat` (sustained
 deviation, classified as intruder or duress using the other two).
 
