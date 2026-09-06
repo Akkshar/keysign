@@ -30,7 +30,11 @@ from pipeline.state import StateModel, rule_load
 # (build that CSV from the enrolment exports PLUS data/samples/strangers.json, see CLAUDE.md)
 # ---------------------------------------------------------------------------
 MODEL_PATH = ROOT / "data" / "models" / "identity.joblib"
-UNKNOWN_CONF = 0.45      # classifier confidence below this -> unknown
+UNKNOWN_CONF = 0.70      # classifier confidence below this on most of the last VOTES windows -> unknown.
+                         # Measured on the recorded turns (5-window majority): a stranger who was
+                         # called Akshaj at 84% is flagged 90% of the time at 0.70, at a cost of 8% of
+                         # Akkshar's windows and none of the others'. 0.85 would flag him 100% but also
+                         # Utkarsh 74%, Akshaj 23%, Akkshar 18% of the time.
 UNKNOWN_DIST = 3.0       # distance to the predicted user's baseline above this -> unknown
                          # (measured on 10 s windows with >= 25 keys: own-baseline p90 2.0-2.6,
                          # other people's median 2.9-3.6)
@@ -72,6 +76,7 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     st = ctx.setdefault("identity", {"history": []})
     if n_keys >= IDENTITY_MIN_KEYS:
         st["history"] = (st["history"] + [pred["user"]])[-VOTES:]
+        st["low_conf"] = (st.get("low_conf", []) + [pred["confidence"] < UNKNOWN_CONF])[-VOTES:]
     if not st["history"]:                                   # first ticks of a session: too thin to call
         return {"user": None, "confidence": round(pred["confidence"], 3),
                 "distance": round(d, 2) if d is not None else None,
@@ -81,8 +86,9 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     voted = max(votes, key=votes.get)
     enrolled = {u: p for u, p in pred["probs"].items() if not is_non_user(u)}
     closest = max(enrolled, key=enrolled.get) if enrolled else None
-    unknown = is_non_user(voted) or \
-              (n_keys >= IDENTITY_MIN_KEYS and pred["confidence"] < UNKNOWN_CONF) or \
+    lc = st.get("low_conf", [])
+    low_conf = len(lc) >= 2 and sum(lc) * 2 > len(lc)            # most of the recent windows under UNKNOWN_CONF
+    unknown = is_non_user(voted) or low_conf or \
               (n_keys >= UNKNOWN_MIN_KEYS and d is not None and d > UNKNOWN_DIST)
     return {
         "user": voted,
@@ -90,6 +96,7 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         "confidence": round(pred["confidence"], 3),
         "distance": round(d, 2) if d is not None else None,
         "unknown": bool(unknown),
+        "low_confidence": bool(low_conf),
         "matches_declared": voted == ctx.get("user"),
         "probs": pred["probs"],
         "votes": votes,

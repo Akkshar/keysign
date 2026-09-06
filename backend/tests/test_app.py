@@ -246,6 +246,14 @@ def test_identity_head_recognises_and_rejects(client, monkeypatch, tmp_path):
         cap.send_json({"type": "events", "events": typed(10, t0=200_000, flight=350, hold=30)})
         idn = cap.receive_json()["heads"]["identity"]
         assert idn["warming_up"] is True and idn["user"] is None and idn["unknown"] is False
+        # someone between the two known typists: the classifier is unsure on most windows -> unknown
+        cap.send_json({"type": "reset"})
+        monkeypatch.setattr(heads, "UNKNOWN_CONF", 0.9)       # the two-typist toy model is never very unsure
+        out = []
+        for i in range(3):
+            cap.send_json({"type": "events", "events": typed(40, t0=300_000 + i * 8_000, flight=185, hold=97)})
+            out.append(cap.receive_json()["heads"]["identity"])
+        assert out[-1]["confidence"] < heads.UNKNOWN_CONF and out[-1]["low_confidence"] is True and out[-1]["unknown"] is True
 
 
 # ---- state head + API ----
