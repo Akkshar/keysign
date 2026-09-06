@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { BiometricsProvider, useBiometrics } from './context/BiometricsContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -15,11 +15,14 @@ import { StateView } from './views/StateView';
 import { ThreatsView } from './views/ThreatsView';
 import { DriftView } from './views/DriftView';
 import { DuressModal } from './components/telemetry/DuressModal';
+import { ShootingStars } from './components/motion/ShootingStars';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MainContent: React.FC = () => {
   const { activeArea, onKeyAction } = useBiometrics();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   // Global keystroke listener: typing anywhere on the site interacts with the 3D typewriter and telemetry.
   // The timings also stream to the local backend (see BiometricsContext), which is what the heads score.
@@ -70,6 +73,18 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-body theme-transition flex relative overflow-x-hidden">
+      {/* Ambient shooting stars (Aceternity) across every page; pointer-events off so nothing under it changes */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <ShootingStars
+          minSpeed={14}
+          maxSpeed={30}
+          minDelay={1200}
+          maxDelay={3600}
+          starColor={isDark ? '#38bdf8' : '#6366f1'}
+          trailColor={isDark ? '#818cf8' : '#a5b4fc'}
+        />
+      </div>
+
       {/* Ambient Misty Vintage Typewriter Watermark Layer */}
       <TypewriterWatermark />
 

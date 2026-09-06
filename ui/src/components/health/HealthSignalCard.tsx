@@ -5,12 +5,13 @@ export interface HealthCondition {
   id: string;
   name: string;
   nameLine2?: string;
-  status: 'Stable' | 'Monitor' | 'Observation';
+  status: 'Stable' | 'Observation Suggested' | 'Monitor' | 'Observation';
   iconSvg: React.ReactNode;
   iconBgClass: string;
   iconTextClass: string;
   iconBorderClass: string;
   description: string;
+  clinicalNotice?: string;
   biomarkers: string[];
   sampleDriftPct: string;
 }
@@ -21,7 +22,7 @@ interface HealthSignalCardProps {
 }
 
 export const HealthSignalCard: React.FC<HealthSignalCardProps> = ({ condition, onClick }) => {
-  const isMonitor = condition.status === 'Monitor' || condition.status === 'Observation';
+  const isMonitor = condition.status === 'Monitor' || condition.status === 'Observation' || condition.status === 'Observation Suggested';
 
   return (
     <motion.div
@@ -62,7 +63,7 @@ export const HealthSignalCard: React.FC<HealthSignalCardProps> = ({ condition, o
                 : 'text-slate-600 dark:text-slate-300'
             }`}
           >
-            Roadmap
+            {condition.status}
           </span>
         </div>
         <span className="text-xs text-slate-300 dark:text-slate-600 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-transform">

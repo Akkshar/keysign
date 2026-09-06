@@ -25,8 +25,8 @@ export const MedicalDisclaimer: React.FC<MedicalDisclaimerProps> = ({ onLearnMor
             strokeLinejoin="round"
           />
         </svg>
-        <span>
-          These signals are for screening and monitoring only. They do not provide a medical diagnosis.
+        <span className="leading-normal">
+          <strong className="font-semibold text-slate-700 dark:text-slate-200">Screening Notice:</strong> KeySign provides behavioral timing signals only and does not diagnose any disease or condition. If you detect persistent changes, please consult a licensed physician or neurologist for clinical testing.
         </span>
       </div>
       <button

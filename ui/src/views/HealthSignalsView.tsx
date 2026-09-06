@@ -32,10 +32,10 @@ export const HealthSignalsView: React.FC = () => {
           </span>
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-slate-900 dark:text-slate-100">
-          Health Signals
+          Health Signals & Screening
         </h1>
         <p className="font-body text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          Continuous passive monitoring extracts micro-variations in finger release speed, hold duration entropy, and flight hesitation without recording message contents.
+          Continuous non-invasive screening extracts micro-variations in finger release speed, hold duration entropy, and flight hesitation. KeySign does not diagnose disease; any identified fluctuations indicate potential timing shifts that should be evaluated through formal clinical testing with a healthcare provider.
         </p>
       </div>
 
@@ -237,6 +237,20 @@ export const HealthSignalsView: React.FC = () => {
                   <span>Baseline Calibration</span>
                   <span>Today</span>
                 </div>
+              </div>
+
+              {/* Clinical Advisory & Actionable Recommendation Banner */}
+              <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 leading-relaxed space-y-1.5">
+                <div className="flex items-center gap-2 font-semibold">
+                  <span className="material-symbols-outlined text-[17px] text-amber-600 dark:text-amber-400">
+                    medical_information
+                  </span>
+                  <span>Non-Diagnostic Screening Guidance</span>
+                </div>
+                <p>
+                  {selectedCondition.clinicalNotice ||
+                    'KeySign detects sub-clinical timing variations and does NOT diagnose any disease. If deviations persist or you experience noticeable symptoms, we strongly suggest consulting a licensed medical doctor or neurologist for formal clinical testing.'}
+                </p>
               </div>
 
               {/* Scientific Grounding Note */}

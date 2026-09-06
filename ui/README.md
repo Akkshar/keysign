@@ -1,7 +1,12 @@
 # ui
 
 The demo dashboard: React + TypeScript + Tailwind + Three.js, designed by the
-team, wired to the live KeySign backend.
+team, wired to the live KeySign backend. Motion: Framer Motion for view and
+gauge transitions, GSAP for the `StrokeText` outline trace, React Bits
+`LineSidebar` (pointer-proximity navigation), Aceternity `ShootingStars`,
+`CardSpotlight`, `HoverBorderGradient`, `BackgroundLines` and
+`TextGenerateEffect` (all local copies under `src/components/motion`).
+Design tokens: `figma-tokens.json`.
 
     npm install          # once
     npm run dev          # http://localhost:5173 (localhost only, on purpose)

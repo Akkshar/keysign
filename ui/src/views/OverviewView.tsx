@@ -1,14 +1,18 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useBiometrics } from '../context/BiometricsContext';
+import { useTheme } from '../context/ThemeContext';
 import { Interactive3DTypewriter } from '../components/3d/Interactive3DTypewriter';
 import { StabilityCard } from '../components/health/StabilityCard';
 import { HealthSignalCard } from '../components/health/HealthSignalCard';
 import { MedicalDisclaimer } from '../components/health/MedicalDisclaimer';
 import { mockHealthConditions } from '../data/healthConditions';
+import { StrokeText } from '../components/motion/StrokeText';
 
 export const OverviewView: React.FC = () => {
   const { setActiveArea } = useBiometrics();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
     <div className="flex flex-col w-full gap-8 lg:gap-10 pb-12 select-none">
@@ -29,12 +33,24 @@ export const OverviewView: React.FC = () => {
               <span>Neurological & Mental Health Behavioral Biomarkers</span>
             </div>
 
+            <div className="w-52 sm:w-64 -ml-1">
+              <StrokeText
+                text="KEYSIGN"
+                fontSize={38}
+                strokeColor={isDark ? '#38bdf8' : '#4f46e5'}
+                fillColor={isDark ? '#e0f2fe' : '#312e81'}
+                strokeWidth={1.5}
+                drawDuration={1.2}
+                fillMode="wipe"
+              />
+            </div>
+
             <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-slate-900 dark:text-slate-100 leading-[1.15]">
               More than words.
             </h1>
 
             <p className="font-body text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-              We analyze your typing patterns to detect early signs of neurological and mental health changes — privately, continuously and in real time.
+              We screen subtle variations in typing kinetics to highlight potential motor and cognitive patterns — privately and in real time, so you can consult a physician early.
             </p>
 
             <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 font-body">
@@ -103,10 +119,10 @@ export const OverviewView: React.FC = () => {
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <h2 className="font-serif text-lg font-medium text-slate-900 dark:text-slate-100">
-                Research roadmap · candidate signals
+                Monitored Screening Signals
               </h2>
               <span className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-                (illustrative · not computed from your data)
+                (roadmap · illustrative, not computed from your data)
               </span>
             </div>
             <button
@@ -127,6 +143,10 @@ export const OverviewView: React.FC = () => {
               />
             ))}
           </div>
+
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 italic px-1">
+            * Screening signals indicate statistical timing fluctuations. They are not medical diagnoses. If unusual patterns persist, formal clinical testing with a healthcare professional is strongly recommended.
+          </p>
         </div>
       </section>
 
