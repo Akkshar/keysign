@@ -81,21 +81,21 @@ Four heads consume the same features. Only the question differs:
 Status at the start of the clock: steps 1-3 of the build order are DONE and
 pushed (capture page, feature extractor, baseline builder, 28 tests, four
 public datasets converted). The team starts from a working core, not zero.
-Review hours below are assumptions (R1 ~h12, R2 ~h30, R3 = final ~h48);
-shift the blocks if the real times differ.
+Clock started 2026-09-06 ~15:00 IST. R1 is at ~22:00 IST the same day (h7).
+R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
 
-- **h0-h2 — data sprint, everyone.** Each person records 20 calm + 10 stress
-  samples on the capture page, same laptop and keyboard each time. Stress =
-  20 s timer + someone interrupting. Export, commit nothing, drop the JSON in
-  `data/samples/`. Measured: 5 samples per person is too few for a baseline,
-  20 is comfortable. This is the cheapest accuracy we will ever buy.
-- **h0-h10 — live stream end-to-end (backend + dashboard skeleton).** Capture
-  page streams events over a WebSocket, backend windows them, extracts
-  features, scores against the person's baseline, dashboard shows distance
-  and features moving in real time. NOBODY starts a head until this works.
-- **R1 (~h12) — show:** live dashboard reacting to typing, baseline distance
-  moving, plus the benchmark slide (identity 92% on 4 teammates, 51-user CMU
-  benchmark, four datasets). Message: "the sensing works, the heads are next."
+- **h0-h1 — data sprint, everyone.** DONE: 91 samples on the new page
+  (20/10 for Akkshar, 10/10 Shourya, 10/10 Utkarsh, 7/14 Akshaj) plus the 40
+  older ones. `data/samples/all_new_page.json` is the merged, de-duplicated,
+  name-normalised file. Re-run when more samples land:
+  `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json -o data/features.csv`
+  then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`.
+- **h0-h7 — live stream end-to-end.** DONE (backend + dashboard + capture
+  Live mode). Identity head in progress.
+- **R1 (22:00, h7) — show:** live dashboard reacting to typing, chair swap
+  making the distance jump, plus the benchmark slide (identity accuracy on 4
+  teammates, 51-user CMU benchmark, four datasets). Message: "the sensing
+  works, the heads are next."
 - **h12-h28 — one head per person, in parallel.** Each head is a function
   `head(features, baseline, ctx) -> dict` plugged into the backend, plus its
   dashboard panel. Priorities, in order: Identity (open-set: classifier +

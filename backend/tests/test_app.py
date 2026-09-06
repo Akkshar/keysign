@@ -138,3 +138,46 @@ def test_broken_head_does_not_kill_stream(client):
             assert tick["status"] == "ok" and "error" in tick["heads"]["bad"]
     finally:
         backend.HEADS.pop("bad", None)
+
+
+# ---- identity head ----
+
+def test_identity_head_without_model_reports_reason(client, monkeypatch, tmp_path):
+    from backend import heads
+    monkeypatch.setattr(heads, "MODEL_PATH", tmp_path / "missing.joblib")
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "u", "session": "s4"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(30)})
+        tick = cap.receive_json()
+        assert tick["heads"]["identity"]["user"] is None and "no identity model" in tick["heads"]["identity"]["reason"]
+
+
+def test_identity_head_recognises_and_rejects(client, monkeypatch, tmp_path):
+    import pandas as pd
+    from backend import heads
+    from pipeline.identity import IdentityModel
+    # two synthetic typists: fast/short holds vs slow/long holds
+    rows = []
+    rng = np.random.default_rng(1)
+    for user, (fl, ho) in {"fast": (110, 55), "slow": (260, 140)}.items():
+        for _ in range(15):
+            f = backend.extract_features(typed(40, flight=fl + rng.normal(0, 8), hold=ho + rng.normal(0, 5)))
+            rows.append({"user": user, "condition": "calm", **f})
+    df = pd.DataFrame(rows)
+    IdentityModel().fit(df, evaluate=False).save(tmp_path / "identity.joblib")
+    monkeypatch.setattr(heads, "MODEL_PATH", tmp_path / "identity.joblib")
+    heads._model_cache.clear()
+    # baseline for "fast" so the open-set distance rule has something to compare with
+    from pipeline.baseline import build_baseline
+    build_baseline(df, "fast").save(tmp_path / "fast.json")
+    build_baseline(df, "slow").save(tmp_path / "slow.json")
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "fast", "session": "s5"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(40, flight=110, hold=55)})
+        idn = cap.receive_json()["heads"]["identity"]
+        assert idn["user"] == "fast" and idn["unknown"] is False and idn["matches_declared"] is True
+        # someone unlike either known typist sits down: classifier still picks one, distance rule says unknown
+        cap.send_json({"type": "reset"})
+        cap.send_json({"type": "events", "events": typed(40, t0=90_000, flight=600, hold=30)})
+        idn = cap.receive_json()["heads"]["identity"]
+        assert idn["unknown"] is True and idn["distance"] > heads.UNKNOWN_DIST

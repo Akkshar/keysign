@@ -29,3 +29,6 @@ data/external/*
 
 # Personal baselines are derived from personal data
 data/baselines/
+
+# Trained models (derived from personal data)
+data/models/
