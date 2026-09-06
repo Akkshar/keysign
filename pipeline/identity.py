@@ -80,14 +80,22 @@ class IdentityModel:
 
     # ---- persistence ----
     def save(self, path: Path | str = DEFAULT_MODEL_PATH) -> Path:
+        # Store plain parts, not this object: a pickled IdentityModel instance
+        # records the class under whatever module trained it (__main__ when run
+        # as a script) and then fails to load inside the server.
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self, path)
+        joblib.dump({"clf": self.clf, "features": self.features, "users": self.users, "n_train": self.n_train,
+                     "cv_accuracy": self.cv_accuracy, "trained_at": self.trained_at}, path)
         return path
 
     @classmethod
     def load(cls, path: Path | str = DEFAULT_MODEL_PATH) -> "IdentityModel":
-        return joblib.load(path)
+        d = joblib.load(path)
+        m = cls(features=d["features"])
+        m.clf, m.users, m.n_train = d["clf"], list(d["users"]), int(d["n_train"])
+        m.cv_accuracy, m.trained_at = d.get("cv_accuracy"), d.get("trained_at", "")
+        return m
 
 
 def cross_val_accuracy(X: np.ndarray, y: np.ndarray, features: list[str], folds: int = 5) -> float:
