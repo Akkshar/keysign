@@ -184,7 +184,7 @@
 <script>
 (() => {
   'use strict';
-  const PAGE_VERSION = 'capture-1.1';
+  const PAGE_VERSION = 'capture-1.2';
   const STORE_KEY = 'keysign.samples.v1';
   const PREF_KEY = 'keysign.prefs.v1';
   const MIN_KEYDOWNS = 10;
@@ -370,7 +370,12 @@
   });
   el.box.addEventListener('paste', e => e.preventDefault());
   el.box.addEventListener('drop', e => e.preventDefault());
-  el.box.addEventListener('blur', () => { if (recording) { blurCount++; setStatus(`recording… (focus lost ${blurCount}×, click back in)`, true); } });
+  el.box.addEventListener('blur', () => {
+    if (!recording) return;
+    setTimeout(() => {              // a click on Save/Discard blurs first; don't count that
+      if (recording && document.activeElement !== el.box) { blurCount++; setStatus(`recording… (focus lost ${blurCount}×, click back in)`, true); }
+    }, 400);
+  });
   el.box.addEventListener('focus', () => { if (recording) setStatus('recording… type the prompt, then Save', true); });
 
   // ---------- live stream to the local backend ----------

@@ -16,6 +16,7 @@ Usage as a library:
 Usage from the shell:
     python -m pipeline.features data/samples/keysign_<date>.json
     python -m pipeline.features export.json -o data/features.csv
+    python -m pipeline.features a.json b.json "keystrokes (1).json" -o data/features.csv   # merged
 
 Feature names are stable and listed in FEATURE_NAMES. Add new features at the
 END of that list so older CSVs stay column-compatible.
@@ -223,13 +224,17 @@ def sliding_windows(events: list[dict], window_ms: float = 10_000, step_ms: floa
 
 def _main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="KeySign: extract features from a capture export.")
-    p.add_argument("input", help="JSON export from capture/index.html")
+    p.add_argument("input", nargs="+", help="one or more JSON exports from capture/index.html (merged)")
     p.add_argument("-o", "--out", help="write features CSV here")
     args = p.parse_args(argv)
 
-    with open(args.input, encoding="utf-8") as fh:
-        samples = json.load(fh)
-    if not isinstance(samples, list) or not samples:
+    samples = []
+    for path in args.input:
+        with open(path, encoding="utf-8") as fh:
+            part = json.load(fh)
+        if isinstance(part, list):
+            samples += part
+    if not samples:
         print("No samples in file.", file=sys.stderr)
         return 1
 
