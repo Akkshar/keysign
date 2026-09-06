@@ -104,7 +104,8 @@ def list_baselines() -> list[dict]:
     for p in sorted(BASELINE_DIR.glob("*.json")) if BASELINE_DIR.exists() else []:
         try:
             b = Baseline.load(p)
-            out.append({"user": b.user, "n_samples": b.n_samples, "condition": b.condition, "created_at": b.created_at})
+            out.append({"user": b.user, "n_samples": b.n_samples, "condition": b.condition, "created_at": b.created_at,
+                        "open_set_threshold": b.open_set_threshold})
         except Exception:
             continue
     return out
@@ -207,7 +208,9 @@ def index():
 @app.get("/health")
 def health():
     return {"ok": True, "sessions": len(sessions), "dashboards": len(dashboards),
-            "heads": list(HEADS), "window_s": WINDOW_S}
+            "heads": list(HEADS), "window_s": WINDOW_S,
+            # which baselines carry an open-set calibration (written by `pipeline.identity train`)
+            "open_set_calibrated": {b["user"]: b.get("open_set_threshold") for b in list_baselines()}}
 
 
 @app.get("/api/users")

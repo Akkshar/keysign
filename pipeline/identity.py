@@ -47,8 +47,11 @@ IDENTITY_FEATURES: list[str] = [f for f in FEATURE_NAMES
 DEFAULT_MODEL_PATH = Path("data/models/identity.joblib")
 DEFAULT_BASELINE_DIR = Path("data/baselines")
 OPEN_SET_MIN_KEYS = 25          # calibrate on windows at least this big (the backend gates the rule the same way)
-OPEN_SET_FALSE_RATE = 0.05      # threshold = the user's own score at this quantile from the top
-OPEN_SET_THRESHOLD_RANGE = (2.2, 3.5)
+OPEN_SET_FALSE_RATE = 0.10      # threshold = the user's own score at this quantile from the top.
+                                # Per window; the head majority-votes 5 windows, so the shown false-unknown
+                                # rate is far lower. Held-out strangers flagged: p95 87% (worst pair 31%),
+                                # p90 92% (worst pair 62%).
+OPEN_SET_THRESHOLD_RANGE = (2.0, 3.5)
 
 
 class IdentityModel:
@@ -186,7 +189,7 @@ def train(features_csv: Path | str, out: Path | str = DEFAULT_MODEL_PATH, min_sa
         print(f"  skipped (fewer than {min_samples} samples): {', '.join(dropped)}")
     thresholds = calibrate_open_set(m, df, baselines)
     if thresholds:
-        print("  open-set thresholds (weighted distance, own p95): " +
+        print(f"  open-set thresholds (weighted distance, own p{int((1 - OPEN_SET_FALSE_RATE) * 100)}): " +
               ", ".join(f"{u} {t:.2f}" for u, t in thresholds.items()))
     return m
 
