@@ -25,7 +25,9 @@
         "--reload-dir",
         "backend",
         "--reload-dir",
-        "pipeline"
+        "pipeline",
+        "--reload-exclude",
+        "*/tests/*"
       ],
       "port": 8000
     },
