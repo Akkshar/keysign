@@ -31,6 +31,23 @@ occur are filled with the sample's mean flight so vectors stay dense.
 
 Input contract: `docs/data-format.md`.
 
+## External datasets (`datasets.py`)  — done
+
+Three public datasets converted into the same sample shape (see
+`data/external/README.md` for what each one is):
+
+    uv run python -m pipeline.datasets --stage ~/Downloads   # extract from archive*.zip
+    uv run python -m pipeline.datasets                        # -> data/external/<name>_{samples.json,features.csv}
+
+| name            | samples | users | labels                    | use                     |
+|-----------------|---------|-------|---------------------------|-------------------------|
+| cmu_password    | 20,400  | 51    | user, session 1-8         | Identity benchmark      |
+| tie5_raw        | 721     | 6     | user, session             | Identity, extra users   |
+| stress_logger   | 74      | 2     | stress/fatigue/energy/PAM | State head, Drift chart |
+
+Our own captures stay the primary data; these are for pretraining, benchmarks
+and the pitch ("identity holds at 51 users, not just our four").
+
 ## Step 3: baseline (`baseline.py`)  — next
 
 Aggregate a user's calm samples into per-feature mean/std (robust: median/MAD),
