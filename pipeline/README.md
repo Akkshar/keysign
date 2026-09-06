@@ -44,6 +44,7 @@ Three public datasets converted into the same sample shape (see
 | cmu_password    | 20,400  | 51    | user, session 1-8         | Identity benchmark      |
 | tie5_raw        | 721     | 6     | user, session             | Identity, extra users   |
 | stress_logger   | 74      | 2     | stress/fatigue/energy/PAM | State head, Drift chart |
+| monkeytype      | 15,003 tests | 22 | wpm/acc/consistency over months | Drift chart only (no events) |
 
 Our own captures stay the primary data; these are for pretraining, benchmarks
 and the pitch ("identity holds at 51 users, not just our four").

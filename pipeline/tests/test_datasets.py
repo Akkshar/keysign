@@ -120,3 +120,33 @@ def test_real_stress_logger():
     assert df["user"].nunique() == 2
     assert set(df["condition"]) == {"calm", "stress"}
     assert df["hold_mean"].between(20, 400).all()
+
+
+# ---- monkeytype (drift-only, no events) ----
+
+def test_monkeytype_loader_and_weekly(tmp_path):
+    from pipeline.datasets import load_monkeytype, monkeytype_weekly, MONKEYTYPE_COLS
+    cols = "_id,isPb,wpm,acc,rawWpm,consistency,charStats,mode,mode2,quoteLength,restartCount,testDuration,afkDuration,incompleteTestSeconds,punctuation,numbers,language,funbox,difficulty,lazyMode,blindMode,bailedOut,tags,timestamp"
+    base = 1_706_000_000_000
+    lines = [cols]
+    for i in range(20):
+        lines.append(f"id{i},{'True' if i == 5 else ''},{80 + i},{95.5},{90 + i},{70},\"100,2,0,1\",time,15,-1,0,15.0,0,0,False,False,english,none,normal,False,False,False,,{base + i * 86_400_000}")
+    (tmp_path / "Subject_Z_Results.csv").write_text("\n".join(lines))
+    df = load_monkeytype(tmp_path)
+    assert list(df.columns) == MONKEYTYPE_COLS
+    assert len(df) == 20 and df["user"].iloc[0] == "mt_Z"
+    assert df["is_pb"].sum() == 1
+    assert df["ts"].is_monotonic_increasing
+    w = monkeytype_weekly(df)
+    assert w["tests"].sum() == 20
+    assert 3 <= len(w) <= 4                       # 20 daily tests span 3-4 ISO weeks
+
+
+@pytest.mark.skipif(not list((EXTERNAL / "monkeytype").glob("Subject_*_Results.csv")), reason="not staged")
+def test_real_monkeytype():
+    from pipeline.datasets import load_monkeytype
+    df = load_monkeytype()
+    assert df["user"].nunique() == 22
+    assert len(df) > 14_000
+    assert df["wpm"].between(0, 1000).all()          # one subject averages 214 wpm
+    assert df["acc"].between(0, 100).all()

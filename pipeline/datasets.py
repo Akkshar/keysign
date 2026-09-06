@@ -15,12 +15,14 @@ Datasets (see data/external/README.md for provenance):
     cmu_password    51 subjects x 8 sessions x 50 reps of ".tie5Roanl" (timings)
     tie5_raw        6 subjects typing ".tie5Roanl" (raw pynput log)
     stress_logger   2 users, ~1 week each, self-reported fatigue/stress labels
+    monkeytype      22 users, 15k typing-test summaries over months (drift only, no events)
 
 CLI:
     uv run python -m pipeline.datasets                 # convert all staged sets
     uv run python -m pipeline.datasets --only cmu_password tie5_raw
     uv run python -m pipeline.datasets --stage ~/Downloads   # extract from archive*.zip first
-Outputs go to data/external/<name>_samples.json and <name>_features.csv.
+Outputs go to data/external/<name>_samples.json and <name>_features.csv,
+plus monkeytype_tests.csv / monkeytype_weekly.csv for the drift series.
 """
 from __future__ import annotations
 
@@ -292,13 +294,62 @@ def load_stress_logger(folder: Path | str = EXTERNAL / "stress_logger", **kw) ->
 
 
 # ---------------------------------------------------------------------------
+# 4. Monkeytype test history: NO keystroke events, drift-only time series
+# ---------------------------------------------------------------------------
+
+MONKEYTYPE_COLS = ["user", "ts", "wpm", "raw_wpm", "acc", "consistency", "test_duration_s",
+                   "afk_s", "restart_count", "mode", "mode2", "is_pb"]
+
+
+def load_monkeytype(folder: Path | str = EXTERNAL / "monkeytype") -> pd.DataFrame:
+    """
+    22 subjects' Monkeytype histories (15k tests over months). Per-test summaries
+    only: wpm ~ our speed_kps, acc ~ 1 - error_rate, consistency ~ 1 / rhythm_cv.
+    Returns a tidy DataFrame sorted by user, time. Used by the Drift head chart,
+    not by extract_features (there are no events to extract from).
+    """
+    frames = []
+    for f in sorted(Path(folder).glob("Subject_*_Results.csv")):
+        d = pd.read_csv(f, low_memory=False)
+        d["user"] = "mt_" + f.name.split("_")[1]
+        frames.append(d)
+    if not frames:
+        return pd.DataFrame(columns=MONKEYTYPE_COLS)
+    df = pd.concat(frames, ignore_index=True)
+    out = pd.DataFrame({
+        "user": df["user"],
+        "ts": pd.to_datetime(df["timestamp"], unit="ms", errors="coerce"),
+        "wpm": pd.to_numeric(df["wpm"], errors="coerce"),
+        "raw_wpm": pd.to_numeric(df["rawWpm"], errors="coerce"),
+        "acc": pd.to_numeric(df["acc"], errors="coerce"),
+        "consistency": pd.to_numeric(df["consistency"], errors="coerce"),
+        "test_duration_s": pd.to_numeric(df["testDuration"], errors="coerce"),
+        "afk_s": pd.to_numeric(df["afkDuration"], errors="coerce"),
+        "restart_count": pd.to_numeric(df["restartCount"], errors="coerce"),
+        "mode": df["mode"].astype(str),
+        "mode2": df["mode2"].astype(str),
+        "is_pb": df["isPb"].fillna(False).astype(str).str.lower().eq("true"),
+    })
+    out = out.dropna(subset=["ts", "wpm"]).sort_values(["user", "ts"]).reset_index(drop=True)
+    return out[MONKEYTYPE_COLS]
+
+
+def monkeytype_weekly(df: pd.DataFrame) -> pd.DataFrame:
+    """Per-user weekly medians: the series the Drift chart plots."""
+    w = df.set_index("ts").groupby("user")[["wpm", "acc", "consistency"]].resample("W").median()
+    n = df.set_index("ts").groupby("user")["wpm"].resample("W").size().rename("tests")
+    return w.join(n).dropna(subset=["wpm"]).reset_index()
+
+
+# ---------------------------------------------------------------------------
 # Staging from the downloaded zips (only the keystroke members; mouse logs stay)
 # ---------------------------------------------------------------------------
 
 def stage_from_zips(zip_dir: Path | str, dest: Path | str = EXTERNAL) -> list[str]:
     dest = Path(dest)
     staged = []
-    for z in sorted(Path(zip_dir).glob("archive*.zip")):
+    zips = sorted(Path(zip_dir).glob("archive*.zip")) + sorted(Path(zip_dir).glob("Modeling-Typing-Performance*.zip"))
+    for z in zips:
         with zipfile.ZipFile(z) as zf:
             names = zf.namelist()
             if "DSL-StrongPasswordData.csv" in names:
@@ -313,6 +364,14 @@ def stage_from_zips(zip_dir: Path | str, dest: Path | str = EXTERNAL) -> list[st
                     if n.endswith("_keystroke_raw.csv"):
                         zf.extract(n, target)
                 staged.append(f"{z.name} -> tie5_raw")
+            elif any(n.endswith("_Results.csv") for n in names):
+                target = dest / "monkeytype"
+                target.mkdir(parents=True, exist_ok=True)
+                for n in names:
+                    base = os.path.basename(n)
+                    if base.startswith("Subject_") and base.endswith("_Results.csv") or base == "LICENSE":
+                        (target / base).write_bytes(zf.read(n))
+                staged.append(f"{z.name} -> monkeytype")
             elif any(n.endswith("/keystrokes.tsv") for n in names):
                 for n in names:
                     base = os.path.basename(n)
@@ -334,7 +393,7 @@ LOADERS = {
 
 def _main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Convert external keystroke datasets into KeySign samples + features.")
-    p.add_argument("--only", nargs="*", choices=list(LOADERS), help="subset of datasets")
+    p.add_argument("--only", nargs="*", choices=[*LOADERS, "monkeytype"], help="subset of datasets")
     p.add_argument("--stage", metavar="ZIP_DIR", help="first extract keystroke files from archive*.zip in this folder")
     p.add_argument("--out", default=str(EXTERNAL), help="output folder (default data/external)")
     args = p.parse_args(argv)
@@ -346,6 +405,8 @@ def _main(argv: list[str] | None = None) -> int:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     for name in (args.only or LOADERS):
+        if name not in LOADERS:
+            continue
         try:
             samples = LOADERS[name]()
         except FileNotFoundError as e:
@@ -362,6 +423,17 @@ def _main(argv: list[str] | None = None) -> int:
         print(f"{name}: {len(samples)} samples, {df['user'].nunique()} users, "
               f"conditions={df['condition'].value_counts().to_dict()}, "
               f"median keys/sample={df['n_keys'].median():.0f}  -> {name}_features.csv")
+
+    if not args.only or "monkeytype" in args.only:
+        mt = load_monkeytype()
+        if len(mt):
+            mt.to_csv(out / "monkeytype_tests.csv", index=False)
+            monkeytype_weekly(mt).to_csv(out / "monkeytype_weekly.csv", index=False)
+            span = mt.groupby("user")["ts"].agg(lambda s: (s.max() - s.min()).days)
+            print(f"monkeytype: {len(mt)} tests, {mt['user'].nunique()} users, "
+                  f"median span {span.median():.0f} days  -> monkeytype_tests.csv, monkeytype_weekly.csv")
+        else:
+            print("monkeytype: not staged, skipping", file=sys.stderr)
     return 0
 
 

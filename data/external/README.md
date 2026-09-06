@@ -44,3 +44,17 @@ negative and H is duplicated, i.e. miscomputed. Only `*_keystroke_raw.csv`
 is used.
 
 Use: extra Identity subjects on the same task as the CMU set.
+
+## monkeytype/  (from Modeling-Typing-Performance-main.zip)
+
+`Subject_A..V_Results.csv`: 15,003 Monkeytype typing tests by 22 people,
+exported from their Monkeytype dashboards (Chaitanya & Gupta, "Modeling
+Typing Performance", AI-HCSST 2025, MIT licence, `LICENSE` kept alongside).
+Per-test summaries only: wpm, raw wpm, accuracy, consistency, duration, mode,
+timestamp. **No keystroke events**, so it never goes through
+`extract_features`. Histories span weeks to 3+ years per person.
+
+Use: the **Drift** chart. `monkeytype_weekly.csv` holds per-user weekly
+medians of wpm / accuracy / consistency, the closest public analogue to
+"is this person's baseline moving over weeks". wpm maps to our `speed_kps`,
+accuracy to `1 - error_rate`, consistency to `1 / rhythm_cv`.
