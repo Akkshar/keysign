@@ -1,0 +1,21 @@
+# Raw keystroke data is personal. Keep it out of git by default.
+data/samples/*.json
+data/samples/*.csv
+*.local.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

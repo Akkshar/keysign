@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KeySign · Capture</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+    --fg: #e6e8ee; --muted: #8b93a7; --accent: #5ee1a1; --warn: #f7b955;
+    --danger: #ff6b6b; --rec: #ff4d4d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  header {
+    display: flex; align-items: baseline; gap: 14px; padding: 16px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+  header h1 { margin: 0; font-size: 18px; letter-spacing: .04em; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+  main { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; padding: 16px 24px; max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .panel h2 { margin: 0 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .row + .row { margin-top: 10px; }
+  label { font-size: 13px; color: var(--muted); }
+  input[type=text], input[type=number], select {
+    background: var(--panel2); color: var(--fg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 7px 10px; font: inherit;
+  }
+  input[type=text] { min-width: 200px; }
+  input[type=number] { width: 80px; }
+  button {
+    background: var(--panel2); color: var(--fg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 8px 14px; font: inherit; cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #0b0f0d; border-color: var(--accent); font-weight: 600; }
+  button.danger { color: var(--danger); }
+  .prompt {
+    background: var(--panel2); border: 1px dashed var(--line); border-radius: 8px;
+    padding: 14px 16px; margin: 12px 0; font-size: 17px; line-height: 1.5; min-height: 56px;
+  }
+  .prompt.free { color: var(--muted); font-style: italic; }
+  textarea {
+    width: 100%; min-height: 150px; resize: vertical; background: #0b0d12; color: var(--fg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+    font: 17px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  textarea.recording { border-color: var(--rec); box-shadow: 0 0 0 3px rgba(255,77,77,.15); }
+  .status { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .dot.on { background: var(--rec); animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+  .countdown { font-size: 40px; font-weight: 700; color: var(--warn); min-width: 70px; text-align: right; }
+  .countdown.urgent { color: var(--danger); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  @media (max-width: 600px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--panel2); border-radius: 8px; padding: 10px 12px; }
+  .stat .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .stat .v { font-size: 20px; font-weight: 600; margin-top: 2px; }
+  .stat .u { font-size: 11px; color: var(--muted); margin-left: 3px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  td.num, th.num { text-align: right; }
+  td button { padding: 2px 8px; font-size: 12px; }
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+  .note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; border: 1px solid var(--line); }
+  .badge.calm { color: var(--accent); border-color: rgba(94,225,161,.4); }
+  .badge.stress { color: var(--danger); border-color: rgba(255,107,107,.4); }
+  .badge.other { color: var(--warn); border-color: rgba(247,185,85,.4); }
+  kbd { font: 11px ui-monospace, monospace; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>KEYSIGN</h1>
+  <span class="sub">capture environment · keystrokes never leave this machine</span>
+  <span class="spacer"></span>
+  <span class="sub mono" id="clockInfo">timer: …</span>
+</header>
+
+<main>
+  <!-- LEFT: capture -->
+  <section>
+    <div class="panel">
+      <h2>Sample setup</h2>
+      <div class="row">
+        <label for="user">User</label>
+        <input type="text" id="user" placeholder="Your name" autocomplete="off">
+        <label for="condition">Condition</label>
+        <select id="condition">
+          <option value="calm">calm</option>
+          <option value="stress">stress</option>
+          <option value="tired">tired</option>
+          <option value="other">other</option>
+        </select>
+        <label for="timerSec">Timer</label>
+        <input type="number" id="timerSec" min="0" max="600" value="0" title="0 = no countdown. Auto-saves when it hits zero.">
+        <label>s</label>
+      </div>
+      <div class="row">
+        <label for="promptMode">Prompt</label>
+        <select id="promptMode">
+          <option value="bank">from bank</option>
+          <option value="free">free typing</option>
+        </select>
+        <button id="nextPrompt">Next prompt</button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>Type</h2>
+      <div class="prompt" id="promptText"></div>
+      <textarea id="box" placeholder="Press Start, then type here…" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" disabled></textarea>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="startBtn">Start</button>
+        <button id="saveBtn" disabled>Save sample</button>
+        <button id="discardBtn" disabled>Discard</button>
+        <span style="flex:1"></span>
+        <span class="countdown mono" id="countdown"></span>
+      </div>
+      <div class="status">
+        <span class="dot" id="dot"></span>
+        <span id="statusText">idle</span>
+        <span style="flex:1"></span>
+        <span><kbd>Ctrl</kbd>+<kbd>Enter</kbd> save · <kbd>Esc</kbd> discard</span>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>Live features <span id="liveLabel" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="stats" id="stats"></div>
+      <div class="note">Same definitions as <span class="mono">analyze.py</span>: hold = keyup − keydown per key; flight = keydown → next keydown; speed = keydowns per second; errors = Backspace/Delete share of keydowns.</div>
+    </div>
+  </section>
+
+  <!-- RIGHT: session -->
+  <section>
+    <div class="panel">
+      <h2>Session <span id="sessionCount" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="row">
+        <button class="primary" id="exportJson">Export JSON</button>
+        <button id="exportCsv">Export CSV</button>
+        <button class="danger" id="clearAll">Clear all</button>
+      </div>
+      <div class="note">Samples persist in this browser's localStorage until you clear them. Export JSON is the file <span class="mono">analyze.py</span> and the pipeline read.</div>
+      <div id="sessionTable" style="margin-top:12px"></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Collection checklist</h2>
+      <div class="note" style="margin-top:0">
+        • 5+ calm samples per person, 5+ stress samples per person.<br>
+        • Stress = set a short timer (15–25 s) and have someone bark at you.<br>
+        • Use the same physical keyboard for a person's whole set.<br>
+        • Don't paste, don't switch windows mid-sample (blurs are counted).<br>
+        • Export after every session. A refresh keeps data; a cleared cache doesn't.
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>KeySign · on-device only · this page makes no network calls</footer>
+
+<script>
+(() => {
+  'use strict';
+  const PAGE_VERSION = 'capture-1.0';
+  const STORE_KEY = 'keysign.samples.v1';
+  const PREF_KEY = 'keysign.prefs.v1';
+  const MIN_KEYDOWNS = 10;
+
+  const PROMPTS = [
+    'the quick brown fox jumps over the lazy dog while the sun sets slowly',
+    'pack my box with five dozen liquor jugs before the train leaves at noon',
+    'a small river runs past the old mill and under the stone bridge',
+    'she sells sea shells by the sea shore every summer morning',
+    'the engineer checked the logs twice and then restarted the server',
+    'we walked along the beach and watched the tide come in at dusk',
+    'type this sentence at your normal pace without trying to be fast',
+    'the meeting moved to thursday because nobody could make it on friday',
+    'bright green leaves covered the path after the storm passed through',
+    'please remember to water the plants and lock the back door tonight',
+  ];
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const el = {
+    user: $('user'), condition: $('condition'), timerSec: $('timerSec'),
+    promptMode: $('promptMode'), nextPrompt: $('nextPrompt'), promptText: $('promptText'),
+    box: $('box'), startBtn: $('startBtn'), saveBtn: $('saveBtn'), discardBtn: $('discardBtn'),
+    countdown: $('countdown'), dot: $('dot'), statusText: $('statusText'),
+    stats: $('stats'), liveLabel: $('liveLabel'), sessionTable: $('sessionTable'),
+    sessionCount: $('sessionCount'), exportJson: $('exportJson'), exportCsv: $('exportCsv'),
+    clearAll: $('clearAll'), clockInfo: $('clockInfo'),
+  };
+
+  // ---------- state ----------
+  let samples = loadSamples();
+  let recording = false;
+  let events = [];          // {type, key, code, t}
+  let startedAt = null;     // Date
+  let startT = 0;           // performance.now() at Start
+  let blurCount = 0;
+  let promptIdx = Math.floor(Math.random() * PROMPTS.length);
+  let timerHandle = null;
+  let timerEndT = 0;
+  const timerResolutionMs = measureTimerResolution();
+
+  // ---------- clock ----------
+  // Prefer event.timeStamp: the DOMHighResTimeStamp the browser assigned when the event
+  // was created, on the same clock as performance.now() (ms since timeOrigin). It is
+  // closer to the physical key event than the time our handler runs. Falls back to
+  // performance.now() if a browser hands us a legacy epoch value.
+  function stamp(e) {
+    const ts = e.timeStamp;
+    if (typeof ts === 'number' && ts < 1e12) return ts;
+    return performance.now();
+  }
+  function measureTimerResolution() {
+    let best = Infinity;
+    for (let i = 0; i < 50; i++) {
+      const a = performance.now(); let b = a; let spins = 0;
+      while (b === a && spins++ < 1e5) b = performance.now();
+      if (b > a) best = Math.min(best, b - a);
+    }
+    return isFinite(best) ? best : NaN;
+  }
+  el.clockInfo.textContent = isNaN(timerResolutionMs)
+    ? 'timer: unknown resolution'
+    : `timer: ~${timerResolutionMs < 1 ? timerResolutionMs.toFixed(3) : timerResolutionMs.toFixed(1)} ms resolution`;
+  if (timerResolutionMs >= 1) {
+    el.clockInfo.style.color = 'var(--warn)';
+    el.clockInfo.title = 'Coarse timer. Use Chrome, or disable privacy.resistFingerprinting in Firefox.';
+  }
+
+  // ---------- prefs ----------
+  try {
+    const p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+    if (p.user) el.user.value = p.user;
+    if (p.condition) el.condition.value = p.condition;
+    if (p.timerSec != null) el.timerSec.value = p.timerSec;
+    if (p.promptMode) el.promptMode.value = p.promptMode;
+  } catch (_) {}
+  function savePrefs() {
+    try {
+      localStorage.setItem(PREF_KEY, JSON.stringify({
+        user: el.user.value, condition: el.condition.value,
+        timerSec: el.timerSec.value, promptMode: el.promptMode.value,
+      }));
+    } catch (_) {}
+  }
+  ['user', 'condition', 'timerSec', 'promptMode'].forEach(k => el[k].addEventListener('change', savePrefs));
+
+  // ---------- prompt ----------
+  function currentPrompt() { return el.promptMode.value === 'bank' ? PROMPTS[promptIdx] : ''; }
+  function renderPrompt() {
+    const p = currentPrompt();
+    el.promptText.textContent = p || 'Free typing: write anything for 20–30 seconds (an email, what you did today…).';
+    el.promptText.classList.toggle('free', !p);
+  }
+  el.nextPrompt.addEventListener('click', () => { promptIdx = (promptIdx + 1) % PROMPTS.length; renderPrompt(); });
+  el.promptMode.addEventListener('change', renderPrompt);
+  renderPrompt();
+
+  // ---------- recording ----------
+  function setStatus(text, on) {
+    el.statusText.textContent = text;
+    el.dot.classList.toggle('on', !!on);
+  }
+
+  function start() {
+    if (!el.user.value.trim()) { el.user.focus(); setStatus('enter a user name first', false); return; }
+    events = []; blurCount = 0; recording = true;
+    startedAt = new Date(); startT = performance.now();
+    el.box.value = ''; el.box.disabled = false; el.box.classList.add('recording'); el.box.focus();
+    el.startBtn.disabled = true; el.saveBtn.disabled = false; el.discardBtn.disabled = false;
+    lockSetup(true);
+    setStatus('recording… type the prompt, then Save', true);
+    startTimer();
+    renderStats(computeFeatures(events), 'live');
+  }
+
+  function finish(save) {
+    if (!recording) return;
+    stopTimer();
+    recording = false;
+    el.box.disabled = true; el.box.classList.remove('recording');
+    el.startBtn.disabled = false; el.saveBtn.disabled = true; el.discardBtn.disabled = true;
+    lockSetup(false);
+    if (save) {
+      const downs = events.filter(e => e.type === 'down').length;
+      if (downs < MIN_KEYDOWNS) { setStatus(`discarded: only ${downs} keydowns (need ≥ ${MIN_KEYDOWNS})`, false); events = []; return; }
+      const sample = {
+        // analyze.py contract
+        user: el.user.value.trim(),
+        condition: el.condition.value,
+        prompt: currentPrompt(),
+        text: el.box.value,
+        events,
+        // extra metadata (ignored by analyze.py)
+        id: uid(),
+        started_at: startedAt.toISOString(),
+        duration_ms: round3(performance.now() - startT),
+        n_events: events.length,
+        n_keydowns: downs,
+        blur_count: blurCount,
+        timer_sec: Number(el.timerSec.value) || 0,
+        meta: {
+          page_version: PAGE_VERSION,
+          user_agent: navigator.userAgent,
+          platform: navigator.platform,
+          time_origin: performance.timeOrigin,
+          timer_resolution_ms: timerResolutionMs,
+        },
+      };
+      samples.push(sample); persistSamples();
+      renderSession();
+      renderStats(computeFeatures(events), `last sample · ${sample.user} · ${sample.condition}`);
+      setStatus(`saved sample #${samples.length} (${downs} keys, ${(sample.duration_ms / 1000).toFixed(1)} s)`, false);
+      if (el.promptMode.value === 'bank') { promptIdx = (promptIdx + 1) % PROMPTS.length; renderPrompt(); }
+    } else {
+      setStatus('discarded', false);
+    }
+    events = [];
+  }
+
+  function lockSetup(locked) {
+    [el.user, el.condition, el.timerSec, el.promptMode, el.nextPrompt].forEach(x => x.disabled = locked);
+  }
+
+  el.startBtn.addEventListener('click', start);
+  el.saveBtn.addEventListener('click', () => finish(true));
+  el.discardBtn.addEventListener('click', () => finish(false));
+
+  // ---------- keystroke capture: the whole point of the page ----------
+  el.box.addEventListener('keydown', e => {
+    if (!recording) return;
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); return; }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); return; }
+    if (e.repeat) return;                 // OS auto-repeat is not a keystroke
+    events.push({ type: 'down', key: e.key, code: e.code, t: round3(stamp(e)) });
+    renderStats(computeFeatures(events), 'live');
+  });
+  el.box.addEventListener('keyup', e => {
+    if (!recording) return;
+    events.push({ type: 'up', key: e.key, code: e.code, t: round3(stamp(e)) });
+  });
+  el.box.addEventListener('paste', e => e.preventDefault());
+  el.box.addEventListener('drop', e => e.preventDefault());
+  el.box.addEventListener('blur', () => { if (recording) { blurCount++; setStatus(`recording… (focus lost ${blurCount}×, click back in)`, true); } });
+  el.box.addEventListener('focus', () => { if (recording) setStatus('recording… type the prompt, then Save', true); });
+
+  // ---------- countdown ----------
+  function startTimer() {
+    const sec = Number(el.timerSec.value) || 0;
+    el.countdown.textContent = ''; el.countdown.classList.remove('urgent');
+    if (sec <= 0) return;
+    timerEndT = performance.now() + sec * 1000;
+    const tick = () => {
+      const left = Math.max(0, timerEndT - performance.now());
+      el.countdown.textContent = (left / 1000).toFixed(1);
+      el.countdown.classList.toggle('urgent', left < 5000);
+      if (left <= 0) { timerHandle = null; finish(true); return; }
+      timerHandle = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+  function stopTimer() {
+    if (timerHandle) cancelAnimationFrame(timerHandle);
+    timerHandle = null;
+    el.countdown.textContent = '';
+  }
+
+  // ---------- features (mirror analyze.py) ----------
+  function computeFeatures(evts) {
+    const downs = new Map(); const holds = []; const downTs = [];
+    let backspaces = 0, total = 0;
+    for (const e of evts) {
+      const k = e.code || e.key;   // some virtual keyboards send an empty code
+      if (e.type === 'down') {
+        downs.set(k, e.t); downTs.push(e.t); total++;
+        if (e.key === 'Backspace' || e.key === 'Delete') backspaces++;
+      } else if (e.type === 'up' && downs.has(k)) {
+        holds.push(e.t - downs.get(k)); downs.delete(k);
+      }
+    }
+    const flights = []; for (let i = 1; i < downTs.length; i++) flights.push(downTs[i] - downTs[i - 1]);
+    const span = downTs.length >= 2 ? (downTs[downTs.length - 1] - downTs[0]) / 1000 : 0;
+    return {
+      keys: total,
+      hold_mean: mean(holds), hold_std: std(holds),
+      flight_mean: mean(flights), flight_std: std(flights),
+      speed_kps: span > 0 ? total / span : 0,
+      error_rate: total ? backspaces / total : 0,
+    };
+  }
+  function mean(xs) { return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0; }
+  function std(xs) { if (xs.length < 2) return 0; const m = mean(xs); return Math.sqrt(mean(xs.map(x => (x - m) ** 2))); }
+
+  function renderStats(f, label) {
+    el.liveLabel.textContent = label ? `· ${label}` : '';
+    const cells = [
+      ['keys', f.keys, ''],
+      ['hold', f.hold_mean.toFixed(1), 'ms'],
+      ['hold σ', f.hold_std.toFixed(1), 'ms'],
+      ['flight', f.flight_mean.toFixed(1), 'ms'],
+      ['flight σ', f.flight_std.toFixed(1), 'ms'],
+      ['speed', f.speed_kps.toFixed(2), 'k/s'],
+      ['errors', (f.error_rate * 100).toFixed(1), '%'],
+    ];
+    el.stats.innerHTML = cells.map(([k, v, u]) =>
+      `<div class="stat"><div class="k">${k}</div><div class="v mono">${v}<span class="u">${u}</span></div></div>`).join('');
+  }
+  renderStats(computeFeatures([]), '');
+
+  // ---------- session ----------
+  function loadSamples() {
+    try { const s = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); return Array.isArray(s) ? s : []; }
+    catch (_) { return []; }
+  }
+  function persistSamples() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(samples)); }
+    catch (err) { setStatus('warning: localStorage full — export now', false); }
+  }
+  function renderSession() {
+    el.sessionCount.textContent = samples.length ? `· ${samples.length} sample${samples.length === 1 ? '' : 's'}` : '';
+    if (!samples.length) { el.sessionTable.innerHTML = '<div class="empty">No samples yet.</div>'; return; }
+    const rows = samples.map((s, i) => {
+      const f = computeFeatures(s.events);
+      const cls = s.condition === 'calm' ? 'calm' : s.condition === 'stress' ? 'stress' : 'other';
+      return `<tr>
+        <td class="num mono">${i + 1}</td>
+        <td>${esc(s.user)}</td>
+        <td><span class="badge ${cls}">${esc(s.condition)}</span></td>
+        <td class="num mono">${f.keys}</td>
+        <td class="num mono">${f.hold_mean.toFixed(0)}</td>
+        <td class="num mono">${f.flight_mean.toFixed(0)}</td>
+        <td class="num mono">${f.speed_kps.toFixed(1)}</td>
+        <td><button data-del="${i}" title="delete">✕</button></td>
+      </tr>`;
+    }).reverse().join('');
+    el.sessionTable.innerHTML = `<table><thead><tr>
+      <th>#</th><th>user</th><th>cond</th><th class="num">keys</th><th class="num">hold</th><th class="num">flight</th><th class="num">k/s</th><th></th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+    el.sessionTable.querySelectorAll('button[data-del]').forEach(b => b.addEventListener('click', () => {
+      const i = Number(b.dataset.del);
+      if (confirm(`Delete sample #${i + 1} (${samples[i].user}, ${samples[i].condition})?`)) {
+        samples.splice(i, 1); persistSamples(); renderSession();
+      }
+    }));
+  }
+  renderSession();
+
+  el.clearAll.addEventListener('click', () => {
+    if (!samples.length) return;
+    if (confirm(`Delete all ${samples.length} samples from this browser? Export first if you haven't.`)) {
+      samples = []; persistSamples(); renderSession(); setStatus('session cleared', false);
+    }
+  });
+
+  // ---------- export ----------
+  function download(name, text, mime) {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function fileStamp() { return new Date().toISOString().replace(/[:T]/g, '-').slice(0, 19); }
+  el.exportJson.addEventListener('click', () => {
+    if (!samples.length) { setStatus('nothing to export', false); return; }
+    download(`keysign_${fileStamp()}.json`, JSON.stringify(samples, null, 1), 'application/json');
+    setStatus(`exported ${samples.length} samples as JSON`, false);
+  });
+  el.exportCsv.addEventListener('click', () => {
+    if (!samples.length) { setStatus('nothing to export', false); return; }
+    const lines = ['sample_id,user,condition,type,key,code,t'];
+    for (const s of samples) for (const e of s.events)
+      lines.push([s.id || '', s.user, s.condition, e.type, e.key, e.code, e.t].map(csv).join(','));
+    download(`keysign_events_${fileStamp()}.csv`, lines.join('\n'), 'text/csv');
+    setStatus(`exported ${lines.length - 1} events as CSV`, false);
+  });
+
+  // ---------- util ----------
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function round3(x) { return Math.round(x * 1000) / 1000; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  function csv(v) { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
+
+  // exposed for validation in devtools / automated tests
+  window.keysign = { get samples() { return samples; }, get events() { return events; }, computeFeatures };
+})();
+</script>
+</body>
+</html>
