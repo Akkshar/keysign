@@ -11,7 +11,7 @@ them to record anything.
 
     uv run python -m backend.sessions list
     uv run python -m backend.sessions export data/sessions/<file>.jsonl --user Stranger -o data/samples/stranger.json
-    uv run python -m backend.sessions score  data/sessions/<file>.jsonl        # open-set score per tick, per baseline
+    uv run python -m backend.sessions score  data/sessions/<file>.jsonl        # distance per tick, per baseline
 """
 from __future__ import annotations
 
@@ -99,10 +99,10 @@ def _main(argv: list[str] | None = None) -> int:
         print(f"{'t':>7s} {'keys':>4s} {'voted':16s} " + " ".join(f"{b.user[:10]:>10s}" for b in bases))
         for r in ticks:
             idn = (r.get("heads") or {}).get("identity") or {}
-            scores = " ".join(f"{float(b.open_set_score(r['features'])):10.2f}" for b in bases)
+            scores = " ".join(f"{float(b.distance(r['features'])):10.2f}" for b in bases)
             print(f"{r.get('ts', 0) % 100000:7.1f} {r.get('n_keys', 0):4d} {str(idn.get('user')):16s} {scores}"
                   + ("  UNKNOWN" if idn.get("unknown") else ""))
-        print("thresholds:            " + " ".join(f"{(b.open_set_threshold or 0):10.2f}" for b in bases))
+        print("(unknown above %.1f)" % 3.0)
     return 0
 
 

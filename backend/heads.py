@@ -29,18 +29,14 @@ from pipeline.state import StateModel, rule_load
 # Train with:  uv run python -m pipeline.identity train data/features_windows.csv
 # ---------------------------------------------------------------------------
 MODEL_PATH = ROOT / "data" / "models" / "identity.joblib"
-UNKNOWN_CONF = 0.45      # accumulated posterior below this -> unknown (weak rule; a stranger usually
-                         # gets a confident wrong label, so the open-set score below does the real work)
-UNKNOWN_DIST = 3.0       # fallback open-set threshold for a baseline that `pipeline.identity train`
-                         # has not calibrated (then the score is the plain distance)
+UNKNOWN_CONF = 0.45      # classifier confidence below this -> unknown
+UNKNOWN_DIST = 3.0       # distance to the predicted user's baseline above this -> unknown
+                         # (measured on 10 s windows with >= 25 keys: own-baseline p90 2.0-2.6,
+                         # other people's median 2.9-3.6)
 VOTES = 5                # majority vote over the last N ticks so the label doesn't flicker
-POSTERIOR_SPAN = 8       # the confidence shown is the posterior over this many voting ticks
-                         # (product of per-tick probabilities), not one tick's tree vote:
-                         # measured p10 of the right person's confidence 0.76 -> 0.96
-PROB_FLOOR = 0.02        # one wildly wrong tick can't veto the other seven
 IDENTITY_MIN_KEYS = 15   # windows thinner than this don't vote (measured: 8-12-key windows are
                          # right only 50-90% of the time, 21+ keys 85-100%)
-UNKNOWN_MIN_KEYS = 25    # the open-set score needs a window this big; thin windows sit at 2+ for everyone
+UNKNOWN_MIN_KEYS = 25    # the distance rule needs a window this big; thin windows sit at 2+ for everyone
 _model_cache: dict[str, tuple[float, IdentityModel]] = {}
 
 
@@ -61,89 +57,66 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     if m is None:
         return {"user": None, "unknown": None, "reason": "no identity model yet (uv run python -m pipeline.identity train data/features.csv)"}
     pred = m.predict(features)
+    b = load_baseline(pred["user"])
+    d = float(b.distance(features)) if b is not None else None
     n_keys = int(features.get("n_keys", 0))
-    st = ctx.setdefault("identity", {"history": [], "logp": [], "unknown_votes": []})
+    st = ctx.setdefault("identity", {"history": []})
     if n_keys >= IDENTITY_MIN_KEYS:
         st["history"] = (st["history"] + [pred["user"]])[-VOTES:]
-        p = np.asarray([pred["probs"][u] for u in m.users], dtype=float)
-        st["logp"] = (st["logp"] + [np.log(np.maximum(p, PROB_FLOOR)).tolist()])[-POSTERIOR_SPAN:]
     if not st["history"]:                                   # first ticks of a session: too thin to call
-        b0 = load_baseline(pred["user"])
-        return {"user": None, "confidence": round(pred["confidence"], 3), "tick_confidence": round(pred["confidence"], 3),
-                "distance": round(float(b0.distance(features)), 2) if b0 is not None else None,
+        return {"user": None, "confidence": round(pred["confidence"], 3),
+                "distance": round(d, 2) if d is not None else None,
                 "unknown": False, "matches_declared": None, "probs": pred["probs"], "votes": {},
                 "warming_up": True, "reason": f"need {IDENTITY_MIN_KEYS} keys in the window to identify"}
-    # who: posterior over the recent voting ticks (product of per-tick probabilities)
-    lp = np.sum(np.asarray(st["logp"]), axis=0); lp -= lp.max()
-    post = np.exp(lp); post /= post.sum()
-    voted = m.users[int(np.argmax(post))]
-    confidence = float(post.max())
     votes = {u: st["history"].count(u) for u in set(st["history"])}
-    # is it really them: calibrated open-set score against the voted user's baseline, majority-voted
-    b = load_baseline(voted)
-    d = float(b.distance(features)) if b is not None else None
-    score = float(b.open_set_score(features)) if b is not None else None
-    thr = (b.open_set_threshold if b is not None else None) or UNKNOWN_DIST
-    if n_keys >= UNKNOWN_MIN_KEYS and score is not None:
-        st["unknown_votes"] = (st["unknown_votes"] + [score > thr])[-VOTES:]
-    uv = st["unknown_votes"]
-    unknown = (len(uv) >= 2 and sum(uv) * 2 > len(uv)) or (len(st["logp"]) >= 3 and confidence < UNKNOWN_CONF)
+    voted = max(votes, key=votes.get)
+    unknown = (n_keys >= IDENTITY_MIN_KEYS and pred["confidence"] < UNKNOWN_CONF) or \
+              (n_keys >= UNKNOWN_MIN_KEYS and d is not None and d > UNKNOWN_DIST)
     return {
         "user": voted,
-        "confidence": round(confidence, 3),               # accumulated over POSTERIOR_SPAN ticks
-        "tick_confidence": round(pred["confidence"], 3),  # this window alone
+        "confidence": round(pred["confidence"], 3),
         "distance": round(d, 2) if d is not None else None,
-        "open_set": {"score": round(score, 2) if score is not None else None, "threshold": round(thr, 2),
-                     "calibrated": bool(b is not None and b.open_set_threshold is not None),
-                     "votes": int(sum(uv)), "of": len(uv)},
         "unknown": bool(unknown),
         "matches_declared": voted == ctx.get("user"),
         "probs": pred["probs"],
-        "posterior": {u: round(float(v), 3) for u, v in zip(m.users, post)},
         "votes": votes,
         "warming_up": False,
     }
 
 # ---------------------------------------------------------------------------
-# Threat: is something wrong right now? Two evidence paths, different clocks:
-#   intruder: identity says someone else / unknown for INTRUDER_PERSIST ticks while the
-#             typing sits at least THREAT_WARN from the declared baseline (~3 s);
-#   duress:   the right person, but THREAT_PERSIST ticks above THREAT_ALERT (~6 s).
-#             A burst of fast typing looks like duress for a few seconds; real duress
-#             lasts the whole interaction, so the duress clock is deliberately slow.
-# Fires a SILENT alert (backend/notify.py) with a cooldown. Runs after identity and state.
+# Threat: is something wrong right now? Sustained deviation from the person's
+# baseline, classified with the other heads' outputs (identity mismatch ->
+# intruder, right person but abnormal and loaded -> duress). Fires a SILENT
+# alert (backend/notify.py) with a cooldown. Runs after identity and state.
 # ---------------------------------------------------------------------------
 THREAT_WARN = 2.0            # single-tick distance for "warn"
-THREAT_ALERT = 3.0           # distance that must be sustained for a duress "alert"
-THREAT_PERSIST = 12          # duress: consecutive ticks (>= 6 s of typing) above THREAT_ALERT
-INTRUDER_PERSIST = 6         # intruder: consecutive ticks (>= 3 s) of identity mismatch + distance >= THREAT_WARN
+THREAT_ALERT = 3.0           # distance that must be sustained for "alert"
+THREAT_PERSIST = 6           # consecutive ticks (>= 3 s of typing) above THREAT_ALERT
 THREAT_MIN_KEYS = 25         # windows thinner than this can't count towards an alert: the first seconds
                              # of any session sit at distance 2-2.5 for everyone (features are noise on
                              # 8-15 keys). Replaying the team's calm samples: the old 8-key / 3-tick rule
-                             # false-alarmed on 15% of them; 25 keys + 6 ticks 4%; 25 keys + 12 ticks 1%.
+                             # false-alarmed on 15% of them, this rule on 4%, intruders still 63%.
 THREAT_COOLDOWN_S = 60.0     # minimum gap between pushes per session
 _alert_log_path = None       # tests point this at a temp file
 
 
 def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
-    st = ctx.setdefault("threat", {"hist": [], "mismatch_run": 0, "level": "ok", "last_alert_at": 0.0,
-                                   "alerts": 0, "last_alert": None})
+    st = ctx.setdefault("threat", {"hist": [], "level": "ok", "last_alert_at": 0.0, "alerts": 0, "last_alert": None})
     if baseline is None:
         return {"level": "none", "kind": None, "reason": "no baseline for this user yet"}
     d = float(baseline.distance(features))
     n_keys = int(features.get("n_keys", 0))
+    if n_keys >= THREAT_MIN_KEYS:
+        st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
+    else:                                     # warm-up: thin windows neither count nor carry over
+        st["hist"] = []
+    sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
     others = ctx.get("heads_so_far") or {}
     idn, state = others.get("identity") or {}, others.get("state") or {}
     mismatch = bool(idn.get("unknown")) or (idn.get("user") is not None and idn.get("matches_declared") is False)
-    if n_keys >= THREAT_MIN_KEYS:
-        st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
-        st["mismatch_run"] = st.get("mismatch_run", 0) + 1 if (mismatch and d >= THREAT_WARN) else 0
-    else:                                     # warm-up: thin windows neither count nor carry over
-        st["hist"], st["mismatch_run"] = [], 0
-    sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
     kind = "intruder" if mismatch else "duress"
 
-    if sustained >= THREAT_PERSIST or st["mismatch_run"] >= INTRUDER_PERSIST:
+    if sustained >= THREAT_PERSIST:
         level = "alert"
     elif (d >= THREAT_WARN and n_keys >= THREAT_MIN_KEYS) or sustained > 0 or mismatch:
         level = "warn"                        # a thin window's distance is noise: no warn on it alone
@@ -151,8 +124,7 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         level = "ok"
 
     out = {"level": level, "kind": kind if level != "ok" else None, "distance": round(d, 2),
-           "sustained_ticks": sustained, "mismatch_ticks": st["mismatch_run"],
-           "identity_mismatch": mismatch, "load": state.get("load"),
+           "sustained_ticks": sustained, "identity_mismatch": mismatch, "load": state.get("load"),
            "warming_up": n_keys < THREAT_MIN_KEYS,
            "drivers": [[f, round(z, 2)] for f, z in baseline.explain(features, top=2)],
            "alerts_total": st["alerts"], "last_alert": st["last_alert"], "channel": notify.channel()}

@@ -40,26 +40,22 @@ Keep state in `ctx["identity"]`. Your dict shows up in `tick["heads"]["identity"
 on the dashboard. A head that raises is reported as `{"error": ...}` and the
 stream keeps going, so you cannot break someone else's demo.
 
-Three heads are in there: `identity` (RandomForest voted over the recent
-windows, plus a per-user open-set score: distance weighted by the model's
-feature importances against the voted user's baseline, thresholded at that
-user's own p95, written into the baseline JSON by `pipeline.identity train`),
-`state` (directional load score, see pipeline/README.md) and `threat` (two
-clocks: intruder when identity disagrees with the declared user for ~3 s,
-duress when the same person sits above 3 sigma for ~6 s).
+Three heads are in there: `identity` (RandomForest + open-set rule), `state`
+(directional load score, see pipeline/README.md) and `threat` (sustained
+deviation, classified as intruder or duress using the other two).
 
 Threat alerts are silent: nothing changes on the typist's page. They are
 appended to `data/alerts.jsonl` and, if `KEYSIGN_NTFY_TOPIC` is set, pushed
 to a phone through ntfy (install the ntfy app, subscribe to a random topic
 name, set the same name in the env). `KEYSIGN_NTFY_SERVER` overrides the
-server. Windows with fewer than 25 keys never count (the first seconds of a
-session are noise for everyone). One push per minute per session. The push carries kind, user label, distance and time only.
+server. An alert needs 3 consecutive ticks above 3 sigma; one push per
+minute per session. The push carries kind, user label, distance and time only.
 
 Every live session is recorded to `data/sessions/<date>_<session>.jsonl`
 (raw events plus each tick's features and head outputs; gitignored;
 `KEYSIGN_RECORD=0` disables). A demo run is data: when someone is misjudged,
 `uv run python -m backend.sessions list` finds their session,
-`... score <file>` prints their open-set score per tick against every
+`... score <file>` prints their distance per tick against every
 baseline, and `... export <file> --user Stranger -o data/samples/stranger.json`
 turns it into capture-style samples for the pipeline.
 

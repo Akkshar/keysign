@@ -92,11 +92,10 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
   then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`,
   then retrain identity on live-shaped windows (NOT on features.csv):
   `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json --windows -o data/features_windows.csv`
-  and `uv run python -m pipeline.identity train data/features_windows.csv`
-  (this also writes each user's open-set weights + threshold into their baseline,
-  so run it AFTER rebuilding baselines). Every live session is recorded to
-  `data/sessions/` (see `backend/sessions.py`): when the demo misjudges someone,
-  their typing is already on disk to score or export, no separate recording needed.
+  and `uv run python -m pipeline.identity train data/features_windows.csv`.
+  Every live session is recorded to `data/sessions/` (see `backend/sessions.py`):
+  when the demo misjudges someone, their typing is already on disk to score or
+  export, no separate recording needed.
 - **h0-h7 — live stream end-to-end.** DONE: backend, dashboard, capture Live
   mode, and all four heads (Identity, State, Threat live; Drift chart).
   Demo script: `docs/demo-runbook.md`.

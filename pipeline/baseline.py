@@ -62,10 +62,6 @@ class Baseline:
     condition: str = "calm"
     method: str = "median_mad"
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
-    # Open-set calibration, written by `pipeline.identity train`: per-feature weights (the identity
-    # model's importances, mean 1) and the score above which a window is "not this person".
-    # {"weights": [...], "threshold": float, "calibrated_at": str, "note": str} or None.
-    open_set: dict | None = None
 
     # ---- scoring ----
     def _vec(self, x) -> np.ndarray:
@@ -87,25 +83,6 @@ class Baseline:
         z = np.clip(self.zscores(x), -clip, clip)
         return np.sqrt(np.mean(z ** 2, axis=-1))
 
-    def open_set_score(self, x, clip: float = Z_CLIP) -> float | np.ndarray:
-        """
-        Weighted RMS of clipped z-scores for the "is this really them?" question.
-        Weights favour the features that tell people apart (hold and flight
-        medians, key overlap) over the ones anyone can change at will (speed,
-        errors). Measured with the stranger held out of everything: flags a
-        stranger 87% of the time at 5% false-unknown, vs 69% for the plain
-        distance. Falls back to the plain distance when uncalibrated.
-        """
-        if not self.open_set or not self.open_set.get("weights"):
-            return self.distance(x, clip=clip)
-        w = np.asarray(self.open_set["weights"], dtype=float)
-        z = np.clip(self.zscores(x), -clip, clip)
-        return np.sqrt(np.mean(w * z ** 2, axis=-1))
-
-    @property
-    def open_set_threshold(self) -> float | None:
-        return float(self.open_set["threshold"]) if self.open_set and "threshold" in self.open_set else None
-
     def explain(self, x, top: int = 3) -> list[tuple[str, float]]:
         """The features that moved most, signed z-scores, largest first."""
         z = self.zscores(x)
@@ -120,7 +97,6 @@ class Baseline:
             "features": self.features,
             "center": [float(v) for v in self.center],
             "scale": [float(v) for v in self.scale],
-            "open_set": self.open_set,
         }
 
     @classmethod
@@ -128,8 +104,7 @@ class Baseline:
         return cls(user=d["user"], features=list(d["features"]),
                    center=np.asarray(d["center"], dtype=float), scale=np.asarray(d["scale"], dtype=float),
                    n_samples=int(d["n_samples"]), condition=d.get("condition", "calm"),
-                   method=d.get("method", "median_mad"), created_at=d.get("created_at", ""),
-                   open_set=d.get("open_set"))
+                   method=d.get("method", "median_mad"), created_at=d.get("created_at", ""))
 
     def save(self, path: Path | str) -> Path:
         path = Path(path)
