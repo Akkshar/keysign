@@ -119,6 +119,13 @@
         </select>
         <button id="nextPrompt">Next prompt</button>
       </div>
+      <div class="row">
+        <label for="liveToggle">Live</label>
+        <input type="checkbox" id="liveToggle" title="Stream keystrokes to the local KeySign backend">
+        <input type="text" id="liveUrl" value="ws://localhost:8000/ws/capture" style="min-width:260px" autocomplete="off">
+        <button id="liveReset" disabled title="Tell the backend a new window starts now (e.g. someone else sits down)">Reset</button>
+        <span class="note" id="liveStatus" style="margin-top:0">off</span>
+      </div>
     </div>
 
     <div class="panel" style="margin-top:16px">
@@ -177,7 +184,7 @@
 <script>
 (() => {
   'use strict';
-  const PAGE_VERSION = 'capture-1.0';
+  const PAGE_VERSION = 'capture-1.1';
   const STORE_KEY = 'keysign.samples.v1';
   const PREF_KEY = 'keysign.prefs.v1';
   const MIN_KEYDOWNS = 10;
@@ -297,7 +304,7 @@
     if (!recording) return;
     stopTimer();
     recording = false;
-    el.box.disabled = true; el.box.classList.remove('recording');
+    el.box.disabled = !live.on; el.box.classList.remove('recording');
     el.startBtn.disabled = false; el.saveBtn.disabled = true; el.discardBtn.disabled = true;
     lockSetup(false);
     if (save) {
@@ -347,21 +354,61 @@
 
   // ---------- keystroke capture: the whole point of the page ----------
   el.box.addEventListener('keydown', e => {
-    if (!recording) return;
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); return; }
-    if (e.key === 'Escape') { e.preventDefault(); finish(false); return; }
+    if (recording && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); finish(true); return; }
+    if (recording && e.key === 'Escape') { e.preventDefault(); finish(false); return; }
     if (e.repeat) return;                 // OS auto-repeat is not a keystroke
-    events.push({ type: 'down', key: e.key, code: e.code, t: round3(stamp(e)) });
+    const ev = { type: 'down', key: e.key, code: e.code, t: round3(stamp(e)) };
+    live.push(ev);
+    if (!recording) return;
+    events.push(ev);
     renderStats(computeFeatures(events), 'live');
   });
   el.box.addEventListener('keyup', e => {
-    if (!recording) return;
-    events.push({ type: 'up', key: e.key, code: e.code, t: round3(stamp(e)) });
+    const ev = { type: 'up', key: e.key, code: e.code, t: round3(stamp(e)) };
+    live.push(ev);
+    if (recording) events.push(ev);
   });
   el.box.addEventListener('paste', e => e.preventDefault());
   el.box.addEventListener('drop', e => e.preventDefault());
   el.box.addEventListener('blur', () => { if (recording) { blurCount++; setStatus(`recording… (focus lost ${blurCount}×, click back in)`, true); } });
   el.box.addEventListener('focus', () => { if (recording) setStatus('recording… type the prompt, then Save', true); });
+
+  // ---------- live stream to the local backend ----------
+  // Batches events every 250 ms over a WebSocket to backend/app.py. Localhost only.
+  const live = {
+    on: false, ws: null, queue: [], timer: null, session: null,
+    push(ev) { if (this.on && this.ws && this.ws.readyState === 1) this.queue.push(ev); },
+    status(t) { $('liveStatus').textContent = t; },
+    connect() {
+      const url = $('liveUrl').value.trim();
+      this.session = uid();
+      try { this.ws = new WebSocket(url); } catch (err) { this.status('bad url'); this.stop(); return; }
+      this.status('connecting…');
+      this.ws.onopen = () => {
+        this.ws.send(JSON.stringify({ type: 'hello', user: el.user.value.trim() || 'unknown', session: this.session }));
+        this.timer = setInterval(() => this.flush(), 250);
+        $('liveReset').disabled = false;
+        el.box.disabled = false;
+        this.status('streaming');
+      };
+      this.ws.onmessage = m => {
+        try { const d = JSON.parse(m.data); if (d.type === 'ack') this.status(`streaming · session ${d.session}${d.baseline ? '' : ' · no baseline for this user'}`); } catch (_) {}
+      };
+      this.ws.onclose = () => { if (this.on) this.status('disconnected (is the backend running?)'); this.cleanup(); };
+      this.ws.onerror = () => { this.status('connection failed'); };
+    },
+    flush() {
+      if (!this.queue.length || !this.ws || this.ws.readyState !== 1) return;
+      this.ws.send(JSON.stringify({ type: 'events', events: this.queue })); this.queue = [];
+    },
+    send(msg) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(msg)); },
+    cleanup() { clearInterval(this.timer); this.timer = null; this.ws = null; this.queue = []; $('liveReset').disabled = true; if (!recording) el.box.disabled = true; },
+    stop() { this.on = false; $('liveToggle').checked = false; if (this.ws) this.ws.close(); this.cleanup(); this.status('off'); },
+  };
+  $('liveToggle').addEventListener('change', e => { live.on = e.target.checked; live.on ? live.connect() : live.stop(); });
+  $('liveReset').addEventListener('click', () => live.send({ type: 'reset' }));
+  el.user.addEventListener('change', () => live.send({ type: 'user', user: el.user.value.trim() || 'unknown' }));
+  window.addEventListener('beforeunload', () => live.flush());
 
   // ---------- countdown ----------
   function startTimer() {
@@ -501,7 +548,7 @@
   function csv(v) { const s = String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }
 
   // exposed for validation in devtools / automated tests
-  window.keysign = { get samples() { return samples; }, get events() { return events; }, computeFeatures };
+  window.keysign = { get samples() { return samples; }, get events() { return events; }, computeFeatures, live };
 })();
 </script>
 </body>

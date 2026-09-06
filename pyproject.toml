@@ -7,13 +7,15 @@ dependencies = [
     "numpy>=1.26",
     "pandas>=2.1",
     "scikit-learn>=1.4",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "httpx>=0.27"]
 
 [tool.pytest.ini_options]
-testpaths = ["pipeline/tests"]
+testpaths = ["pipeline/tests", "backend/tests"]
 
 [tool.uv]
 package = false

@@ -76,18 +76,52 @@ Four heads consume the same features. Only the question differs:
 
 ---
 
-## 48-hour plan
+## 48-hour plan (revised for 3 reviews)
 
-- **0-10h — build the core, together.** Capture page, feature extractor,
-  baseline builder, live dashboard skeleton. NOBODY splits off until raw data
-  streams end-to-end. Integrate on day one.
-- **10-36h — one head per person.** Each teammate owns a head end-to-end (model
-  + its dashboard panel). Independent by design, so parallel work is safe.
-- **36-48h — freeze, rehearse, pitch.** Feature freeze at hour 36. Bugs only.
-  Rehearse the demo 3x, once with no wifi.
+Status at the start of the clock: steps 1-3 of the build order are DONE and
+pushed (capture page, feature extractor, baseline builder, 28 tests, four
+public datasets converted). The team starts from a working core, not zero.
+Review hours below are assumptions (R1 ~h12, R2 ~h30, R3 = final ~h48);
+shift the blocks if the real times differ.
 
-Degrades gracefully: core + two heads is already a complete, demoable story.
-Drift is the planned cut.
+- **h0-h2 — data sprint, everyone.** Each person records 20 calm + 10 stress
+  samples on the capture page, same laptop and keyboard each time. Stress =
+  20 s timer + someone interrupting. Export, commit nothing, drop the JSON in
+  `data/samples/`. Measured: 5 samples per person is too few for a baseline,
+  20 is comfortable. This is the cheapest accuracy we will ever buy.
+- **h0-h10 — live stream end-to-end (backend + dashboard skeleton).** Capture
+  page streams events over a WebSocket, backend windows them, extracts
+  features, scores against the person's baseline, dashboard shows distance
+  and features moving in real time. NOBODY starts a head until this works.
+- **R1 (~h12) — show:** live dashboard reacting to typing, baseline distance
+  moving, plus the benchmark slide (identity 92% on 4 teammates, 51-user CMU
+  benchmark, four datasets). Message: "the sensing works, the heads are next."
+- **h12-h28 — one head per person, in parallel.** Each head is a function
+  `head(features, baseline, ctx) -> dict` plugged into the backend, plus its
+  dashboard panel. Priorities, in order: Identity (open-set: classifier +
+  "unknown" when distance to the claimed baseline is high), State
+  (supervised model on per-user z-scores, measured AUC 0.82; Gemini writes
+  the plain-language explanation), Threat (distance threshold + silent push
+  to a phone), Drift (chart only: Monkeytype weekly medians + CMU
+  session-to-session, `data/external/monkeytype_weekly.csv`).
+- **R2 (~h30) — show:** the full 3-minute demo story with at least Identity
+  and State live, Threat if ready. Take the reviewers' objections as the h30-h36
+  bug list.
+- **h30-h36 — integrate and polish.** One demo storyline, one dashboard, cut
+  anything flaky. Pi appliance only if someone is idle. Feature freeze at h36.
+- **h36-h48 — rehearse and pitch.** Demo 3x end-to-end, once with wifi off.
+  Deck: problem, one-pipeline-four-heads, live demo, benchmarks, privacy
+  (on-device, no network calls), drift as the vision.
+- **R3 (final) — show:** the demo, then the numbers.
+
+Degrades gracefully: core + Identity + State is already a complete, demoable
+story. Threat is the first cut, Drift is a chart no matter what.
+
+Findings that already changed the design (see `pipeline/README.md`):
+digraph timings help identity but hurt the baseline distance, so they are
+excluded from it; stress has a direction (faster, more errors, more pauses,
+more key overlap), so State is supervised on z-scores, not a distance; the
+public stress-logger labels do not separate and are used only for drift.
 
 ## Team split
 
@@ -116,12 +150,16 @@ person on it, done first.
 
 ## Build order (do these in sequence)
 
-1. Browser capture page: log keydown/keyup with high-resolution timestamps,
-   export to a local file. Minimal. Validate with real data before anything else.
-2. Feature extractor: raw events -> feature vector per typing sample.
-3. Baseline builder: aggregate a user's samples into a personal baseline.
-4. Dashboard skeleton: show live features streaming in.
-5. Heads, one at a time: identity -> state -> threat. Drift is a chart only.
+1. DONE — Browser capture page (`capture/index.html`, serve with `node capture/serve.js`).
+2. DONE — Feature extractor (`pipeline/features.py`, `FEATURE_NAMES`).
+3. DONE — Baseline builder (`pipeline/baseline.py`, JSON per user in `data/baselines/`).
+4. Backend + dashboard skeleton: WebSocket in, windowed features + baseline
+   distance out, live chart. (`backend/`, `dashboard/`)
+5. Heads, one per person, as backend plug-ins: identity -> state -> threat.
+   Drift is a chart only.
+
+Run everything with `uv run ...` (Python) and `node ...` (JS). Tests:
+`uv run python -m pytest -q`.
 
 ## Working principles
 
