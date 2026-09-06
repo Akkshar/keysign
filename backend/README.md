@@ -55,6 +55,14 @@ name, set the same name in the env). `KEYSIGN_NTFY_SERVER` overrides the
 server. Windows with fewer than 25 keys never count (the first seconds of a
 session are noise for everyone). One push per minute per session. The push carries kind, user label, distance and time only.
 
+Every live session is recorded to `data/sessions/<date>_<session>.jsonl`
+(raw events plus each tick's features and head outputs; gitignored;
+`KEYSIGN_RECORD=0` disables). A demo run is data: when someone is misjudged,
+`uv run python -m backend.sessions list` finds their session,
+`... score <file>` prints their open-set score per tick against every
+baseline, and `... export <file> --user Stranger -o data/samples/stranger.json`
+turns it into capture-style samples for the pipeline.
+
 Baselines are read from `data/baselines/<slug>.json`; build them with
 `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`.
 Retrain identity on 10 s windows, the shape the backend actually scores:

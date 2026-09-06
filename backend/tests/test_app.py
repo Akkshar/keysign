@@ -30,6 +30,7 @@ def typed(n, t0=0.0, flight=120.0, hold=60.0):
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(backend, "BASELINE_DIR", tmp_path)   # isolate baselines
+    monkeypatch.setattr(backend, "RECORD_DIR", tmp_path / "sessions")   # and session recordings
     monkeypatch.setattr(backend, "TICK_MS", 0)               # no rate limit in tests
     from backend import heads
     monkeypatch.setattr(heads, "_alert_log_path", tmp_path / "alerts.jsonl")   # don't write real alerts
@@ -110,6 +111,36 @@ def test_capture_with_baseline_scores_and_runs_heads(client, tmp_path):
         assert tick["heads"]["threat"]["level"] == "alert" and tick["heads"]["threat"]["kind"] in ("duress", "intruder")
 
 
+def test_session_is_recorded_and_exportable(client, tmp_path):
+    import json as _json
+    from backend import sessions as rec
+    make_baseline(tmp_path)
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "rec1"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(40)}); cap.receive_json()
+        cap.send_json({"type": "reset"})
+        cap.send_json({"type": "events", "events": typed(40, t0=30_000)}); cap.receive_json()
+    files = list((tmp_path / "sessions").glob("*_rec1.jsonl"))
+    assert len(files) == 1
+    recs = rec.read(files[0])
+    kinds = [r["type"] for r in recs]
+    assert kinds[0] == "hello" and "reset" in kinds and kinds.count("tick") == 2 and kinds.count("events") == 2
+    tick = next(r for r in recs if r["type"] == "tick")
+    assert tick["n_keys"] == 40 and "hold_mean" in tick["features"] and "threat" in tick["heads"]
+    assert len(rec.events_of(recs)) == 160
+    samples = rec.to_samples(recs, "Stranger", chunk_s=20.0, min_keys=30)
+    assert len(samples) == 2 and samples[0]["user"] == "Stranger" and samples[0]["n_keydowns"] == 40
+    assert samples[0]["events"][0]["t"] == 0                    # re-based per sample
+
+
+def test_recording_can_be_disabled(client, tmp_path, monkeypatch):
+    monkeypatch.setattr(backend, "RECORD", False)
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "u", "session": "norec"}); cap.receive_json()
+        cap.send_json({"type": "events", "events": typed(20)}); cap.receive_json()
+    assert not (tmp_path / "sessions").exists() or not list((tmp_path / "sessions").glob("*_norec.jsonl"))
+
+
 def test_dashboard_hello_lists_sessions_and_heads(client):
     with client.websocket_connect("/ws/dashboard") as dash:
         hello = dash.receive_json()
@@ -131,7 +162,8 @@ def test_broadcast_drops_dead_dashboards():
     backend.dashboards.clear()
 
 
-def test_window_trims_old_events():
+def test_window_trims_old_events(monkeypatch):
+    monkeypatch.setattr(backend, "RECORD", False)      # a bare Session must not write into data/sessions
     s = backend.Session("x", "u")
     s.add(typed(20, t0=0))
     s.add(typed(20, t0=60_000))          # a minute later

@@ -38,3 +38,6 @@ capture/replay*.json
 
 # Silent alert log (personal)
 data/alerts*.jsonl
+
+# Live session recordings (raw keystrokes, personal)
+data/sessions/

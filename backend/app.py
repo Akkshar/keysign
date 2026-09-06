@@ -13,6 +13,8 @@ Data flow:
                        heads    = each registered head(features, baseline, ctx) -> dict
                                         |
     dashboard     <--ws /ws/dashboard-- broadcast one JSON "tick" per session
+    data/sessions/<date>_<session>.jsonl  <-- raw events + ticks, every session
+                                              (backend/sessions.py; KEYSIGN_RECORD=0 to disable)
 
 Heads plug in with `register_head(name, fn)`; see backend/heads.py. Nothing
 here leaves the machine: both sockets are localhost.
@@ -35,6 +37,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import time
 import uuid
 from collections import deque
@@ -51,6 +54,8 @@ log = logging.getLogger("keysign")
 
 ROOT = Path(__file__).resolve().parent.parent
 BASELINE_DIR = ROOT / "data" / "baselines"
+RECORD_DIR = ROOT / "data" / "sessions"         # every live session, raw events + ticks (gitignored)
+RECORD = os.environ.get("KEYSIGN_RECORD", "1") != "0"
 
 WINDOW_S = 10.0          # features are computed on the last N seconds of events
 BUFFER_S = 120.0         # how much history a session keeps
@@ -123,6 +128,21 @@ class Session:
         self.last_tick_msg: dict | None = None
         self.ticks = 0
         self.ctx: dict[str, Any] = {}        # heads can keep per-session state here
+        self.record_path: Path | None = None
+        if RECORD:
+            RECORD_DIR.mkdir(parents=True, exist_ok=True)
+            self.record_path = RECORD_DIR / f"{time.strftime('%Y-%m-%d_%H%M%S')}_{session_id}.jsonl"
+            self.record({"type": "hello", "user": user, "session": session_id, "ts": time.time()})
+
+    def record(self, obj: dict) -> None:
+        """Append one line to this session's recording (see backend/sessions.py). Never raises."""
+        if self.record_path is None:
+            return
+        try:
+            with open(self.record_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(obj) + "\n")
+        except OSError:
+            log.exception("could not record session %s", self.id)
 
     def add(self, events: list[dict]) -> None:
         for e in events:
@@ -266,16 +286,26 @@ async def ws_capture(ws: WebSocket):
                                                "baseline": load_baseline(session.user) is not None}))
             elif t == "events" and session is not None:
                 session.add(msg.get("events") or [])
+                session.record({"type": "events", "ts": time.time(), "events": msg.get("events") or []})
                 tick = session.tick()
                 if tick:
+                    if tick.get("features"):
+                        h = tick["heads"]
+                        session.record({"type": "tick", "ts": tick["ts"], "user": tick["user"], "n_keys": tick["n_keys"],
+                                        "distance": tick["distance"], "features": tick["features"],
+                                        "heads": {"identity": h.get("identity"),
+                                                  "threat": {k: (h.get("threat") or {}).get(k) for k in ("level", "kind", "distance")},
+                                                  "state": {k: (h.get("state") or {}).get(k) for k in ("load", "label")}}})
                     await ws.send_text(json.dumps(tick))     # echo to the typist's page too
                     await broadcast(tick)
             elif t == "reset" and session is not None:
                 session.events.clear()
                 session.ctx.clear()
+                session.record({"type": "reset", "ts": time.time()})
                 await broadcast({"type": "reset", "session": session.id, "user": session.user})
             elif t == "user" and session is not None:        # same chair, new declared user
                 session.user = str(msg.get("user") or session.user)
+                session.record({"type": "user", "ts": time.time(), "user": session.user})
     except WebSocketDisconnect:
         pass
     finally:
