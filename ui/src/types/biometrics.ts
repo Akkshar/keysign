@@ -1,4 +1,5 @@
 export type DetectionArea =
+  | 'introduction'
   | 'overview'
   | 'health-signals'
   | 'monitoring'

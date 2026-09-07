@@ -10,6 +10,7 @@ interface NavItem {
 
 // One pipeline, four heads: Identity, State, Threats live; Drift is the roadmap chart.
 const navItems: NavItem[] = [
+  { id: 'introduction', label: 'How it works' },
   { id: 'overview', label: 'Overview' },
   { id: 'monitoring', label: 'Live Monitoring' },
   { id: 'identity', label: 'Identity' },

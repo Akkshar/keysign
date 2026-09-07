@@ -12,6 +12,7 @@ export const Header: React.FC = () => {
 
   const getAreaLabel = () => {
     switch (activeArea) {
+      case 'introduction': return 'How it works';
       case 'overview': return 'Overview';
       case 'health-signals': return 'Health Signals';
       case 'monitoring': return 'Live Monitoring';
