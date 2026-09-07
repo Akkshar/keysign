@@ -666,11 +666,6 @@ def main() -> int:
             print("   settings back to " + json.dumps(restore))
         except Exception as e:
             print("   could not restore settings:", e)
-        if not a.keep_data:
-            try:
-                cleanup(sessions_made, sessions_before)
-            except Exception as e:
-                print("   cleanup failed:", e)
         if started_backend and not a.keep:
             started_backend.terminate()
             try:
@@ -680,6 +675,11 @@ def main() -> int:
             print("   backend stopped")
         elif started_backend:
             print("   backend left running on :8000 (--keep)")
+        if not a.keep_data:                                      # last, so nothing can write while we tidy
+            try:
+                cleanup(sessions_made, sessions_before)
+            except Exception as e:
+                print("   cleanup failed:", e)
 
     print("\n" + "=" * 70)
     if failures:
