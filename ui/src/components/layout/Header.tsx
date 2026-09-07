@@ -49,10 +49,27 @@ export const Header: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* Right: Monitoring Pill, Theme Switcher & User Profile */}
+      <HeaderControls />
+    </header>
+  );
+};
+
+
+/**
+ * The live controls: the rhythm strip, the backend pill, Reset, the theme toggle and whoever
+ * the machine is measuring against. Shared by the sidebar header and the top navigation, so
+ * there is one copy of the things that have to stay right.
+ */
+export const HeaderControls: React.FC = () => {
+  const { isTyping, live, setActiveArea } = useBiometrics();
+  const { theme, toggleTheme } = useTheme();
+  const auth = useAuth();
+  const initials = (live.declaredUser || '?').split(/\s+/).map((s) => s[0]).join('').slice(0, 2).toUpperCase();
+
+  return (
       <div className="flex items-center gap-4 lg:gap-6">
         {/* The signature: your last keystrokes as a rhythm strip. Beats while you type. */}
-        <div className="hidden md:flex items-center gap-3 pr-2 mr-2 border-r border-slate-200/70 dark:border-slate-700/60">
+        <div className="hidden 2xl:flex items-center gap-3 pr-2 mr-2 border-r border-slate-200/70 dark:border-slate-700/60">
           <RhythmStrip />
           <span className={`hidden lg:inline whitespace-nowrap text-[11px] font-medium transition-colors ${isTyping ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-400 dark:text-slate-500'}`}>
             {isTyping ? 'typing' : 'your rhythm'}
@@ -153,6 +170,5 @@ export const Header: React.FC = () => {
         </div>
         )}
       </div>
-    </header>
   );
 };

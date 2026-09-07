@@ -4,8 +4,7 @@ import { BiometricsProvider, useBiometrics } from './context/BiometricsContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HandoffDone, SignInView } from './views/SignInView';
 import { setCalibrating } from './lib/enrol';
-import { Sidebar } from './components/layout/Sidebar';
-import { Header } from './components/layout/Header';
+import { TopNav } from './components/layout/TopNav';
 import { TypewriterWatermark } from './components/layout/TypewriterWatermark';
 
 import { IntroductionView } from './views/IntroductionView';
@@ -21,6 +20,8 @@ import { DriftView } from './views/DriftView';
 import { SettingsView } from './views/SettingsView';
 import { AlertCard } from './components/telemetry/AlertCard';
 import { ShootingStars } from './components/motion/ShootingStars';
+import { FallingKeys } from './components/motion/FallingKeys';
+import { Galaxy } from './components/background/Galaxy';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -62,6 +63,8 @@ const MainContent: React.FC = () => {
   const { activeArea, onKeyAction } = useBiometrics();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  // views that already own a WebGL canvas
+  const heavyView = activeArea === 'monitoring' || activeArea === 'live-demo';
 
   // Global keystroke listener: typing anywhere on the site interacts with the 3D typewriter and telemetry.
   // The timings also stream to the local backend (see BiometricsContext), which is what the heads score.
@@ -116,8 +119,27 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-body theme-transition flex relative overflow-x-hidden">
-      {/* Ambient shooting stars (Aceternity) across every page; pointer-events off so nothing under it changes */}
+      {/* Ambient layer, pointer-events off so nothing under it changes. The Galaxy shader runs
+          only where no other WebGL does: Live Monitoring already draws the 3D typewriter, and two
+          contexts on one page cost frames on the demo laptop. Falling keys are canvas 2D and cheap
+          enough to leave everywhere. */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Dark only: the shader paints a starfield, and on a white page it reads as smudges
+            rather than depth. Light mode keeps the falling keys and the shooting stars. */}
+        {isDark && !heavyView && (
+          <Galaxy
+            className="absolute inset-0"
+            density={0.6}
+            starSpeed={0.22}
+            glowIntensity={0.32}
+            saturation={0.65}
+            hueShift={220}
+            mouseInteraction={false}
+            mouseRepulsion={false}
+            twinkleIntensity={0.25}
+          />
+        )}
+        <FallingKeys />
         <ShootingStars
           minSpeed={14}
           maxSpeed={30}
@@ -131,14 +153,11 @@ const MainContent: React.FC = () => {
       {/* Ambient Misty Vintage Typewriter Watermark Layer */}
       <TypewriterWatermark />
 
-      {/* Fixed Left Sidebar with KeySign Brand & Clinical Navigation */}
-      <Sidebar />
+      <TopNav />
       <AlertCard />
 
       {/* Main Viewport Container */}
-      <div className="pl-64 flex-1 flex flex-col min-w-0 relative z-10">
-        {/* Fixed Header with Monitoring Pill, Theme Toggle, Profile */}
-        <Header />
+      <div className="flex-1 flex flex-col min-w-0 relative z-10">
 
         {/* Scrollable Content Canvas */}
         <main className="relative pt-24 min-h-screen w-full px-6 sm:px-10 lg:px-14 max-w-7xl mx-auto theme-transition">
