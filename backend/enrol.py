@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import subprocess
 import sys
 import threading
@@ -55,7 +56,8 @@ _status_lock = threading.Lock()
 # ten sentences under the last person's name, at speed, on purpose: that is exactly what the
 # Threat head is built to notice, and an intruder alert in the middle of a reviewer's
 # calibration would lock the laptop in front of them.
-CALIBRATION_WINDOW_S = 15 * 60
+CALIBRATION_WINDOW_S = 3 * 60      # the page refreshes this every minute while it is open, so a
+                                   # window someone walked away from starts watching again quickly
 _calibrating_until = 0.0
 
 
@@ -185,15 +187,37 @@ def calibrate_state(user: str, df: pd.DataFrame, baseline: Baseline, path: Path)
     return baseline.state
 
 
+MODEL_PATH = ROOT / "data" / "models" / "identity.joblib"
+ACCURACY_DROP_ALLOWED = 0.03      # a new class may cost a point or two; more than this is a worse model
+
+
+def model_accuracy(path: Path = MODEL_PATH) -> float | None:
+    try:
+        from pipeline.identity import IdentityModel
+        return IdentityModel.load(path).cv_accuracy
+    except Exception:
+        return None
+
+
 def retrain_identity(user: str) -> None:
     """
     Rebuild the window features over every sample file and retrain the identity model, so the
     new person is recognised rather than reported unknown. Minutes of typing is thin next to
-    the team's hundreds of samples, so their confidence will be lower than the team's at
-    first. Runs in a thread; never raises.
+    the team's hundreds of samples, so their confidence will be lower than the team's at first.
+
+    The model in use is kept aside first and put back if the retrained one is more than
+    ACCURACY_DROP_ALLOWED worse on held-out samples. Enrolling somebody must never quietly
+    make the machine worse at recognising everyone else. Runs in a thread; never raises.
     """
     def run():
         _set_status(state="training", user=user, message="teaching the identity model this typist")
+        before = model_accuracy()
+        backup = MODEL_PATH.with_name(MODEL_PATH.name + ".before-enrol")
+        try:
+            if MODEL_PATH.exists():
+                shutil.copy2(MODEL_PATH, backup)
+        except Exception:
+            backup = None
         try:
             inputs = [str(p) for p in [
                 ROOT / "keystrokes (1).json",
@@ -215,9 +239,21 @@ def retrain_identity(user: str) -> None:
             if r.returncode != 0:
                 _set_status(state="error", message=f"identity training failed: {r.stderr[-200:]}")
                 return
-            _set_status(state="ready", user=user, message=(r.stdout or "").strip().splitlines()[-1][:200]
-                        if r.stdout else "identity model retrained")
-            log.info("identity model retrained for %s", user)
+            after = model_accuracy()
+            if before is not None and after is not None and after < before - ACCURACY_DROP_ALLOWED:
+                if backup and backup.exists():
+                    shutil.copy2(backup, MODEL_PATH)
+                    msg = (f"kept the previous identity model: retraining with {user} scored "
+                           f"{after:.0%} against {before:.0%}")
+                else:
+                    msg = f"identity accuracy fell to {after:.0%} from {before:.0%} and there was no model to put back"
+                log.warning("%s", msg)
+                _set_status(state="ready", user=user, message=msg)
+                return
+            _set_status(state="ready", user=user,
+                        message=(f"identity model retrained, {after:.0%} on held-out samples" if after is not None
+                                 else "identity model retrained"))
+            log.info("identity model retrained for %s (%s -> %s)", user, before, after)
         except Exception as e:                                  # never take the backend down for this
             log.exception("identity retraining failed")
             _set_status(state="error", message=str(e)[:200])

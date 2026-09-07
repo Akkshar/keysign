@@ -15,7 +15,46 @@ only thing that leaves it is the silent alert to the phone.
 
 Phone: the one with the ntfy app subscribed to the topic. Volume on.
 
-## Start-up (5 minutes before, three terminals, all in the project folder)
+## Start-up, the short way (use this)
+
+One command. It starts the backend, hooks the keyboard for every application,
+puts a tray icon up and opens the app window with no address bar:
+
+    cd "C:\Users\akksh\OneDrive\Desktop\C2C"
+    uv run python -m agent
+
+Stop it from the tray, or with `uv run python -m agent --quit`. After any
+`npm --prefix ui run build`, restart it (or tray -> Reload the dashboard): the
+window keeps its own cache and will otherwise show the older build.
+
+**Signing in.** The window remembers whoever signed in last on this machine, so
+usually there is nothing to do. If it asks:
+
+- *Continue with Google in your browser* opens Chrome (this machine's default is
+  Arc, which does not hold the Google session). Sign in there and the window
+  picks it up on its own in a second or two; the browser window then says it can
+  be closed.
+- Or type an email and password straight into the window. No browser, no pop-ups,
+  and creating an account works the same way.
+- Or *Continue as operator*, which skips sign-in and picks the profile from a
+  dropdown. Fastest path if anything misbehaves.
+
+**A reviewer who wants their own profile.** They sign in, and because that account
+has no profile they are offered one: ten sentences, five typed normally and five
+at speed, about two minutes. At the end the machine measures against them, and
+the numbers on that screen are the ones it just measured. Alerts are held off
+while anyone is at a sign-in screen or calibrating, so nothing locks the laptop
+in a reviewer's face.
+
+Two things to know about that:
+
+- it points the machine at the reviewer. To go back to Akkshar for the chair
+  swap, use the profile dropdown in the header;
+- it retrains the identity model in the background, about twenty seconds. If the
+  retrained model turns out worse on held-out samples, the previous one is put
+  back and Settings says so, so a calibration cannot spoil the swap demo.
+
+## The long way (three terminals, only if the app will not start)
 
     cd "C:\Users\akksh\OneDrive\Desktop\C2C"
 
@@ -62,6 +101,8 @@ streams to the backend, so either window can be the typing surface.
 - [ ] After any `npm --prefix ui run build`, restart the agent (or tray ->
       Reload the dashboard). The app window has its own HTTP cache and used to
       keep showing an older build.
+- [ ] The header names the right person under "measured against". A calibration
+      run points it at whoever calibrated.
 - [ ] Face models present: `uv run python -m backend.faces fetch` says
       `engine now: sface`. Owner enrolled in Settings (facing the screen,
       glancing sideways, looking down at the keys) from BOTH cameras.
@@ -151,6 +192,24 @@ on this laptop. Questions."
 | Tests | 60 |
 
 ## If something breaks
+
+**The alert fires but nothing reaches the phone.** Check `KEYSIGN_NTFY_TOPIC` is
+set in the terminal that started the agent. The alert is logged either way, and
+Threats -> Silent alerts shows what the machine decided and why.
+
+**A swap is detected but nothing happens.** That was a bug: the handover counted
+alerts, and the count resets after a six-second pause (fixed 2026-09-07). If it
+ever returns, the giveaway is a row in `data/alerts.jsonl` with no verdict JSON
+beside it in `data/alert_photos/`.
+
+**Google sign-in will not finish.** Use email and password in the window, or
+Continue as operator. Neither needs a browser.
+
+**The camera light keeps coming on.** Someone is typing at a sign-in screen while
+the machine still measures against the last person. It is held off now; if it
+happens anyway, Settings -> Webcam burst switches it off for the demo.
+
+## If something breaks (the older notes)
 
 | Symptom | Fix |
 |---------|-----|

@@ -573,6 +573,11 @@ def signin_in_browser(request: Request, browser: str = "default"):
     from backend import actions
     if browser == "remembered":
         browser = str(actions.settings().get("signin_browser") or "default")
+        # The hand-off exists to reach a browser that holds a Google session, and the machine's
+        # default here is Arc, which does not. Chrome, when it is installed, is the better bet
+        # than the default; the card still offers the other one.
+        if browser == "default" and chrome_path():
+            browser = "chrome"
     base = str(request.base_url).rstrip("/")
     if not any(base.startswith(p) for p in ("http://localhost", "http://127.0.0.1", "http://[::1]")):
         return JSONResponse({"ok": False, "error": "not a loopback address"}, status_code=400)

@@ -8,6 +8,7 @@ tests read ticks there. Broadcasting itself is unit-tested with fakes.
 """
 import asyncio
 import pathlib
+import time
 import json
 
 import numpy as np
@@ -502,6 +503,45 @@ def test_only_one_thread_opens_the_camera_and_a_fresh_burst_is_shared(monkeypatc
     assert got["first"] and got["second"] == got["first"], "the second alert was left with no frame"
 
 
+def test_enrolling_someone_cannot_make_identity_worse(tmp_path, monkeypatch):
+    """
+    Retraining across everyone with a ten-sentence class can cost accuracy. The model in use is
+    kept aside and put back when the new one is worse, so enrolling a reviewer during a demo
+    cannot quietly stop the machine recognising the team.
+    """
+    from backend import enrol as E
+    model = tmp_path / "identity.joblib"
+    model.write_bytes(b"the model that works")
+    monkeypatch.setattr(E, "MODEL_PATH", model)
+    scores = iter([0.94, 0.80])                       # before, after
+    monkeypatch.setattr(E, "model_accuracy", lambda *a, **k: next(scores))
+    def fake_run(argv, **kw):
+        model.write_bytes(b"a worse model")           # training overwrites it
+        return type("R", (), {"returncode": 0, "stdout": "identity: ...", "stderr": ""})()
+    monkeypatch.setattr(E.subprocess, "run", fake_run)
+    monkeypatch.setattr(E, "SAMPLES_DIR", tmp_path)
+    (tmp_path / "enrolled_x.json").write_text("[]", encoding="utf-8")
+    E.retrain_identity("Reviewer")
+    for _ in range(60):
+        if E.status().get("state") == "ready":
+            break
+        time.sleep(0.05)
+    assert model.read_bytes() == b"the model that works", "the worse model was left in place"
+    assert "kept the previous identity model" in E.status()["message"], E.status()
+
+    # a retrain that holds up is kept
+    model.write_bytes(b"the model that works")
+    scores2 = iter([0.94, 0.93])
+    monkeypatch.setattr(E, "model_accuracy", lambda *a, **k: next(scores2))
+    E.retrain_identity("Reviewer")
+    for _ in range(60):
+        if "93%" in E.status().get("message", ""):
+            break
+        time.sleep(0.05)
+    assert model.read_bytes() == b"a worse model"     # i.e. the newly trained one
+    assert "retrained" in E.status()["message"]
+
+
 def test_signin_browser_opens_only_this_backend(client, monkeypatch):
     """The window asks the backend to open the browser; only its own loopback address is opened."""
     opened = []
@@ -525,6 +565,14 @@ def test_signin_browser_opens_only_this_backend(client, monkeypatch):
     opened.clear()
     r = local.post("/api/signin/browser?browser=chrome").json()
     assert r["chrome_available"] is False and opened == ["http://localhost:8000/?signin=1"]
+    # "remembered" with nothing remembered still prefers Chrome when it is installed: the
+    # hand-off has to reach a browser holding a Google session, and this machine's default
+    # (Arc) does not
+    monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "fresh-settings.json")
+    monkeypatch.setattr(backend, "CHROME_PATHS", [pathlib.Path(__file__)])
+    launched.clear(); opened.clear()
+    r = local.post("/api/signin/browser?browser=remembered").json()
+    assert r["browser"] == "chrome" and launched and not opened
     # anything that is not this machine is refused, so the endpoint cannot open arbitrary pages
     opened.clear()
     assert client.post("/api/signin/browser").status_code == 400        # base_url http://testserver
