@@ -132,7 +132,7 @@ export const OverviewView: React.FC = () => {
     <Reveal className="flex flex-col w-full gap-8 pb-12">
       {/* Thesis */}
       <section
-        className="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 sm:p-8 lg:p-10"
+        className="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-6 sm:p-8 lg:p-10"
         data-purpose="hero-section"
       >
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
@@ -199,7 +199,7 @@ export const OverviewView: React.FC = () => {
             Type anywhere: every key you press is scored on this machine
           </span>
         </div>
-        <div className="relative w-full h-[480px] rounded-3xl bg-surface-container-low border border-outline-variant/40 overflow-hidden [&>div>div:first-child]:!h-[480px]">
+        <div className="relative w-full h-[480px] rounded-xl bg-surface-container-low border border-outline-variant/40 overflow-hidden [&>div>div:first-child]:!h-[480px]">
           <Interactive3DTypewriter className="w-full" />
         </div>
       </section>
@@ -217,7 +217,7 @@ export const OverviewView: React.FC = () => {
             <button
               key={h.area}
               onClick={() => setActiveArea(h.area)}
-              className="text-left bg-surface-container-lowest border border-outline-variant/40 rounded-2xl p-5 hover:bg-surface-container-low transition-colors cursor-pointer space-y-2"
+              className="text-left bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 hover:bg-surface-container-low transition-colors cursor-pointer space-y-2"
             >
               <span className={`font-telemetry text-[11px] uppercase tracking-wider ${h.tone}`}>{h.name}</span>
               <p className="font-serif text-base font-medium text-on-surface leading-snug">{h.question}</p>

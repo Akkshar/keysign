@@ -24,12 +24,14 @@ export const WaterfallChart: React.FC = () => {
   const seen = new Set(pulses.map((p) => p.status));
 
   return (
-    <div className="bg-surface-container-lowest p-space-xl rounded-2xl border border-outline-variant/40">
+    <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] shadow-sm p-space-xl">
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-space-sm mb-space-lg">
         <div>
-          <h3 className="font-serif text-lg font-medium text-on-surface">Hold and gap, key by key</h3>
-          <p className="font-body text-xs text-on-surface-variant">
-            Your last 20 keystrokes. Tall bar: how long the key was held. Short bar: the gap before it.
+          <h3 className="font-serif text-lg font-medium text-stone-900 dark:text-stone-100">Hold and gap, key by key</h3>
+          <p className="font-body text-xs text-stone-500 dark:text-stone-400">
+            {pulses.length
+              ? 'Your last 20 keystrokes. Tall bar: how long the key was held. Short bar: the gap before it.'
+              : 'Tall bar: how long a key was held. Short bar: the gap before it.'}
           </p>
         </div>
         <div className="flex items-center gap-space-md flex-wrap font-body text-[11px] text-on-surface-variant">
@@ -44,8 +46,18 @@ export const WaterfallChart: React.FC = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="flex items-end justify-between gap-2 min-w-[560px] h-40 pt-space-md border-b border-outline-variant/40 px-1">
+      {pulses.length === 0 && (
+        <div className="h-40 flex flex-col items-center justify-center gap-1 text-center border-b border-stone-200 dark:border-stone-800">
+          <span className="font-body text-sm text-stone-500 dark:text-stone-400">Nothing recorded yet</span>
+          <span className="font-body text-xs text-stone-400 dark:text-stone-500 max-w-sm">
+            Type anywhere on this page. With the desktop agent capturing, the keys go to whichever
+            application has focus, so this stays empty while the heads keep scoring.
+          </span>
+        </div>
+      )}
+
+      <div className={`overflow-x-auto ${pulses.length ? '' : 'hidden'}`}>
+        <div className="flex items-end justify-between gap-2 min-w-[560px] h-40 pt-space-md border-b border-stone-200 dark:border-stone-800 px-1">
           {pulses.map((pulse, idx) => {
             const dwellH = Math.max(6, (pulse.dwellMs / maxDwell) * 100);
             const flightH = Math.max(4, (pulse.flightMs / maxFlight) * 70);

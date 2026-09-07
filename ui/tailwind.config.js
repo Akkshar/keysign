@@ -8,13 +8,15 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Amber is the new design's accent; primary was still the old cobalt, which is
+        // why a token-styled card next to a stone-and-amber one looked like a different app.
         'primary': {
-          DEFAULT: '#1d4ed8',
-          dark: '#3b82f6',
-          container: '#1d4ed8',
-          'on-container': '#cad3ff',
-          fixed: '#dce1ff',
-          'fixed-dim': '#b7c4ff',
+          DEFAULT: '#b45309',
+          dark: '#f59e0b',
+          container: '#b45309',
+          'on-container': '#ffe4bd',
+          fixed: '#ffedd5',
+          'fixed-dim': '#fed7aa',
         },
         'secondary': {
           DEFAULT: '#059669',
@@ -24,12 +26,14 @@ export default {
           fixed: '#85f8c4',
           'fixed-dim': '#68dba9',
         },
+        // Caution needs to be legible next to primary now that primary is amber, so it
+        // moves to terracotta. Secondary stays emerald and error stays red, as the zip has them.
         'tertiary': {
-          DEFAULT: '#d97706',
-          dark: '#f59e0b',
-          container: '#8d4b00',
-          'on-container': '#ffcba3',
-          fixed: '#ffdcc3',
+          DEFAULT: '#c2410c',
+          dark: '#fb923c',
+          container: '#7c2d12',
+          'on-container': '#ffd9c2',
+          fixed: '#ffe0cc',
         },
         'error': {
           DEFAULT: '#dc2626',

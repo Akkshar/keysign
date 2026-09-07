@@ -33,18 +33,18 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
 
   return (
     <section
-      className={`glass-panel rounded-xl shadow-[0_4px_24px_-4px_rgba(15,23,42,0.04)] p-6 lg:p-7 border border-slate-200/80 dark:border-slate-800/80 transition-all ${className}`}
+      className={`glass-panel rounded-xl shadow-[0_4px_24px_-4px_rgba(15,23,42,0.04)] p-6 lg:p-7 border border-stone-200/80 dark:border-stone-800/80 transition-all ${className}`}
       data-purpose="primary-stability-card"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Column: Circular Stability Score Gauge */}
-        <div className="lg:col-span-5 flex items-center gap-6 pr-4 lg:border-r lg:border-slate-200/60 dark:lg:border-slate-800/60">
+        <div className="lg:col-span-5 flex items-center gap-6 pr-4 lg:border-r lg:border-stone-200/60 dark:lg:border-stone-800/60">
           {/* Circular Progress Ring SVG */}
           <div className="relative w-24 h-24 shrink-0 flex items-center justify-center" data-purpose="circular-score-gauge">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
               {/* Background Ring Track */}
               <circle
-                className="text-slate-100 dark:text-slate-800"
+                className="text-stone-100 dark:text-stone-800"
                 cx="50"
                 cy="50"
                 fill="transparent"
@@ -75,26 +75,26 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
             </svg>
             {/* Center Score Numeric Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none">
-              <span className="text-2xl font-semibold tracking-tight text-slate-800 dark:text-slate-100 leading-none font-headline">
+              <span className="text-2xl font-semibold tracking-tight text-stone-800 dark:text-stone-100 leading-none font-headline">
                 {score}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium mt-0.5">/ 100</span>
+              <span className="text-[10px] text-stone-400 font-medium mt-0.5">/ 100</span>
             </div>
           </div>
 
           {/* Score Narrative & Stability Status */}
           <div className="space-y-1.5">
-            <h2 className="text-base font-serif font-medium text-slate-900 dark:text-slate-100 leading-snug">
+            <h2 className="text-base font-serif font-medium text-stone-900 dark:text-stone-100 leading-snug">
               Typing Pattern Stability
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
+            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed font-normal">
               Your current typing behavior is consistent with your personal baseline.
             </p>
             <div className="flex items-center gap-1.5 pt-1">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Stable Baseline</span>
+              <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Stable Baseline</span>
             </div>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 block pt-0.5">
+            <span className="text-[10px] text-stone-400 dark:text-stone-500 block pt-0.5">
               Screening baseline • Not a diagnostic evaluation
             </span>
           </div>
@@ -105,7 +105,7 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
           {/* Real-time Badge Indicator */}
           <div className="flex justify-end items-center gap-2">
             {isTyping && (
-              <span className="text-[10px] font-telemetry text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded font-medium animate-pulse">
+              <span className="text-[10px] font-telemetry text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded font-medium animate-pulse">
                 LIVE KEYSTROKE INGESTION
               </span>
             )}
@@ -129,9 +129,9 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
                   className={`wave-bar w-[3px] rounded-full transition-all duration-200 ${
                     isIndigo
                       ? h > 48
-                        ? 'bg-indigo-600 dark:bg-indigo-400'
-                        : 'bg-indigo-400 dark:bg-indigo-500'
-                      : 'bg-slate-300 dark:bg-slate-700'
+                        ? 'bg-amber-600 dark:bg-amber-400'
+                        : 'bg-amber-400 dark:bg-amber-500'
+                      : 'bg-stone-300 dark:bg-stone-700'
                   }`}
                   style={{
                     height: `${h}px`,
@@ -143,7 +143,7 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
           </div>
 
           {/* Waveform Explanation Caption */}
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-normal">
+          <div className="flex items-center justify-between text-[11px] text-stone-400 font-normal">
             <span>Live typing pattern (timing only)</span>
             <span className="font-telemetry text-[10px] text-on-surface-variant">One reading per key, in milliseconds</span>
           </div>

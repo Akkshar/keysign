@@ -27,10 +27,10 @@ export const CardSpotlight: React.FC<CardSpotlightProps> = ({
   return (
     <div
       onMouseMove={handleMouseMove}
-      className={`group/spotlight relative overflow-hidden rounded-2xl ${className}`}
+      className={`group/spotlight relative overflow-hidden rounded-xl ${className}`}
     >
       <motion.div
-        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100 z-0"
+        className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition-opacity duration-300 group-hover/spotlight:opacity-100 z-0"
         style={{
           background: useMotionTemplate`
             radial-gradient(

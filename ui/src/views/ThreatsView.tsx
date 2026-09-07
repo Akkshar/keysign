@@ -90,7 +90,7 @@ export const ThreatsView: React.FC = () => {
       <Reveal className="flex flex-col w-full gap-space-2xl">
         {/* Hero: the verdict and the two clocks */}
         <CardSpotlight color={level === 'alert' ? 'rgba(220, 38, 38, 0.10)' : level === 'warn' ? 'rgba(217, 119, 6, 0.10)' : 'rgba(5, 150, 105, 0.10)'}>
-          <div className="bg-surface-container-lowest border border-surface-container rounded-2xl p-space-2xl flex flex-col gap-space-xl">
+          <div className="bg-surface-container-lowest border border-surface-container rounded-xl p-space-2xl flex flex-col gap-space-xl">
             <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-space-lg">
               <div className="flex flex-col gap-space-xs">
                 <span className="font-telemetry text-xs uppercase tracking-wider text-on-surface-variant">Threat · {live.connected ? 'live' : 'backend offline'}</span>
@@ -136,7 +136,7 @@ export const ThreatsView: React.FC = () => {
         </CardSpotlight>
 
         {/* What is pulling the window away from the baseline */}
-        <div className="bg-surface-container-lowest border border-surface-container rounded-2xl p-space-xl flex flex-col gap-space-lg">
+        <div className="bg-surface-container-lowest border border-surface-container rounded-xl p-space-xl flex flex-col gap-space-lg">
           <div className="flex flex-col gap-space-2xs">
             <h2 className="font-serif text-xl font-medium text-on-surface">Top drivers</h2>
             <p className="font-body text-sm text-on-surface-variant">
@@ -151,7 +151,7 @@ export const ThreatsView: React.FC = () => {
         </div>
 
         {/* The real alert log */}
-        <div className="bg-surface-container-lowest border border-surface-container rounded-2xl p-space-xl flex flex-col gap-space-lg">
+        <div className="bg-surface-container-lowest border border-surface-container rounded-xl p-space-xl flex flex-col gap-space-lg">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-space-sm">
             <div className="flex flex-col gap-space-2xs">
               <h2 className="font-serif text-xl font-medium text-on-surface">Silent alerts</h2>

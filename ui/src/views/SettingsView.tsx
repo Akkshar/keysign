@@ -34,7 +34,7 @@ export const SettingsView: React.FC = () => {
 
       <AgentSection />
 
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-6">
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <label htmlFor="settings-user" className="text-sm font-medium text-on-surface">Measure against</label>
@@ -119,7 +119,7 @@ export const SettingsView: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-4">
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-4">
         <div>
           <h2 className="font-serif text-xl font-medium text-on-surface">Set on the backend</h2>
           <p className="text-xs text-on-surface-variant">
@@ -260,7 +260,7 @@ const AccountSection: React.FC = () => {
   const { live } = useBiometrics();
   if (auth.status === 'unconfigured') {
     return (
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-2">
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-2">
         <h2 className="font-serif text-xl font-medium text-on-surface">Account</h2>
         <p className="text-xs text-on-surface-variant">
           Sign-in is not configured, so the declared user is the dropdown below. To enable email and Google sign-in,
@@ -272,7 +272,7 @@ const AccountSection: React.FC = () => {
   }
   if (auth.status !== 'signed-in' || !auth.account) {
     return (
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-3">
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-3">
         <h2 className="font-serif text-xl font-medium text-on-surface">Account</h2>
         <p className="text-xs text-on-surface-variant">Operator mode: nobody is signed in; the declared user is the dropdown below.</p>
         <button type="button" onClick={() => { sessionStorage.removeItem('keysign.ui.operator'); window.location.reload(); }}
@@ -284,10 +284,10 @@ const AccountSection: React.FC = () => {
   }
   const a = auth.account;
   return (
-    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-5">
+    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-5">
       <div className="flex items-center gap-3">
         {a.photo ? <img src={a.photo} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover" />
-          : <div className="w-10 h-10 rounded-full bg-slate-700 text-white flex items-center justify-center text-sm font-medium">{(a.name || a.email)[0]?.toUpperCase()}</div>}
+          : <div className="w-10 h-10 rounded-full bg-stone-700 text-white flex items-center justify-center text-sm font-medium">{(a.name || a.email)[0]?.toUpperCase()}</div>}
         <div>
           <h2 className="font-serif text-xl font-medium text-on-surface">{a.name || a.email}</h2>
           <p className="text-xs text-on-surface-variant">{a.email} · signed in with {a.provider === 'google' ? 'Google' : 'email'}</p>
@@ -338,7 +338,7 @@ const AgentSection: React.FC = () => {
   const set = async (changes: Partial<AppSettings>) => { const c = await updateSettings(changes); if (c) setCfg(c); };
   const ago = agent.last_key_at ? Math.max(0, Math.round(Date.now() / 1000 - agent.last_key_at)) : null;
   return (
-    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-5">
+    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-5">
       <div>
         <h2 className="font-serif text-xl font-medium text-on-surface">On this machine</h2>
         <p className="text-xs text-on-surface-variant">

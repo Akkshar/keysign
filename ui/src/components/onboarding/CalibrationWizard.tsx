@@ -287,6 +287,6 @@ const Shell: React.FC<{ title: string; sub: string; children: React.ReactNode }>
       <h1 className="font-serif text-3xl font-medium tracking-tight text-on-surface">{title}</h1>
       <p className="text-sm text-on-surface-variant">{sub}</p>
     </div>
-    <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 shadow-sm">{children}</div>
+    <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 shadow-sm">{children}</div>
   </div>
 );

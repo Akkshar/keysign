@@ -31,7 +31,7 @@ export const HealthSignalCard: React.FC<HealthSignalCardProps> = ({ condition, o
       onClick={onClick}
       aria-pressed={selected}
       data-purpose="signal-card"
-      className={`group w-full text-left rounded-2xl p-4 border transition-colors duration-200 flex flex-col justify-between min-h-[140px] bg-surface-container-lowest ${
+      className={`group w-full text-left rounded-xl p-4 border transition-colors duration-200 flex flex-col justify-between min-h-[140px] bg-surface-container-lowest ${
         selected
           ? 'border-primary/50'
           : 'border-outline-variant/60 hover:border-outline'

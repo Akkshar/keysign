@@ -22,18 +22,18 @@ import { HealthSignalsView } from './HealthSignalsView';
 const SectionDivider: React.FC<{ title: string; targetId: string }> = ({ title, targetId }) => (
   <div className="w-full py-10 sm:py-14 flex items-center justify-center select-none">
     <div className="w-full flex items-center gap-4">
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-700 to-slate-400/40 dark:to-slate-600/40" />
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-stone-300 dark:via-stone-700 to-stone-400/40 dark:to-stone-600/40" />
       <button
         type="button"
         onClick={() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })}
-        className="px-4 py-1.5 rounded-md border border-slate-200/90 dark:border-slate-800/90 bg-white/80 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 font-telemetry text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 hover:text-slate-900 dark:hover:text-slate-100 transition-all group"
+        className="px-4 py-1.5 rounded-md border border-stone-200/90 dark:border-stone-800/90 bg-white/80 dark:bg-stone-900/80 text-stone-600 dark:text-stone-400 font-telemetry text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-stone-100 transition-all group"
       >
         <span>{title}</span>
-        <span className="material-symbols-outlined text-sm text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-transform group-hover:translate-y-0.5">
+        <span className="material-symbols-outlined text-sm text-stone-400 dark:text-stone-500 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-transform group-hover:translate-y-0.5">
           arrow_downward
         </span>
       </button>
-      <div className="flex-1 h-px bg-gradient-to-l from-transparent via-slate-300 dark:via-slate-700 to-slate-400/40 dark:to-slate-600/40" />
+      <div className="flex-1 h-px bg-gradient-to-l from-transparent via-stone-300 dark:via-stone-700 to-stone-400/40 dark:to-stone-600/40" />
     </div>
   </div>
 );

@@ -24,7 +24,7 @@ export const SignInView: React.FC = () => {
       >
         <div className="mb-8 space-y-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center text-white">
               <span className="material-symbols-outlined text-[19px]">keyboard_alt</span>
             </div>
             <span className="font-serif text-2xl font-medium tracking-tight">KeySign</span>
@@ -43,7 +43,7 @@ export const SignInView: React.FC = () => {
             <p className="text-sm text-primary">Choose your profile, then go back to the KeySign window.</p>
           )}
         </div>
-        <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 shadow-sm">
+        <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 shadow-sm">
           {needsLink ? <LinkProfile /> : <SignInForm />}
         </div>
         <p className="mt-6 text-[11px] text-on-surface-variant leading-relaxed">
@@ -55,8 +55,8 @@ export const SignInView: React.FC = () => {
   );
 };
 
-const inputCls = 'w-full rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
-const primaryCls = 'w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+const inputCls = 'w-full rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-amber-500/40';
+const primaryCls = 'w-full rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 const secondaryCls = 'w-full rounded-lg border border-outline-variant/60 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface text-sm font-medium py-2.5 transition-colors disabled:opacity-50 flex items-center justify-center gap-2';
 
 const SignInForm: React.FC = () => {
@@ -228,7 +228,7 @@ export const HandoffDone: React.FC = () => {
     <div className="min-h-screen bg-background text-on-surface flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md text-center space-y-4">
         <div className="flex items-center justify-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+          <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center text-white">
             <span className="material-symbols-outlined text-[19px]">keyboard_alt</span>
           </div>
           <span className="font-serif text-2xl font-medium tracking-tight">KeySign</span>

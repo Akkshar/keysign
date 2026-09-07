@@ -55,7 +55,7 @@ export const PrivacyView: React.FC = () => {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-0">
         {stages.map((s, i) => (
           <div key={s.title} className="relative flex">
-            <div className="flex-1 bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-5 space-y-3">
+            <div className="flex-1 bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-5 space-y-3">
               <div>
                 <h2 className="font-serif text-xl font-medium text-on-surface">{s.title}</h2>
                 <p className="text-xs text-on-surface-variant font-telemetry">{s.sub}</p>
@@ -125,7 +125,7 @@ export const PrivacyView: React.FC = () => {
           </div>
         </CardSpotlight>
 
-        <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-4">
+        <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-4">
           <h2 className="font-serif text-xl font-medium text-on-surface">What we don't do</h2>
           <ul className="space-y-2.5">
             {[

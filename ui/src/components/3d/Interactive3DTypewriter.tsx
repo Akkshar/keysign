@@ -98,7 +98,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
     }
 
     // 2. Render Typewritten Text with realistic ink bleed
-    ctx.fillStyle = '#1e293b';
+    ctx.fillStyle = '#2b2622';
     ctx.font = 'bold 36px "Courier New", Courier, monospace';
     ctx.textBaseline = 'middle';
 
@@ -124,7 +124,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
 
       // Blinking ink cursor on last line
       if (lineIndex === lines.length - 1) {
-        ctx.fillStyle = '#4f46e5';
+        ctx.fillStyle = '#b45309';
         ctx.fillRect(currentX + 2, y - 18, 4, 36);
       }
     });
@@ -161,7 +161,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
     container.appendChild(renderer.domElement);
 
     // 3. Studio Lighting: Multi-point key, rim, and warm accent lights
-    const ambientLight = new THREE.AmbientLight(0xf1f5f9, 2.0);
+    const ambientLight = new THREE.AmbientLight(0xf5f1e8, 2.0);
     scene.add(ambientLight);
 
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
@@ -173,11 +173,11 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
     keyLight.shadow.camera.far = 25;
     scene.add(keyLight);
 
-    const rimLight = new THREE.DirectionalLight(0x818cf8, 1.4); // Cool indigo rim
+    const rimLight = new THREE.DirectionalLight(0xd6c9a8, 1.4); // Warm rim, off the paper
     rimLight.position.set(-6, 4, -4);
     scene.add(rimLight);
 
-    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.9); // Cyan telemetry bounce
+    const fillLight = new THREE.DirectionalLight(0xb4906a, 0.6); // Low warm fill
     fillLight.position.set(0, -2, 5);
     scene.add(fillLight);
 
@@ -188,19 +188,19 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
 
     // High-fidelity Materials
     const chassisMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1e293b, // Matte slate lacquer
+      color: 0x2b2622, // Matte umber lacquer
       roughness: 0.32,
       metalness: 0.48,
     });
 
     const chromeMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf1f5f9, // Polished chrome
+      color: 0xe8e3d8, // Polished nickel
       roughness: 0.12,
       metalness: 0.92,
     });
 
     const darkRollerMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0f172a, // Vulcanized black rubber
+      color: 0x17140f, // Vulcanized black rubber
       roughness: 0.65,
       metalness: 0.2,
     });
@@ -351,18 +351,18 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
       if (!ctx) return null;
 
       // Ivory circular background
-      ctx.fillStyle = '#f8fafc';
+      ctx.fillStyle = '#fbf8ee';
       ctx.beginPath();
       ctx.arc(64, 64, 62, 0, Math.PI * 2);
       ctx.fill();
 
       // Inner thin vintage ring
-      ctx.strokeStyle = '#94a3b8';
+      ctx.strokeStyle = '#a8a29e';
       ctx.lineWidth = 3;
       ctx.stroke();
 
       // Bold key label
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = '#1c1917';
       ctx.font = 'bold 54px "Courier New", Courier, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -388,7 +388,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
         const keyLabelTex = createKeyLabelTexture(char);
 
         const capMat = new THREE.MeshStandardMaterial({
-          color: 0xf8fafc,
+          color: 0xfbf8ee,
           roughness: 0.28,
           metalness: 0.1,
           map: keyLabelTex || undefined,
@@ -429,7 +429,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
     // Wide Chrome & Ivory Spacebar
     const spaceGeo = new THREE.BoxGeometry(1.7, 0.08, 0.22);
     const spaceMat = new THREE.MeshStandardMaterial({
-      color: 0xf8fafc,
+      color: 0xfbf8ee,
       roughness: 0.25,
       metalness: 0.15,
       emissive: new THREE.Color(0x000000),
@@ -540,7 +540,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
       // 1. Depress the exact QWERTY 3D keycap
       if (keyData) {
         keyData.group.position.y = keyData.originalY - 0.075; // Real mechanical depression
-        keyData.material.emissive.setHex(0x6366f1); // Glowing indigo strike pulse
+        keyData.material.emissive.setHex(0xb45309); // Glowing indigo strike pulse
 
         setTimeout(() => {
           keyData.group.position.y = keyData.originalY;
@@ -653,7 +653,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
               a purple gradient, "Milestone Unlocked!". Words per minute is the one number
               worth keeping, because it is measured and it is what a typist looks for. */}
           <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 text-xs font-mono text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/75 dark:bg-stone-900/75 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-xs font-mono text-stone-600 dark:text-stone-400">
               <span className="w-2 h-2 rounded-full bg-primary" />
               <span>Follows your keyboard</span>
             </div>
@@ -662,7 +662,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
               <motion.div
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="px-3 py-1.5 rounded-full bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-mono text-slate-600 dark:text-slate-300"
+                className="px-3 py-1.5 rounded-full bg-white/75 dark:bg-stone-900/75 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-[11px] font-mono text-stone-600 dark:text-stone-300"
               >
                 {typingGame.wpm} wpm
               </motion.div>
@@ -676,8 +676,8 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
               transition={{ duration: 0.45 }}
               className={`w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-colors ${
                 typingGame.bellTriggered
-                  ? 'bg-amber-400 border-amber-300 text-slate-900 shadow-amber-400/50'
-                  : 'bg-white/75 dark:bg-slate-900/75 border-slate-200/60 dark:border-slate-800/60 text-slate-500 dark:text-slate-400'
+                  ? 'bg-amber-400 border-amber-300 text-stone-900 shadow-amber-400/50'
+                  : 'bg-white/75 dark:bg-stone-900/75 border-stone-200/60 dark:border-stone-800/60 text-stone-500 dark:text-stone-400'
               }`}
               title="Carriage Return Bell"
             >
@@ -687,7 +687,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
             {/* Clear Paper Button */}
             <button
               onClick={handleClearPaper}
-              className="px-2.5 py-1 rounded-full bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-[10px] font-mono text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-full bg-white/70 dark:bg-stone-800/70 hover:bg-white dark:hover:bg-stone-800 border border-stone-200/60 dark:border-stone-700/60 text-[10px] font-mono text-stone-600 dark:text-stone-300 transition-colors cursor-pointer"
               title="Clear paper and insert new sheet"
             >
               New Sheet
@@ -695,9 +695,9 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
           </div>
 
           {/* Bottom Live Interaction Guide */}
-          <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 text-[11px] text-slate-600 dark:text-slate-400">
+          <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-[11px] text-stone-600 dark:text-stone-400">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-indigo-600 dark:text-indigo-400">
+              <span className="material-symbols-outlined text-[16px] text-amber-600 dark:text-amber-400">
                 keyboard
               </span>
               <span>
@@ -706,12 +706,12 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
             </div>
 
             <div className="flex items-center gap-3 font-mono text-[10px]">
-              <span className="flex items-center gap-1 text-slate-500">
+              <span className="flex items-center gap-1 text-stone-500">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 Live Inking
               </span>
-              <span className="text-slate-400 hidden sm:inline">|</span>
-              <span className="text-indigo-600 dark:text-indigo-400">
+              <span className="text-stone-400 hidden sm:inline">|</span>
+              <span className="text-amber-600 dark:text-amber-400">
                 Press Enter for Carriage Return
               </span>
             </div>

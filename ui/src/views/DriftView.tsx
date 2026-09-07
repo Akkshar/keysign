@@ -108,14 +108,14 @@ export const DriftView: React.FC = () => {
       </div>
 
       {!data && (
-        <div className="bg-surface-container-lowest rounded-2xl p-space-xl border border-surface-container font-body text-sm text-on-surface-variant">
+        <div className="bg-surface-container-lowest rounded-xl p-space-xl border border-surface-container font-body text-sm text-on-surface-variant">
           No drift data. Run <code className="font-telemetry">uv run python -m pipeline.drift</code> and copy <code className="font-telemetry">dashboard/public/drift.json</code> to <code className="font-telemetry">ui/public/</code>.
         </div>
       )}
 
       {u && (
         <CardSpotlight color="rgba(19, 27, 46, 0.06)">
-          <div className="bg-surface-container-lowest border border-surface-container rounded-2xl p-space-2xl flex flex-col gap-space-xl">
+          <div className="bg-surface-container-lowest border border-surface-container rounded-xl p-space-2xl flex flex-col gap-space-xl">
             {/* Selector */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-space-md">
               <label className="flex items-center gap-space-sm font-body text-sm text-on-surface-variant">
@@ -195,7 +195,7 @@ export const DriftView: React.FC = () => {
       {/* CMU benchmark + our own record */}
       {cmu && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
-          <div className="bg-surface-container-lowest rounded-2xl p-space-xl border border-surface-container flex flex-col gap-space-md">
+          <div className="bg-surface-container-lowest rounded-xl p-space-xl border border-surface-container flex flex-col gap-space-md">
             <div className="flex flex-col gap-space-2xs">
               <h2 className="font-serif text-xl font-medium text-on-surface">CMU benchmark</h2>
               <p className="font-body text-sm text-on-surface-variant">{cmu.subjects} people typed the same password on eight different days. Mean per session, in ms.</p>
@@ -226,7 +226,7 @@ export const DriftView: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-surface-container-lowest rounded-2xl p-space-xl border border-surface-container flex flex-col gap-space-md">
+          <div className="bg-surface-container-lowest rounded-xl p-space-xl border border-surface-container flex flex-col gap-space-md">
             <div className="flex flex-col gap-space-2xs">
               <h2 className="font-serif text-xl font-medium text-on-surface">Our own record{mine ? ` · ${mine.user}` : ''}</h2>
               <p className="font-body text-sm text-on-surface-variant">Calm samples grouped by day. This is where a personal drift chart starts.</p>

@@ -57,8 +57,8 @@
     --surface: #faf8f5;
     --surface-dim: #f3f0e8;
     --surface-bright: #ffffff;
-    --surface-container-lowest: #ffffff;
-    --surface-container-low: #f9f8f4;
+    --surface-container-lowest: #fdfcf9;
+    --surface-container-low: #f7f5ef;
     --surface-container: #f4f2ec;
     --surface-container-high: #eae7de;
     --surface-container-highest: #dedad0;
@@ -74,8 +74,8 @@
     --surface: #141412;
     --surface-dim: #0d0d0c;
     --surface-bright: #262624;
-    --surface-container-lowest: #181816;
-    --surface-container-low: #1f1e1b;
+    --surface-container-lowest: #151513;
+    --surface-container-low: #1c1b18;
     --surface-container: #262522;
     --surface-container-high: #2e2d29;
     --surface-container-highest: #383733;
@@ -272,4 +272,19 @@
 .dark .hover-subtle-glow:hover {
   border-color: rgba(120, 113, 108, 0.85) !important;
   box-shadow: 0 0 18px -2px rgba(245, 158, 11, 0.12), 0 2px 8px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* The split-flap board's 3D, as the design defines it. Our copy of the board writes these
+   as arbitrary properties because the pack is authored for Tailwind v4 and this project is
+   on v3.4; the named classes are here so markup taken straight from the pack also works. */
+.perspective-dramatic {
+  perspective: 1000px;
+}
+
+.transform-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
 }

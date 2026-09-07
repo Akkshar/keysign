@@ -129,6 +129,7 @@ const defaultGauges: NeuromotorGauges = {
 // Nothing until somebody types. This used to be seeded with twenty invented
 // keystrokes marked VERIFIED, so every instrument on the page showed a plausible
 // reading before a single key had been pressed.
+const PULSE_HISTORY = 60;   // keystrokes kept for the tape, the trace and the ledger
 const initialPulses: KeystrokeTuple[] = [];
 
 const clamp = (x: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, x));
@@ -484,7 +485,9 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         entropy: 0.97,
         status: preset === 'duress' ? 'DURESS' : preset === 'impersonator' ? 'ANOMALOUS' : preset === 'cognitive' ? 'CAUTION' : 'VERIFIED',
       };
-      setRecentPulses((prev) => [...prev.slice(1), pulse]);
+      // Grow to a cap, do not slide a fixed-length window: with the seeded array gone,
+      // prev.slice(1) dropped the only entry every time and the list never passed one.
+      setRecentPulses((prev) => [...prev, pulse].slice(-PULSE_HISTORY));
     }
   }, []);
 

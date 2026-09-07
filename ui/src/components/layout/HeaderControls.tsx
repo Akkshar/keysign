@@ -19,9 +19,9 @@ export const HeaderControls: React.FC = () => {
   return (
       <div className="flex items-center gap-4 lg:gap-6">
         {/* The signature: your last keystrokes as a rhythm strip. Beats while you type. */}
-        <div className="hidden 2xl:flex items-center gap-3 pr-2 mr-2 border-r border-slate-200/70 dark:border-slate-700/60">
+        <div className="hidden 2xl:flex items-center gap-3 pr-2 mr-2 border-r border-stone-200/70 dark:border-stone-700/60">
           <RhythmStrip />
-          <span className={`hidden lg:inline whitespace-nowrap text-[11px] font-medium transition-colors ${isTyping ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-400 dark:text-slate-500'}`}>
+          <span className={`hidden lg:inline whitespace-nowrap text-[11px] font-medium transition-colors ${isTyping ? 'text-amber-600 dark:text-amber-300' : 'text-stone-400 dark:text-stone-500'}`}>
             {isTyping ? 'typing' : 'your rhythm'}
           </span>
         </div>
@@ -51,7 +51,7 @@ export const HeaderControls: React.FC = () => {
             type="button"
             onClick={live.reset}
             title="Clear the backend's typing window"
-            className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-white/70 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-colors"
+            className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-white/70 dark:bg-stone-800/80 border border-stone-200/70 dark:border-stone-700/60 text-stone-600 dark:text-stone-300 hover:bg-white dark:hover:bg-stone-800 transition-colors"
           >
             <span className="material-symbols-outlined text-[14px]">restart_alt</span>
             Reset
@@ -65,7 +65,7 @@ export const HeaderControls: React.FC = () => {
           whileTap={{ scale: 0.9, rotate: 180 }}
           transition={{ type: 'spring', stiffness: 400, damping: 17 }}
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
-          className="w-8 h-8 rounded-full bg-white/70 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200/70 dark:border-slate-700/60 transition-colors"
+          className="w-8 h-8 rounded-full bg-white/70 dark:bg-stone-800/80 hover:bg-white dark:hover:bg-stone-800 flex items-center justify-center text-stone-600 dark:text-stone-300 shadow-sm border border-stone-200/70 dark:border-stone-700/60 transition-colors"
         >
           <motion.span
             key={theme}
@@ -89,28 +89,28 @@ export const HeaderControls: React.FC = () => {
             title={`${auth.account.email} · measured against ${live.declaredUser || 'no profile yet'}`}
           >
             {auth.account.photo ? (
-              <img src={auth.account.photo} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-white/80 dark:ring-slate-800" />
+              <img src={auth.account.photo} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-white/80 dark:ring-stone-800" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-slate-700 dark:bg-slate-600 text-white flex items-center justify-center font-medium text-xs shadow-sm ring-2 ring-white/80 dark:ring-slate-800">
+              <div className="w-8 h-8 rounded-full bg-stone-700 dark:bg-stone-600 text-white flex items-center justify-center font-medium text-xs shadow-sm ring-2 ring-white/80 dark:ring-stone-800">
                 {initials}
               </div>
             )}
             <span className="hidden sm:flex flex-col leading-tight">
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+              <span className="text-xs font-medium text-stone-700 dark:text-stone-200 group-hover:text-stone-900 dark:group-hover:text-white transition-colors">
                 {auth.account.name || auth.account.email}
               </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400">measured against {live.declaredUser || 'no profile yet'}</span>
+              <span className="text-[10px] text-stone-500 dark:text-stone-400">measured against {live.declaredUser || 'no profile yet'}</span>
             </span>
           </button>
         ) : (
         <div className="flex items-center gap-2.5 pl-2 group" data-purpose="user-profile" title="Declared user: whose baseline to measure against. The Identity head decides who is really typing.">
-          <div className="w-8 h-8 rounded-full bg-slate-700 dark:bg-slate-600 text-white flex items-center justify-center font-medium text-xs shadow-sm ring-2 ring-white/80 dark:ring-slate-800">
+          <div className="w-8 h-8 rounded-full bg-stone-700 dark:bg-stone-600 text-white flex items-center justify-center font-medium text-xs shadow-sm ring-2 ring-white/80 dark:ring-stone-800">
             {initials}
           </div>
           <select
             value={live.declaredUser}
             onChange={(e) => live.setDeclaredUser(e.target.value)}
-            className="text-xs font-medium bg-transparent text-slate-700 dark:text-slate-300 border border-slate-200/70 dark:border-slate-700/60 rounded-lg px-2 py-1 max-w-[180px] focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+            className="text-xs font-medium bg-transparent text-stone-700 dark:text-stone-300 border border-stone-200/70 dark:border-stone-700/60 rounded-lg px-2 py-1 max-w-[180px] focus:outline-none focus:ring-2 focus:ring-amber-500/40"
           >
             {!live.users.length && <option value="">{live.connected ? 'no baselines yet' : 'no backend'}</option>}
             {live.users.map((u) => (

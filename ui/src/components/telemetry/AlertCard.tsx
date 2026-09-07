@@ -116,7 +116,7 @@ export const AlertCard: React.FC = () => {
           transition={{ duration: reduce ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
           onMouseEnter={() => { hover.current = true; }}
           onMouseLeave={() => { hover.current = false; }}
-          className={`fixed top-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-3rem)] bg-surface-container-lowest rounded-2xl p-space-xl shadow-2xl border-l-4 ${edge} border border-surface-container flex flex-col gap-space-md pointer-events-auto`}
+          className={`fixed top-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-3rem)] bg-surface-container-lowest rounded-xl p-space-xl shadow-2xl border-l-4 ${edge} border border-surface-container flex flex-col gap-space-md pointer-events-auto`}
         >
           <div className="flex items-start justify-between gap-space-md">
             <div className="flex flex-col gap-space-2xs">
