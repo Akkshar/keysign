@@ -109,12 +109,20 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
 # ---------------------------------------------------------------------------
 # Threat: is something wrong right now? Sustained deviation from the person's
 # baseline, classified with the other heads' outputs (identity mismatch ->
-# intruder, right person but abnormal and loaded -> duress). Fires a SILENT
-# alert (backend/notify.py) with a cooldown. Runs after identity and state.
+# intruder, right person but abnormal AND under load -> duress). Fires a SILENT
+# alert (backend/notify.py) with a cooldown; backend/actions.py then asks the
+# camera before anything is pushed or locked. Runs after identity and state.
 # ---------------------------------------------------------------------------
 THREAT_WARN = 2.0            # single-tick distance for "warn"
 THREAT_ALERT = 3.0           # distance that must be sustained for "alert"
-THREAT_PERSIST = 6           # consecutive ticks (>= 3 s of typing) above THREAT_ALERT
+THREAT_PERSIST = 6           # consecutive ticks (>= 3 s of typing) above THREAT_ALERT. For DURESS each of
+                             # those ticks must also sit at or above the person's high-load cut-off (the
+                             # State head, per-user from `pipeline.state calibrate`): duress has a direction
+                             # (faster, more errors, more overlap), "far from calm" alone is just the owner
+                             # writing prose in another app. Measured on 20 recorded sessions
+                             # (2026-09-07): without the gate 6 duress alerts, 4 of them on the owner's
+                             # ordinary typing through the OS hook; with it 1, in the session that reached
+                             # full load. Intruder alerts are not gated: an impostor need not be stressed.
 INTRUDER_PERSIST = 6         # or: identity disagrees with the declared user for this many consecutive
                              # ticks while EITHER the typing is at least THREAT_WARN off OR the identity
                              # vote is confident (not low_confidence). Akshaj under Akkshar's name sits
@@ -138,6 +146,9 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     n_keys = int(features.get("n_keys", 0))
     others = ctx.get("heads_so_far") or {}
     idn, state = others.get("identity") or {}, others.get("state") or {}
+    load = state.get("load")
+    load_above = float((baseline.state or {}).get("load_above", LOAD_ABOVE))
+    stressed = load is None or float(load) >= load_above     # no State head at all: the gate stays open
     # Positive evidence of another person: the vote names someone else (a teammate or a Stranger
     # class) or is not confident. "Unknown" by distance alone, with a confident vote for the
     # declared user, is the owner typing far from their calm baseline (composing prose in another
@@ -146,15 +157,18 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     # +6-8 sigma) while identity said Akkshar at 90%+, and the old rule locked the machine twice.
     mismatch = (idn.get("user") is not None and idn.get("matches_declared") is False) or bool(idn.get("low_confidence"))
     if n_keys >= THREAT_MIN_KEYS:
-        st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
+        st["hist"] = (st["hist"] + [(d, stressed)])[-THREAT_PERSIST:]
         counts = mismatch and (d >= THREAT_WARN or not idn.get("low_confidence"))
         st["mismatch_run"] = st.get("mismatch_run", 0) + 1 if counts else 0
     else:                                     # warm-up: thin windows neither count nor carry over
         st["hist"], st["mismatch_run"] = [], 0
-    sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
+    sustained = sum(1 for x, _ in st["hist"] if x >= THREAT_ALERT)
+    stressed_ticks = sum(1 for x, hi in st["hist"] if x >= THREAT_ALERT and hi)
     kind = "intruder" if mismatch else "duress"
 
-    if sustained >= THREAT_PERSIST or st.get("mismatch_run", 0) >= INTRUDER_PERSIST:
+    duress_ready = stressed_ticks >= THREAT_PERSIST
+    intruder_ready = mismatch and (sustained >= THREAT_PERSIST or st.get("mismatch_run", 0) >= INTRUDER_PERSIST)
+    if intruder_ready or (duress_ready and not mismatch):
         level = "alert"
     elif (d >= THREAT_WARN and n_keys >= THREAT_MIN_KEYS) or sustained > 0 or mismatch:
         level = "warn"                        # a thin window's distance is noise: no warn on it alone
@@ -162,8 +176,8 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         level = "ok"
 
     out = {"level": level, "kind": kind if level != "ok" else None, "distance": round(d, 2),
-           "sustained_ticks": sustained, "mismatch_ticks": st.get("mismatch_run", 0),
-           "identity_mismatch": mismatch, "load": state.get("load"),
+           "sustained_ticks": sustained, "stressed_ticks": stressed_ticks, "mismatch_ticks": st.get("mismatch_run", 0),
+           "identity_mismatch": mismatch, "load": load, "load_above": round(load_above, 2), "stressed": bool(stressed),
            "warming_up": n_keys < THREAT_MIN_KEYS,
            "drivers": [[f, round(z, 2)] for f, z in baseline.explain(features, top=2)],
            "alerts_total": st["alerts"], "last_alert": st["last_alert"], "channel": notify.channel()}
@@ -173,8 +187,8 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     if entering and now - st["last_alert_at"] >= THREAT_COOLDOWN_S:
         alert = {"ts": now, "session": ctx.get("session"), "user": ctx.get("user") or baseline.user, "kind": kind,
                  "distance": round(d, 2), "sustained_ticks": sustained, "identity": idn.get("user"),
-                 "identity_confidence": idn.get("confidence"), "load": state.get("load"), "drivers": out["drivers"]}
-        res = notify.send(alert, _alert_log_path, push=(kind != "intruder"))   # intruder: backend/actions pushes after the camera check
+                 "identity_confidence": idn.get("confidence"), "load": load, "drivers": out["drivers"]}
+        res = notify.send(alert, _alert_log_path, push=False)   # backend/actions.py pushes after the camera has had its say
         st["last_alert_at"], st["alerts"] = now, st["alerts"] + 1
         st["last_alert"] = {"ts": now, "kind": kind, **res}
         out["alerts_total"], out["last_alert"] = st["alerts"], st["last_alert"]

@@ -17,7 +17,7 @@ import { StateView } from './views/StateView';
 import { ThreatsView } from './views/ThreatsView';
 import { DriftView } from './views/DriftView';
 import { SettingsView } from './views/SettingsView';
-import { DuressModal } from './components/telemetry/DuressModal';
+import { AlertCard } from './components/telemetry/AlertCard';
 import { ShootingStars } from './components/motion/ShootingStars';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -104,7 +104,7 @@ const MainContent: React.FC = () => {
 
       {/* Fixed Left Sidebar with KeySign Brand & Clinical Navigation */}
       <Sidebar />
-      <DuressModal />
+      <AlertCard />
 
       {/* Main Viewport Container */}
       <div className="pl-64 flex-1 flex flex-col min-w-0 relative z-10">

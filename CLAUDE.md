@@ -193,9 +193,18 @@ Run everything with `uv run ...` (Python) and `node ...` (JS). Tests:
 
 As an app: `npm --prefix ui run build` then `uv run python -m agent` (see `agent/`):
 backend + pynput keyboard hook for every application + tray + WebView2 window.
-Agent sessions are recorded redacted (key classes only). Intruder alert -> webcam
-frame (backend fallback) -> face check -> push -> LockWorkStation, per
-`data/settings.json`. Reviewers asked not to see localhost: the window has no address bar.
+Agent sessions are recorded redacted (key classes only); Ctrl/Alt/Win chords
+are dropped (not typing). Any alert -> webcam burst -> SFace face check
+(`uv run python -m backend.faces fetch` once for the models, 39 MB, gitignored)
+-> `backend/actions.decide` (someone else in the chair = intruder: push, and the
+lock when the typing agrees; the owner in the chair = duress if the typing said
+so, else kept local) -> tray notification + a card at the edge of the dashboard,
+never a window over the typing. Duress needs the State head's high-load cut-off
+on every one of its 6 ticks (2026-09-07: 4 of 6 duress alerts on recorded
+sessions were the owner's ordinary typing; the gate keeps only the one at full
+load). `modifier_ratio` is out of the baseline distance (zero spread in
+enrolment; one Shift pinned it at the clip). Reviewers asked not to see
+localhost: the window has no address bar.
 
 ## Working principles
 

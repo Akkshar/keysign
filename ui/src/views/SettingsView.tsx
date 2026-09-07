@@ -73,11 +73,13 @@ export const SettingsView: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
           <div>
-            <span className="text-sm font-medium text-on-surface">Photo on intruder alert</span>
+            <span className="text-sm font-medium text-on-surface">Camera check on every alert</span>
             <p className="text-xs text-on-surface-variant">
-              The camera stays off. When the Threat head raises an intruder alert it opens for one frame, the backend
-              checks the face against your enrolled face and grabs the screen, and the images go with the phone push
-              only if the face is not yours. Never for duress. Stored in data/alert_photos on this machine.
+              The camera stays off. When the Threat head raises an alert (intruder or duress) it opens for one frame,
+              the backend compares the face with your enrolled face and grabs the screen, and that decides the final
+              call: someone else in the chair is an intruder (images pushed, screen locked); you in the chair under
+              duress is pushed as duress with no image; you in the chair with odd typing is kept local. Stored in
+              data/alert_photos on this machine.
               {live.cameraError ? ` Camera: ${live.cameraError}.` : ''}
             </p>
           </div>
@@ -172,12 +174,13 @@ const FaceEnrolment: React.FC = () => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
       <div>
-        <span className="text-sm font-medium text-on-surface">Your face, for the intruder check</span>
+        <span className="text-sm font-medium text-on-surface">Your face, for the camera check</span>
         <p className="text-xs text-on-surface-variant">
           {user ? `${user}: ` : ''}{n == null ? 'not enrolled' : n === 0 ? 'no face samples yet' : `${n} face samples on this machine`}.
-          {' '}Frames from the webcam, cropped to the face and kept in data/faces. A photo taken at an alert is
-          compared with these; if it matches, nothing is pushed and nothing locks. Enrol from both cameras: this
-          window's, and the app's own (used when no dashboard is open), and include looking down at the keys.
+          {' '}Frames from the webcam, aligned to the face and kept in data/faces as small crops plus a 128-number
+          embedding (SFace). A burst taken at an alert is compared with these: a match means you are in the chair.
+          Enrol from both cameras: this window's, and the app's own (used when no dashboard is open), facing the
+          screen, glancing sideways, and looking down at the keys.
           {msg ? ` ${msg}` : ''}
         </p>
       </div>
@@ -298,10 +301,11 @@ const AgentSection: React.FC = () => {
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
         <div>
-          <span className="text-sm font-medium text-on-surface">Lock the screen on an intruder alert</span>
+          <span className="text-sm font-medium text-on-surface">Lock the screen on a confirmed intruder</span>
           <p className="text-xs text-on-surface-variant">
-            Windows' own lock screen, about 2 s after the alert so the webcam frame and the screen snapshot are taken
-            first. The owner unlocks with their password. Never for duress: that alert stays silent.
+            Windows' own lock screen, about 2 s after the alert so the webcam burst and the screen snapshot are taken
+            first. The owner unlocks with their password. Only when the camera does not see the owner; never for
+            duress, whose alert stays off this screen.
           </p>
         </div>
         <button type="button" disabled={!cfg} onClick={() => cfg && set({ lock_on_intruder: !cfg.lock_on_intruder })}
@@ -311,15 +315,29 @@ const AgentSection: React.FC = () => {
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
         <div>
-          <span className="text-sm font-medium text-on-surface">Webcam frame when no dashboard is open</span>
+          <span className="text-sm font-medium text-on-surface">Webcam burst when no dashboard is open</span>
           <p className="text-xs text-on-surface-variant">
-            In background mode the backend takes the frame itself if this window has not sent one within 1.5 s, then runs
-            the same face check and push.
+            In background mode the backend takes five frames itself if this window has not sent one within 1.5 s, keeps
+            the one most like the owner, then runs the same face check and decision.
           </p>
         </div>
         <button type="button" disabled={!cfg} onClick={() => cfg && set({ photo_on_intruder: !cfg.photo_on_intruder })}
           className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.photo_on_intruder ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'}`}>
           {cfg == null ? '…' : cfg.photo_on_intruder ? 'On' : 'Off'}
+        </button>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+        <div>
+          <span className="text-sm font-medium text-on-surface">Tray notification on an alert</span>
+          <p className="text-xs text-on-surface-variant">
+            A Windows notification in the corner from the KeySign tray icon once the camera has had its say, so you see
+            the alert without anything opening in front of what you are typing. Off keeps alerts to the phone and this
+            dashboard only.
+          </p>
+        </div>
+        <button type="button" disabled={!cfg} onClick={() => cfg && set({ toast_on_alert: !cfg.toast_on_alert })}
+          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.toast_on_alert ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'}`}>
+          {cfg == null ? '…' : cfg.toast_on_alert ? 'On' : 'Off'}
         </button>
       </div>
     </section>

@@ -1,12 +1,13 @@
 /**
- * Webcam snapshot for intruder alerts.
+ * Webcam snapshot for threat alerts.
  *
  * Opt-in (Settings). The camera is NOT kept open: when the backend raises an
- * INTRUDER alert the dashboard opens it, takes one JPEG frame, closes it and
- * posts the frame to the local backend. The backend checks the face against
- * the owner's enrolled face and grabs the screen; the images leave the
- * machine (phone push) only when the face is not the owner's.
- * Duress alerts never take a photo: the person at the keyboard is the victim.
+ * alert of either kind the dashboard opens it, takes one JPEG frame, closes
+ * it and posts the frame to the local backend. The backend checks the face
+ * against the owner's enrolled face (backend/faces.py, SFace) and grabs the
+ * screen; the images leave the machine (phone push) only when the final call
+ * is an intruder. A duress frame never leaves the machine: the person at the
+ * keyboard is the victim.
  */
 import { BACKEND_HTTP } from './keysign';
 

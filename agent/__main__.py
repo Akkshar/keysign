@@ -4,7 +4,8 @@ KeySign as an app:  uv run python -m agent
 One process, four parts:
   - the backend (uvicorn, 127.0.0.1:8000), which also serves the built dashboard (ui/dist);
   - system-wide keystroke capture (agent/capture.py) feeding it;
-  - a tray icon: Open KeySign, Pause/Resume capture, Reset window, Quit;
+  - a tray icon: Open KeySign, Pause/Resume capture, Reset window, Quit; alerts
+    appear as tray notifications in the corner (data/settings.json: toast_on_alert);
   - a native window (Windows WebView2 via pywebview) showing the dashboard,
     so nobody sees a browser or an address bar.
 
@@ -172,6 +173,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     icon = pystray.Icon("KeySign", make_icon(), "KeySign · on-device typing signature", menu)
     icon_ref.append(icon)
+
+    # Alerts reach the owner as a tray notification in the corner (backend/actions.py decides
+    # which ones), never as a window in front of what they are typing.
+    def toast(title: str, message: str) -> None:
+        try:
+            icon.notify(message, title)
+        except Exception as e:
+            log.warning("tray notification failed: %s", e)
+    _actions.TOAST_HOOK = toast
     try:
         icon.run_detached()
         log.info("tray icon up. On Windows 11 new icons sit behind the ^ chevron by the clock until you drag them out; "

@@ -1,16 +1,32 @@
 """
-What happens on the machine when an intruder alert fires, beyond the phone push.
+What happens on the machine when the Threat head raises an alert, beyond the log.
 
     settings()            -> data/settings.json (lock_on_intruder, declared_user, ...)
-    on_alert(alert)       -> schedules: webcam fallback if no photo arrives, then the lock
+    decide(alert, verdict)-> the final call: kind, push?, lock?, images?, why
+    on_alert(alert)       -> camera burst (unless the dashboard sent a frame), decide, push, toast, lock
 
-Webcam fallback: the dashboard posts a frame when it is open; in background
-mode nothing is, so after PHOTO_GRACE_S the backend grabs one itself with
-OpenCV and runs the same face check / screen snapshot / push path as the
-POST endpoint. Lock: Windows' own lock screen (LockWorkStation), after the
-photo so the camera frame is taken first, and only if the face check does
-not say "this is the owner" (should_lock). Duress never locks: the person
-at the keyboard is the victim and the alert must stay silent.
+The camera is the second factor for EVERY alert kind. The typing says "this
+is not the owner" (intruder) or "the owner, but far off and under load"
+(duress); the webcam then looks at who is actually in the chair
+(backend/faces.py) and the two are combined:
+
+    typing    camera         final      push   lock   images to the phone
+    intruder  someone else   intruder   yes    yes    frame + screen
+    intruder  the owner      (none)     no     no     no      owner typing oddly: kept local
+    intruder  no say         intruder   yes    yes    frame if any + screen
+    duress    someone else   intruder   yes    NO     frame + screen     typing and camera disagree: alert, don't lock
+    duress    the owner      duress     yes    no     no      camera confirms the victim is the owner
+    duress    no say         duress     yes    no     no
+
+"No say": no camera, no face in the burst, owner not enrolled, or a face the
+engine cannot place (turned away). Duress never pushes the frame: the person
+at the keyboard is the victim. The lock needs the typing's word too: a typist
+looking straight down at the keys scores like a stranger to the face model
+(measured 0.17 on the owner), so the camera alone never locks the owner out.
+The lock is Windows' own (LockWorkStation), after the frame and the screen
+snapshot. Tray notification (the desktop agent's TOAST_HOOK) for every final
+alert, so the owner sees it in the corner of the screen and never as a window
+in front of their typing.
 """
 from __future__ import annotations
 
@@ -20,18 +36,24 @@ import os
 import threading
 import time
 from pathlib import Path
+from typing import Callable
 
 log = logging.getLogger("keysign.actions")
 
 ROOT = Path(__file__).resolve().parent.parent
 SETTINGS_PATH = ROOT / "data" / "settings.json"
 DEFAULTS = {"lock_on_intruder": os.environ.get("KEYSIGN_LOCK_ON_INTRUDER", "1") != "0",
-            "declared_user": "", "photo_on_intruder": True}
+            "declared_user": "",
+            "photo_on_intruder": True,        # camera burst on every alert kind (name kept for the dashboard's setting)
+            "toast_on_alert": True}           # tray notification in the corner for every final alert
 PHOTO_GRACE_S = 1.5          # wait this long for the dashboard's frame before grabbing one ourselves
 LOCK_DELAY_S = 2.5           # lock after the frame and the screen snapshot are taken
 
 _photo_seen: set[float] = set()          # alert ts that already got a photo (from the dashboard or us)
 _lock = threading.Lock()
+
+QUIT_HOOK = None                                        # the desktop agent registers its shutdown here
+TOAST_HOOK: Callable[[str, str], None] | None = None    # the desktop agent registers icon.notify here
 
 
 # ---- settings ----
@@ -64,7 +86,7 @@ def lock_workstation() -> bool:
         return False
 
 
-# ---- webcam fallback ----
+# ---- webcam ----
 def grab_webcam_burst(n: int = 5, gap_s: float = 0.35, index: int = 0, warmup_frames: int = 8) -> list[bytes]:
     """
     Several JPEGs from the default camera, gap_s apart, after a warm-up so exposure has
@@ -111,9 +133,6 @@ def _seen(ts: float) -> bool:
         return round(float(ts), 3) in _photo_seen
 
 
-QUIT_HOOK = None          # the desktop agent registers its shutdown here (POST /api/agent/quit, --quit)
-
-
 def face_verdict(alert: dict) -> dict | None:
     """The stored face-check result for this alert, if a frame was processed."""
     try:
@@ -124,29 +143,77 @@ def face_verdict(alert: dict) -> dict | None:
         return None
 
 
+# ---- the decision ----
+def decide(alert: dict, verdict: dict | None) -> dict:
+    """
+    Combine what the typing said (alert["kind"]) with what the camera saw. See the
+    table in the module docstring. Returns {"kind", "push", "lock", "images", "why"}.
+    """
+    typed = alert.get("kind") or "duress"
+    m = (verdict or {}).get("match")
+    sim = (verdict or {}).get("similarity")
+    seen = f" ({sim:.2f})" if isinstance(sim, (int, float)) else ""
+    if m is False:
+        if typed == "duress":
+            return {"kind": "intruder", "push": True, "lock": False, "images": True,
+                    "why": "camera: not the owner at the keyboard" + seen + "; the typing had said duress, so no lock"}
+        return {"kind": "intruder", "push": True, "lock": True, "images": True, "why": "camera: not the owner at the keyboard" + seen}
+    if m is True:
+        if typed == "duress":
+            return {"kind": "duress", "push": True, "lock": False, "images": False,
+                    "why": "camera: the owner is at the keyboard" + seen + "; the typing is off under load"}
+        return {"kind": None, "push": False, "lock": False, "images": False,
+                "why": "face matched the owner" + seen + ": the owner typing oddly, kept local"}
+    # the camera had no say
+    if verdict is None:
+        why = "no camera frame"
+    elif verdict.get("face") is False:
+        why = "no face in frame"
+    elif not verdict.get("enrolled"):
+        why = "owner face not enrolled"
+    else:
+        why = verdict.get("reason") or "camera unsure"
+    if typed == "intruder":
+        named_other = bool(alert.get("identity")) and alert.get("identity") != alert.get("user")
+        why = (f"typing identified as {alert.get('identity')}" if named_other else "typing did not match the owner") + f"; {why}"
+        return {"kind": "intruder", "push": True, "lock": True, "images": True, "why": why}
+    return {"kind": "duress", "push": True, "lock": False, "images": False, "why": f"typing far off under load; {why}"}
+
+
 def should_lock(alert: dict, verdict: dict | None) -> tuple[bool, str]:
-    """
-    Lock only on positive evidence of another person. The webcam is the second
-    factor: a frame that matches the enrolled owner vetoes the lock even when the
-    typing said intruder; a frame that does not match confirms it. No frame or no
-    enrolment: go with the typing.
-    """
-    if verdict and verdict.get("match") is True:
-        return False, "face matched the owner"
-    if verdict and verdict.get("match") is False:
-        return True, "face does not match the owner"
-    named_other = bool(alert.get("identity")) and alert.get("identity") != alert.get("user")
-    if named_other:
-        return True, f"typing identified as {alert.get('identity')}"
-    return True, "typing did not match the owner"
+    """Kept for callers that only want the lock decision."""
+    d = decide(alert, verdict)
+    return bool(d["lock"]), d["why"]
+
+
+def toast(title: str, message: str) -> bool:
+    """Tray notification through the desktop agent, if one is running and the setting is on."""
+    if TOAST_HOOK is None or not settings().get("toast_on_alert", True):
+        return False
+    try:
+        TOAST_HOOK(title, message)
+        return True
+    except Exception as e:
+        log.warning("toast failed: %s", e)
+        return False
+
+
+def _toast_text(alert: dict, d: dict) -> tuple[str, str]:
+    dist = float(alert.get("distance") or 0)
+    when = time.strftime("%H:%M:%S", time.localtime(alert.get("ts", time.time())))
+    if d["kind"] == "intruder":
+        return "KeySign: someone else at the keyboard", f"{when} · {d['why']}" + (" · locking" if d["lock"] else "")
+    return "KeySign: possible duress", f"{when} · {alert.get('user', '?')} typing {dist:.1f}σ from calm under high load · {d['why']}"
 
 
 def on_alert(alert: dict, process_photo) -> None:
     """
-    Called by the app when an alert is raised. `process_photo(alert, jpeg)` is the
-    shared face-check + screen + push routine. Runs in a background thread.
+    Called by the app when an alert of either kind is raised. `process_photo(alert, jpeg,
+    source, verdict)` is the shared store + face-check + screen routine (backend/app.py).
+    Runs in a background thread: camera burst (unless the dashboard already posted a
+    frame), decision, push, tray notification, lock.
     """
-    if alert.get("kind") != "intruder":
+    if alert.get("kind") not in ("intruder", "duress"):
         return
     cfg = settings()
 
@@ -166,15 +233,17 @@ def on_alert(alert: dict, process_photo) -> None:
                         verdict = (res or {}).get("face") if isinstance(res, dict) else verdict
                 if verdict is None:
                     verdict = face_verdict(alert)
-            # The intruder alert itself is pushed only now, after the camera has had its say.
-            lock, why = should_lock(alert, verdict)
-            if lock:
-                notify.push_alert(alert, why)
-                log.warning("intruder alert on %s's session: %s; pushed", alert.get("user"), why)
+            d = decide(alert, verdict)
+            final = {**alert, "kind": d["kind"] or alert.get("kind"), "typed_kind": alert.get("kind")}
+            if d["push"]:
+                notify.push_alert(final, d["why"])
+                log.warning("%s alert on %s's session: %s; pushed", final["kind"], alert.get("user"), d["why"])
             else:
-                log.warning("intruder alert on %s's session: %s; alert kept local", alert.get("user"), why)
-            notify.mark_delivery(alert, pushed=lock, reason=why)
-            if cfg.get("lock_on_intruder") and lock:
+                log.warning("alert on %s's session: %s; kept local", alert.get("user"), d["why"])
+            notify.mark_delivery(alert, pushed=bool(d["push"]), reason=d["why"], kind=d["kind"])
+            if d["push"]:
+                toast(*_toast_text(final, d))
+            if cfg.get("lock_on_intruder") and d["lock"]:
                 time.sleep(LOCK_DELAY_S)
                 log.warning("locking the workstation")
                 lock_workstation()

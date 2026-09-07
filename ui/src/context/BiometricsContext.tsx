@@ -41,7 +41,7 @@ export interface LiveState {
   setDeclaredUser: (u: string) => void;
   reset: () => void;           // "someone new sits down": clear the backend window
   sessionId: string;
-  photoOnIntruder: boolean;    // webcam frame taken (camera opened for one frame) on an INTRUDER alert, never duress
+  photoOnIntruder: boolean;    // webcam frame taken (camera opened for one frame) on every alert; the backend decides what it means
   setPhotoOnIntruder: (on: boolean) => Promise<boolean>;
   cameraError: string | null;
   lastPhoto: string | null;    // file name of the most recent frame this session
@@ -68,8 +68,8 @@ interface BiometricsContextType {
   recentPulses: KeystrokeTuple[];
   terminalLogs: string[];
   clearTerminal: () => void;
-  duressModalOpen: boolean;
-  setDuressModalOpen: (open: boolean) => void;
+  alertCardOpen: boolean;
+  setAlertCardOpen: (open: boolean) => void;
   onKeyAction: (action: 'down' | 'up', e?: KeyboardEvent) => void;
   isTyping: boolean;
   live: LiveState;
@@ -239,7 +239,7 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [userProfile, setUserProfile] = useState<UserProfile>(defaultProfile);
   const [cognitiveState, setCognitiveState] = useState<CognitiveStateData>(defaultCognitive);
   const [neuromotorGauges, setNeuromotorGauges] = useState<NeuromotorGauges>(defaultGauges);
-  const [duressModalOpen, setDuressModalOpen] = useState<boolean>(false);
+  const [alertCardOpen, setAlertCardOpen] = useState<boolean>(false);
 
   const [eventsPerSec, setEventsPerSec] = useState<number>(0);
   const [liveConfidence, setLiveConfidence] = useState<number>(0);
@@ -325,8 +325,8 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const alertTs = th?.last_alert?.ts ?? null;
       if (alertTs != null && alertTs !== lastAlertTs.current) {
         lastAlertTs.current = alertTs;
-        setDuressModalOpen(true);
-        if (photoRef.current && th?.kind === 'intruder') {
+        setAlertCardOpen(true);
+        if (photoRef.current) {                       // both kinds: the camera decides intruder / duress / kept local
           const ts = alertTs;
           const cam = camRef.current ?? (camRef.current = new WebcamSnap());
           cam.snap().then((blob) => blob && postAlertPhoto(ts, m.session, blob))
@@ -486,7 +486,7 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         activeArea, setActiveArea, demoMode, setDemoMode, activePreset, setPreset,
         userProfile, cognitiveState, setCognitiveState, neuromotorGauges, eventsPerSec,
         liveConfidence, liveWpm, liveDwell, liveFlight, liveJitter, recentPulses,
-        terminalLogs, clearTerminal, duressModalOpen, setDuressModalOpen, onKeyAction, isTyping, live, stateTimeline,
+        terminalLogs, clearTerminal, alertCardOpen, setAlertCardOpen, onKeyAction, isTyping, live, stateTimeline,
       }}
     >
       {children}

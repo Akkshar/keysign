@@ -13,6 +13,8 @@ Privacy rules, in code not policy:
 - capture pauses on its own while the foreground window looks like a place
   for secrets (password managers, sign-in pages), and whenever the user
   pauses it from the tray;
+- shortcut chords (a key while Ctrl/Alt/Win is held) and those modifier keys are
+  not typing and are dropped before they reach the stream;
 - everything stays on 127.0.0.1.
 """
 from __future__ import annotations
@@ -34,6 +36,11 @@ SECRET_TITLES = ("password", "1password", "bitwarden", "keepass", "lastpass", "d
 
 _MOD = {"shift": "Shift", "shift_r": "Shift", "ctrl": "Control", "ctrl_l": "Control", "ctrl_r": "Control",
         "alt": "Alt", "alt_l": "Alt", "alt_r": "Alt", "alt_gr": "AltGraph", "cmd": "Meta", "cmd_r": "Meta", "caps_lock": "CapsLock"}
+# Command modifiers. A key pressed while one of these is held (Ctrl+C, Alt+Tab, Win+D) is a
+# command, not typing: it has no rhythm to score and the enrolment page never saw any, so
+# such chords, and the modifier keys themselves, are dropped from the stream. Shift and
+# CapsLock stay: capitals are part of how a person types.
+_COMMAND_MODS = {"ctrl", "ctrl_l", "ctrl_r", "alt", "alt_l", "alt_r", "alt_gr", "cmd", "cmd_r"}
 _SPECIAL = {"space": (" ", "Space"), "backspace": ("Backspace", "Backspace"), "delete": ("Delete", "Delete"),
             "enter": ("Enter", "Enter"), "tab": ("Tab", "Tab"), "esc": ("Escape", "Escape")}
 
@@ -93,6 +100,9 @@ class Capture:
         self._q: list[dict] = []
         self._lock = threading.Lock()
         self._down: set = set()
+        self._held_mods: set = set()                       # command modifiers currently held
+        self._chorded: set = set()                         # keys that went down inside a chord
+        self.chords_dropped = 0
         self._stop = threading.Event()
         self._listener = None
         self._ws = None
@@ -103,12 +113,22 @@ class Capture:
             if self.paused or self.auto_paused:
                 return
             ident = getattr(key, "name", None) or getattr(key, "char", None)
+            if ident in _COMMAND_MODS:                     # Ctrl / Alt / Win: never typing
+                (self._held_mods.add if kind == "down" else self._held_mods.discard)(ident)
+                return
             if kind == "down":
                 if ident in self._down:                    # OS auto-repeat
                     return
                 self._down.add(ident)
+                if self._held_mods:                        # a shortcut chord: drop the key and its release
+                    self._chorded.add(ident)
+                    self.chords_dropped += 1
+                    return
             else:
                 self._down.discard(ident)
+                if ident in self._chorded:
+                    self._chorded.discard(ident)
+                    return
             ev = key_event(key, kind, time.perf_counter() * 1000.0)
             if ev is None:
                 return
@@ -193,4 +213,5 @@ class Capture:
 
     def status(self) -> dict:
         return {"session": self.session, "connected": self.connected, "paused": self.paused, "auto_paused": self.auto_paused,
-                "keys_sent": self.keys_sent, "last_key_at": self.last_key_at, "foreground": foreground_title()[:80]}
+                "keys_sent": self.keys_sent, "chords_dropped": self.chords_dropped, "last_key_at": self.last_key_at,
+                "foreground": foreground_title()[:80]}

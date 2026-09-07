@@ -96,19 +96,20 @@ def test_capture_with_baseline_scores_and_runs_heads(client, tmp_path):
         assert tick["heads"]["threat"]["level"] == "ok"
         assert 0 <= tick["heads"]["state"]["load"] <= 1
         assert len(tick["top"]) == 3 and tick["top"][0][0] in tick["z"]
-        # a very different typist sits down
+        # the same person, suddenly twice as fast and far off the baseline: stress-shaped typing
         cap.send_json({"type": "reset"})
-        cap.send_json({"type": "events", "events": typed(40, t0=50_000, flight=200, hold=150)})
+        cap.send_json({"type": "events", "events": typed(40, t0=50_000, flight=60, hold=30)})
         tick = cap.receive_json()
-        assert tick["n_keys"] == 40                                      # reset cleared the buffer (40 x 200 ms fits the 10 s window)
-        assert tick["distance"] > 3.0
+        assert tick["n_keys"] == 40                                      # reset cleared the buffer
+        assert tick["distance"] > 3.0 and tick["heads"]["state"]["label"] == "high load"
         assert tick["heads"]["threat"]["level"] == "warn"               # one tick is not enough
         from backend import heads
-        for i in range(1, heads.THREAT_PERSIST):                         # sustained -> alert
-            cap.send_json({"type": "events", "events": typed(10, t0=58_000 + i * 2_000, flight=200, hold=150)})
+        for i in range(1, heads.THREAT_PERSIST):                         # sustained under load -> alert
+            cap.send_json({"type": "events", "events": typed(25, t0=52_500 + i * 2_000, flight=60, hold=30)})
             tick = cap.receive_json()
             assert tick["n_keys"] >= heads.THREAT_MIN_KEYS
-        assert tick["heads"]["threat"]["level"] == "alert" and tick["heads"]["threat"]["kind"] in ("duress", "intruder")
+        assert tick["heads"]["threat"]["level"] == "alert" and tick["heads"]["threat"]["kind"] == "duress"
+        assert tick["heads"]["threat"]["stressed_ticks"] == heads.THREAT_PERSIST
 
 
 def test_session_is_recorded_and_exportable(client, tmp_path):

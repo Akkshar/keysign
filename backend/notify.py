@@ -6,13 +6,14 @@ KEYSIGN_NTFY_TOPIC is set, it is also pushed to a phone through ntfy
 (https://ntfy.sh, free, no account: install the app, subscribe to the topic).
 The push runs in a background thread so it can never stall the stream, and
 carries only the alert kind, user label, distance and time, never keystrokes.
-If the dashboard's "photo on intruder" setting is on, the browser opens the
-webcam for one frame when an INTRUDER alert fires and posts it to
-/api/alerts/photo. The backend checks the face against the owner's enrolled
-face (backend/faces.py) and grabs the screen. Everything is stored in
-data/alert_photos/; the webcam frame and the screen are pushed to the phone
-only when the face is NOT the owner's (or no face / no enrolment).
-Duress alerts never take a photo: the person at the keyboard is the victim.
+Every alert, of either kind, gets a webcam burst (the dashboard posts a frame
+to /api/alerts/photo if it is open; otherwise backend/actions.py grabs one).
+The backend checks the face against the owner's enrolled face
+(backend/faces.py), grabs the screen, and only then decides what the alert
+is (backend/actions.decide) and pushes it. Everything is stored in
+data/alert_photos/; the webcam frame and the screen go to the phone only
+when the final call is an intruder. A duress frame never leaves the machine:
+the person at the keyboard is the victim.
 
     KEYSIGN_NTFY_TOPIC=keysign-duress-7f3k9      # required to push
     KEYSIGN_NTFY_SERVER=https://ntfy.sh          # optional, default
@@ -151,8 +152,9 @@ def push_alert(alert: dict, why: str = "") -> dict:
     return {"sent": True, "channel": "ntfy"}
 
 
-def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str | None = None) -> None:
-    """Write the final delivery decision next to the alert's photo verdict so the log can show it."""
+def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str | None = None,
+                  kind: str | None = None) -> None:
+    """Write the final decision (pushed?, why, final kind) next to the alert's photo verdict so the log can show it."""
     d = Path(photo_dir or PHOTO_DIR)
     d.mkdir(parents=True, exist_ok=True)
     p = d / (photo_name(alert.get("ts", 0), alert.get("session"))[:-4] + ".json")
@@ -160,7 +162,7 @@ def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str 
         cur = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
     except (OSError, json.JSONDecodeError):
         cur = {}
-    cur.update({"pushed": bool(pushed), "reason": reason})
+    cur.update({"pushed": bool(pushed), "reason": reason, "final_kind": kind, "decided_at": time.time()})
     p.write_text(json.dumps(cur), encoding="utf-8")
 
 
@@ -176,8 +178,11 @@ def _post(alert: dict) -> None:
     server = os.environ.get("KEYSIGN_NTFY_SERVER", "https://ntfy.sh").rstrip("/")
     kind = alert.get("kind", "alert")
     title = "KeySign: possible intruder" if kind == "intruder" else "KeySign: possible duress"
+    load = alert.get("load")
     body = (f"{alert.get('user', '?')} · {kind} · {float(alert.get('distance') or 0):.1f}σ from baseline for "
-            f"{alert.get('sustained_ticks', 0)} ticks · {time.strftime('%H:%M:%S', time.localtime(alert.get('ts', time.time())))}"
+            f"{alert.get('sustained_ticks', 0)} ticks"
+            + (f" · load {round(float(load) * 100)}/100" if isinstance(load, (int, float)) else "")
+            + f" · {time.strftime('%H:%M:%S', time.localtime(alert.get('ts', time.time())))}"
             + (f" · {alert['why']}" if alert.get("why") else ""))
     req = urllib.request.Request(f"{server}/{topic}", data=body.encode("utf-8"), method="POST",
                                  headers={"Title": title, "Priority": "high" if kind == "duress" else "urgent",

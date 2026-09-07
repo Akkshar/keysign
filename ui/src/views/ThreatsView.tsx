@@ -3,7 +3,6 @@ import { AnimatePresence } from 'framer-motion';
 import { useBiometrics } from '../context/BiometricsContext';
 import { BACKEND_HTTP, fetchAlerts } from '../lib/keysign';
 import { alertPhotoUrl } from '../lib/webcam';
-import { DuressModal } from '../components/telemetry/DuressModal';
 import { Reveal, Swap } from '../components/motion/Reveal';
 import { CardSpotlight } from '../components/motion/CardSpotlight';
 import { AnimatedCounter } from '../components/common/AnimatedCounter';
@@ -28,7 +27,7 @@ const LEVEL_WORD: Record<Level, string> = { ok: 'Nominal', warn: 'Caution', aler
 const LEVEL_TONE: Record<Level, string> = { ok: 'text-secondary', warn: 'text-tertiary', alert: 'text-error', none: 'text-on-surface-variant' };
 
 export const ThreatsView: React.FC = () => {
-  const { live, setDuressModalOpen } = useBiometrics();
+  const { live, setAlertCardOpen } = useBiometrics();
   const tick = live.tick;
   const th = tick?.heads?.threat;
   const level: Level = (th?.level as Level) ?? 'none';
@@ -46,7 +45,7 @@ export const ThreatsView: React.FC = () => {
     setMismatchTicks(localMismatch.current);
   }, [tick, th]);
 
-  const sustained = th?.sustained_ticks ?? 0;
+  const sustained = th?.stressed_ticks ?? th?.sustained_ticks ?? 0;
   const distance = tick?.distance ?? null;
   const drivers = (th?.drivers ?? []).slice(0, 2) as [string, number][];
   const channel = th?.channel || 'not configured';
@@ -54,8 +53,9 @@ export const ThreatsView: React.FC = () => {
   const kindLine =
     !th ? (!live.connected ? 'Waiting for the local backend.' : !tick ? 'Waiting for typing. Type anywhere on this page.' : 'No baseline for the declared user yet. Enrol one on the capture page.')
     : level === 'alert' && th.kind === 'intruder' ? `Intruder: the identity head disagrees with ${declared}.`
-    : level === 'alert' ? `Duress: ${declared} is typing, far from their calm baseline.`
+    : level === 'alert' ? `Duress: ${declared} is typing, far from their calm baseline and under high load.`
     : level === 'warn' && th.identity_mismatch ? `Identity disagrees with ${declared}. Counting.`
+    : level === 'warn' && th.stressed === false && (th.sustained_ticks ?? 0) > 0 ? `Far from calm but not under load: the owner writing differently, not duress.`
     : level === 'warn' ? `Above the warn line. Counting whether it holds.`
     : `Typing matches ${declared}'s calm baseline.`;
 
@@ -117,16 +117,16 @@ export const ThreatsView: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-space-xl">
               <TickClock label="Identity mismatch" ticks={mismatchTicks} of={MISMATCH_TICKS} fired={level === 'alert' && th?.kind === 'intruder'} />
-              <TickClock label="Above 3σ from baseline" ticks={sustained} of={SUSTAIN_TICKS} fired={level === 'alert' && th?.kind === 'duress'} />
+              <TickClock label="Above 3σ and under load" ticks={sustained} of={SUSTAIN_TICKS} fired={level === 'alert' && th?.kind === 'duress'} />
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-space-sm pt-space-md border-t border-surface-container">
               <p className="font-body text-sm text-on-surface-variant">
-                Alerts go to the phone, not this screen · channel: <span className="font-telemetry text-on-surface">{channel}</span>
+                Alerts go to the phone and a card at the edge of this screen, after the camera has looked · channel: <span className="font-telemetry text-on-surface">{channel}</span>
               </p>
               <button
                 type="button"
-                onClick={() => setDuressModalOpen(true)}
+                onClick={() => setAlertCardOpen(true)}
                 className="self-start font-body text-sm text-primary hover:underline"
               >
                 Preview the alert card
@@ -226,7 +226,7 @@ export const ThreatsView: React.FC = () => {
         </div>
       </Reveal>
 
-      <DuressModal />
+
     </>
   );
 };

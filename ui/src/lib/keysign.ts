@@ -41,10 +41,14 @@ export interface ThreatOut {
   kind?: 'intruder' | 'duress' | null;
   distance?: number;
   sustained_ticks?: number;
+  stressed_ticks?: number;        // of the sustained ticks, those also at or above the person's high-load cut-off (duress needs all of them)
+  stressed?: boolean;
+  load?: number | null;
+  load_above?: number;
   identity_mismatch?: boolean;
   drivers?: [string, number][];
   alerts_total?: number;
-  last_alert?: { ts: number; kind: string; sent: boolean; channel: string } | null;
+  last_alert?: { ts: number; kind: string; sent: boolean | null; channel: string; reason?: string } | null;
   channel?: string;
   reason?: string;
   error?: string;
@@ -180,7 +184,7 @@ export const kpsToWpm = (kps: number) => Math.round((kps * 60) / 5);
 
 
 /** Machine-side settings kept by the backend (data/settings.json). */
-export interface AppSettings { lock_on_intruder: boolean; photo_on_intruder: boolean; declared_user: string }
+export interface AppSettings { lock_on_intruder: boolean; photo_on_intruder: boolean; toast_on_alert: boolean; declared_user: string }
 export async function fetchSettings(): Promise<AppSettings | null> {
   try { const r = await fetch(`${BACKEND_HTTP}/api/settings`); return r.ok ? r.json() : null; } catch { return null; }
 }

@@ -237,7 +237,7 @@ def _maybe_alert_actions(session: Session, tick: dict) -> None:
             la = th["last_alert"]
             idn = (tick.get("heads") or {}).get("identity") or {}
             alert = {"ts": la.get("ts"), "kind": la.get("kind") or th.get("kind"), "user": session.user, "session": session.id,
-                     "distance": th.get("distance"), "sustained_ticks": th.get("sustained_ticks"),
+                     "distance": th.get("distance"), "sustained_ticks": th.get("sustained_ticks"), "load": th.get("load"),
                      "identity": idn.get("user"), "identity_confidence": idn.get("confidence")}
             actions.on_alert(alert, process_alert_photo)
     except Exception:
@@ -309,7 +309,11 @@ MAX_PHOTO_BYTES = 2_000_000
 
 def process_alert_photo(alert: dict, data: bytes, session: str | None = None, source: str = "dashboard",
                         verdict: dict | None = None) -> dict:
-    """Store the frame, check the face against the owner, grab the screen, push if not the owner."""
+    """
+    Store the frame, check the face against the owner, grab the screen, and push the
+    images if backend/actions.decide says the final call is an intruder. The text of the
+    alert itself is pushed by backend/actions.on_alert once the camera has had its say.
+    """
     from backend import actions, faces, notify
     actions.photo_arrived(alert["ts"])
     sess = alert.get("session") or session
@@ -331,22 +335,22 @@ def process_alert_photo(alert: dict, data: bytes, session: str | None = None, so
     verdict["source"] = source
     notify.save_verdict(alert["ts"], sess, verdict)
     when = time.strftime("%H:%M:%S", time.localtime(alert["ts"]))
-    if verdict.get("match") is True:
-        push = {"sent": False, "channel": notify.channel(), "reason": "face matched the owner; kept local"}
-    else:
-        why = ("face does not match " + owner) if verdict.get("match") is False else ("no face in frame" if verdict.get("face") is False else "owner face not enrolled")
-        push = notify.send_photo(alert, p, "KeySign: who is at the keyboard", f"{when} · {why} · intruder alert on {owner}'s session")
+    d = actions.decide(alert, verdict)
+    if d["images"]:
+        push = notify.send_photo(alert, p, "KeySign: who is at the keyboard", f"{when} · {d['why']} · on {owner}'s session")
         if screen_name:
             notify.send_photo(alert, notify.PHOTO_DIR / screen_name, "KeySign: what was on the screen", f"{when} · screen at the moment of the alert")
-    return {"ok": True, "photo": p.name, "screen": screen_name, "face": verdict, **push}
+    else:
+        push = {"sent": False, "channel": notify.channel(), "reason": d["why"]}
+    return {"ok": True, "photo": p.name, "screen": screen_name, "face": verdict, "final_kind": d["kind"], **push}
 
 
 @app.post("/api/alerts/photo")
 async def alert_photo(request: Request, ts: float, session: str | None = None):
     """
-    One webcam frame (JPEG body) for the intruder alert raised at `ts`. Stored
-    in data/alert_photos/ and, if a phone topic is configured, pushed as an
-    attachment. The dashboard only posts this for INTRUDER alerts.
+    One webcam frame (JPEG body) for the alert raised at `ts`, of either kind. Stored
+    in data/alert_photos/, face-checked against the owner, and pushed as an attachment
+    only when the final call is an intruder (a duress frame never leaves the machine).
     """
     from backend import notify
     data = await request.body()
@@ -356,8 +360,6 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
     if not alerts:
         return JSONResponse({"ok": False, "error": "no alert at that time"}, status_code=404)
     alert = alerts[-1]
-    if alert.get("kind") != "intruder":
-        return JSONResponse({"ok": False, "error": "photos are only taken for intruder alerts"}, status_code=400)
     return process_alert_photo(alert, data, session)
 
 
@@ -369,7 +371,7 @@ def settings_get():
 
 @app.put("/api/settings")
 async def settings_put(request: Request):
-    """Body: any of lock_on_intruder (bool), photo_on_intruder (bool), declared_user (str)."""
+    """Body: any of lock_on_intruder (bool), photo_on_intruder (bool), toast_on_alert (bool), declared_user (str)."""
     from backend import actions
     body = await request.json()
     if not isinstance(body, dict):
@@ -461,7 +463,7 @@ def account_unlink(email: str):
 @app.get("/api/faces/{user}")
 def faces_status(user: str):
     from backend import faces
-    return {"user": user, "n_samples": faces.n_samples(user), "threshold": round(faces.threshold_for(user), 1)}
+    return {"user": user, "n_samples": faces.n_samples(user), "threshold": round(faces.threshold_for(user), 2), "method": faces.method()}
 
 
 @app.post("/api/faces/{user}")
@@ -496,7 +498,7 @@ def faces_enrol_from_camera(user: str, frames: int = 8):
         stored += 1 if r.get("ok") else 0
         without_face += 0 if r.get("ok") else 1
     return {"ok": stored > 0, "stored": stored, "without_face": without_face, "n_samples": faces.n_samples(user),
-            "threshold": round(faces.threshold_for(user), 1)}
+            "threshold": round(faces.threshold_for(user), 2), "method": faces.method()}
 
 
 @app.delete("/api/faces/{user}")

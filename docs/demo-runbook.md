@@ -57,6 +57,11 @@ streams to the backend, so either window can be the typing surface.
       `data/samples/all_new_page.json`). This is the fallback.
 - [ ] Wifi off test done once earlier: everything but the phone push still works.
 - [ ] Laptop on power, notifications muted, screen lock off.
+- [ ] Face models present: `uv run python -m backend.faces fetch` says
+      `engine now: sface`. Owner enrolled in Settings (facing the screen,
+      glancing sideways, looking down at the keys) from BOTH cameras.
+- [ ] `data/settings.json`: `toast_on_alert` on if the tray notification is
+      part of the story, off if the projector must stay clean.
 
 ## The three minutes
 

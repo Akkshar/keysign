@@ -46,36 +46,65 @@ reported as unknown), `state`
 (directional load score, see pipeline/README.md) and `threat` (sustained
 deviation, classified as intruder or duress using the other two).
 
-Threat alerts are silent: nothing changes on the typist's page. They are
-appended to `data/alerts.jsonl` and, if `KEYSIGN_NTFY_TOPIC` is set, pushed
-to a phone through ntfy (install the ntfy app, subscribe to a random topic
-name, set the same name in the env). `KEYSIGN_NTFY_SERVER` overrides the
-server. An alert needs 3 consecutive ticks above 3 sigma; one push per
-minute per session. The push carries kind, user label, distance and time only.
+Threat alerts are silent for the typist: nothing opens in front of the
+typing. They are appended to `data/alerts.jsonl` and, if `KEYSIGN_NTFY_TOPIC`
+is set, pushed to a phone through ntfy (install the ntfy app, subscribe to a
+random topic name, set the same name in the env). `KEYSIGN_NTFY_SERVER`
+overrides the server. The push carries kind, user label, distance, load and
+time only; one push per minute per session. The dashboard shows a card at
+the edge of the screen, and the desktop agent a tray notification in the
+corner (`toast_on_alert` in `data/settings.json`).
 
-Intruder alerts can carry a webcam frame: with "Photo on intruder alert"
-switched on in the dashboard's Settings, the browser posts one JPEG to
-`POST /api/alerts/photo?ts=<alert ts>` the moment the alert lands. It is
-stored in `data/alert_photos/` (gitignored), listed with the alert in
-`/api/alerts` as `photo`, served from `/api/alerts/photo/<name>`, and pushed
-to the phone as a second message with the image attached. Duress alerts
-never take a photo.
+Two clocks fire an alert (`backend/heads.py`): 6 consecutive ticks over
+3 sigma *while the State head says the person is at or above their own
+high-load cut-off* is duress (stress has a direction; "far from calm" alone
+is the owner writing prose in another app, measured 4 false duress alerts
+in one ordinary session before the gate); 6 consecutive ticks of a confident
+identity mismatch is an intruder, load or not.
 
-The camera is opened only for that one frame. Before pushing, the backend
-checks the face against the owner's enrolled face (`backend/faces.py`:
-OpenCV Haar detection + LBPH, enrolled from Settings into `data/faces/<user>/`,
-gitignored) and grabs the screen with Pillow (`KEYSIGN_SCREEN_SNAPSHOT=0`
-to disable). If the face matches the owner the images stay on disk; if it
-does not, or there is no face or no enrolment, the webcam frame and the
-screen go to the phone with the alert. `GET/POST/DELETE /api/faces/{user}`
-manage the enrolment.
+**The camera is the second factor for both kinds.** When an alert fires the
+dashboard, if open, posts one JPEG to `POST /api/alerts/photo?ts=<alert ts>`;
+otherwise the backend takes a five-frame burst itself 1.5 s later
+(`backend/actions.py`). The face is compared with the owner's enrolled face
+and the two verdicts are combined (`backend/actions.decide`):
+
+| typing says | camera sees   | final call        | phone push | lock | images pushed |
+|-------------|---------------|-------------------|-----------|------|---------------|
+| intruder    | someone else  | intruder          | yes       | yes  | frame + screen |
+| intruder    | the owner     | kept local        | no        | no   | no |
+| intruder    | cannot tell   | intruder          | yes       | yes  | frame if any + screen |
+| duress      | someone else  | intruder          | yes       | no   | frame + screen |
+| duress      | the owner     | duress (confirmed)| yes       | no   | no |
+| duress      | cannot tell   | duress            | yes       | no   | no |
+
+A duress frame never leaves the machine: the person at the keyboard is the
+victim. The lock needs the typing's word as well as the camera's: a typist
+looking straight down at the keys scores like a stranger to the face model,
+so the camera alone never locks the owner out. Frames, screen snapshots and
+verdicts live in `data/alert_photos/`
+(gitignored), listed with each alert in `/api/alerts`, served from
+`/api/alerts/photo/<name>`. `KEYSIGN_SCREEN_SNAPSHOT=0` disables the screen
+snapshot.
+
+Face engine (`backend/faces.py`): YuNet detection + SFace embeddings from
+OpenCV's model zoo, cosine similarity against the owner's enrolled
+embeddings; >= 0.40 is the owner, < 0.25 somebody else, in between the
+camera abstains and the typing decides. Measured on this machine's stored
+alert frames: the owner scored 0.42-0.79, every other person 0.14-0.26.
+The models (39 MB) are not in git: `uv run python -m backend.faces fetch`
+downloads them into `backend/assets/`; without them the old Haar + LBPH
+check runs instead (it accepted a stranger at distance 67 and rejected the
+owner at 76, so fetch the models). Enrol from Settings, or from the app's own
+camera with `POST /api/faces/{user}/grab`; include looking down at the keys.
+`uv run python -m backend.faces check "<user>" <frames...>` scores frames by
+hand. `GET/POST/DELETE /api/faces/{user}` manage the enrolment.
 
 Run it as an app instead: `uv run python -m agent` starts this backend, a
 system-wide keystroke hook (pynput), a tray icon and a native window showing
 the built dashboard (`npm --prefix ui run build` first). Agent sessions say
-`redact: true`, so their recordings keep only key classes, never the key.
-On an intruder alert the backend grabs a webcam frame itself if the
-dashboard has not posted one within 1.5 s, then locks the workstation
+`redact: true`, so their recordings keep only key classes, never the key;
+shortcut chords (Ctrl/Alt/Win + key) are not typing and are dropped before
+they reach the stream. A confirmed intruder locks the workstation
 (`data/settings.json`, `lock_on_intruder`; `PUT /api/settings`). See
 `agent/__main__.py`.
 

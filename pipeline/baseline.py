@@ -41,10 +41,16 @@ from pipeline.features import FEATURE_NAMES
 # are stable enough per sample to estimate a spread from. Digraph timings are
 # excluded: a 60-key sample contains each digraph once or twice, so their MAD
 # is noise and they dominated the distance (measured: pooled stress AUC on the
-# teammates set went from 0.47 to 0.54 by dropping them). They stay in
-# FEATURE_NAMES for the identity classifier, where they help.
+# teammates set went from 0.47 to 0.54 by dropping them). modifier_ratio is
+# excluded too: the enrolment prompts are typed without modifiers, so every
+# baseline had a zero spread for it (floored at 1e-6) and one Shift under the
+# system-wide hook pinned that z-score at the clip (2026-09-07: the drivers of
+# the agent's false alerts read "modifier_ratio +43478"). Measured on the
+# labelled windows: dropping it moves calm/stress medians by < 0.05 sigma and
+# takes the agent's own ordinary typing from 39-45% of ticks over 3 sigma to
+# 17-40%. Both stay in FEATURE_NAMES for the identity classifier.
 BASELINE_FEATURES: list[str] = [f for f in FEATURE_NAMES
-                                if f not in ("n_keys", "duration_s", "pause_count", "longest_pause_ms")
+                                if f not in ("n_keys", "duration_s", "pause_count", "longest_pause_ms", "modifier_ratio")
                                 and not f.startswith("dg_")]
 
 MAD_TO_SIGMA = 1.4826      # MAD of a normal distribution -> its standard deviation

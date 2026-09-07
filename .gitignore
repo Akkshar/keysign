@@ -55,3 +55,7 @@ data/sessions/
 
 # Playwright screenshots from ui/tests
 ui/tests/out/
+
+# Face models (39 MB, fetch with: uv run python -m backend.faces fetch)
+backend/assets/*.onnx
+backend/assets/*.part

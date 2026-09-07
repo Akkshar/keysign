@@ -140,6 +140,8 @@ def test_cooldown_prevents_repeat_pushes(baseline, alert_log, monkeypatch):
 
 
 def test_push_goes_through_ntfy_when_configured(baseline, alert_log, monkeypatch):
+    """The head records the alert and leaves the push to backend/actions.py (after the camera);
+    push_alert then reaches ntfy with kind, user, distance and time only."""
     sent = []
     monkeypatch.setenv("KEYSIGN_NTFY_TOPIC", "keysign-test-topic")
     monkeypatch.setattr(notify, "_post", lambda alert: sent.append(alert))
@@ -147,13 +149,44 @@ def test_push_goes_through_ntfy_when_configured(baseline, alert_log, monkeypatch
     out = None
     for _ in range(heads.THREAT_PERSIST):
         out = heads.threat_head(odd_features(), baseline, ctx)
-    assert out["last_alert"]["sent"] is True and out["last_alert"]["channel"] == "ntfy"
+    assert out["last_alert"]["sent"] is None and out["last_alert"]["channel"] == "ntfy"
+    logged = json.loads(alert_log.read_text().splitlines()[-1])
+    assert logged["kind"] == "duress"
+    notify.push_alert(logged, "camera: the owner is at the keyboard")
     import time
     for _ in range(50):                      # background thread
         if sent:
             break
         time.sleep(0.02)
-    assert sent and sent[0]["kind"] == "duress" and "events" not in sent[0]
+    assert sent and sent[0]["kind"] == "duress" and "events" not in sent[0] and sent[0]["why"].startswith("camera")
+
+
+def test_duress_needs_load_but_intruder_does_not(baseline, alert_log):
+    """Duress has a direction. The same 3-sigma typing by the declared user is a warn while the
+    State head says the load is under the person's cut-off, and an alert once it is over.
+    An impostor is an intruder either way."""
+    calm = ctx_with(identity={"user": "Test User", "matches_declared": True, "unknown": False}, state={"load": 0.1})
+    out = None
+    for _ in range(heads.THREAT_PERSIST * 2):
+        out = heads.threat_head(odd_features(), baseline, calm)
+    assert out["level"] == "warn" and out["sustained_ticks"] == heads.THREAT_PERSIST and out["stressed_ticks"] == 0
+    assert out["stressed"] is False and out["load_above"] == heads.LOAD_ABOVE and calm["threat"]["alerts"] == 0
+    loaded = ctx_with(identity={"user": "Test User", "matches_declared": True, "unknown": False}, state={"load": 0.9})
+    for _ in range(heads.THREAT_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, loaded)
+    assert out["level"] == "alert" and out["kind"] == "duress" and out["stressed_ticks"] == heads.THREAT_PERSIST
+    # the per-user cut-off from `pipeline.state calibrate` wins over the global one
+    baseline.state = {"load_above": 0.95}
+    strict = ctx_with(identity={"user": "Test User", "matches_declared": True, "unknown": False}, state={"load": 0.9})
+    for _ in range(heads.THREAT_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, strict)
+    assert out["level"] == "warn" and out["load_above"] == 0.95
+    baseline.state = None
+    # a confident stranger at low load still trips the intruder clock
+    impostor = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "unknown": False, "low_confidence": False}, state={"load": 0.05})
+    for _ in range(heads.THREAT_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, impostor)
+    assert out["level"] == "alert" and out["kind"] == "intruder"
 
 
 def test_push_failure_is_swallowed(baseline, alert_log, monkeypatch):
@@ -188,16 +221,25 @@ def test_alert_photo_stored_listed_and_pushed(alert_log, monkeypatch, tmp_path):
     listed = client.get("/api/alerts").json()["alerts"]
     assert listed[0]["photo"] == "1000_abc.jpg" and listed[0]["screen"] == "1000_abc_screen.jpg"
     assert listed[0]["face"]["match"] is False and listed[0]["face"]["owner"] == "u" and listed[1]["photo"] is None
-    # duress never gets a photo; garbage is refused; unknown alert time is refused
-    assert client.post("/api/alerts/photo?ts=2000", content=jpeg, headers={"Content-Type": "image/jpeg"}).status_code == 400
+    # a duress alert gets a frame too: a stranger in it makes the final call an intruder, images and all
+    r = client.post("/api/alerts/photo?ts=2000", content=jpeg, headers={"Content-Type": "image/jpeg"}).json()
+    assert r["ok"] is True and r["final_kind"] == "intruder" and r["sent"] is True
+    # garbage is refused; unknown alert time is refused
     assert client.post("/api/alerts/photo?ts=1000", content=b"not a jpeg", headers={"Content-Type": "image/jpeg"}).status_code == 400
     assert client.post("/api/alerts/photo?ts=5000", content=jpeg, headers={"Content-Type": "image/jpeg"}).status_code == 404
     import time
     for _ in range(50):
-        if len(pushed) >= 2:
+        if len(pushed) >= 4:
             break
         time.sleep(0.02)
-    assert sorted(pushed) == [("intruder", "1000_abc.jpg"), ("intruder", "1000_abc_screen.jpg")]
+    assert sorted(pushed) == [("duress", "2000_abc.jpg"), ("duress", "2000_abc_screen.jpg"), ("intruder", "1000_abc.jpg"), ("intruder", "1000_abc_screen.jpg")]
+    # the owner in a duress frame: stored, never pushed
+    monkeypatch.setattr(faces, "verify", lambda user, data: {"face": True, "match": True, "similarity": 0.6, "enrolled": 5})
+    notify.record({"ts": 2500.0, "session": "abc", "kind": "duress", "user": "u"}, alert_log)
+    r = client.post("/api/alerts/photo?ts=2500", content=jpeg, headers={"Content-Type": "image/jpeg"}).json()
+    assert r["final_kind"] == "duress" and r["sent"] is False and (tmp_path / "photos" / "2500_abc.jpg").exists()
+    time.sleep(0.1)
+    assert len(pushed) == 4
 
 
 def test_alert_photo_stays_local_when_face_matches_owner(alert_log, monkeypatch, tmp_path):
