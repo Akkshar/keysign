@@ -33,11 +33,16 @@ log = logging.getLogger("keysign.faces")
 ROOT = Path(__file__).resolve().parent.parent
 FACE_DIR = ROOT / "data" / "faces"
 CROP = 160                      # enrolled crops are CROP x CROP grayscale
-THRESHOLD = 70.0                # LBPH distance below this = same person (typical own-face 30-60, stranger 80+)
+THRESHOLD = 70.0                # fallback only. Measured: the owner's own crops score 26-34 against each
+                                # other, a different person at the same desk 67-69, so 70 let intruders
+                                # through. The per-user threshold is 1.6 x the owner's own p90 leave-one-out
+                                # distance, clamped to THRESHOLD_RANGE (Akkshar: ~53).
+THRESHOLD_RANGE = (40.0, 60.0)
+THRESHOLD_FACTOR = 1.6
 MAX_SAMPLES = 20
 
 _cascade = None
-_models: dict[str, tuple[float, object, int]] = {}      # user -> (dir mtime, recognizer, n)
+_models: dict[str, tuple[float, object, int, float]] = {}      # user -> (dir mtime, recognizer, n, threshold)
 
 
 def _slug(s: str) -> str:
@@ -128,44 +133,65 @@ def clear(user: str) -> int:
     return n
 
 
+def _recognizer(imgs):
+    cv2 = _cv2()
+    rec = cv2.face.LBPHFaceRecognizer_create(radius=1, neighbors=8, grid_x=8, grid_y=8)
+    rec.train(imgs, np.zeros(len(imgs), dtype=np.int32))
+    return rec
+
+
+def own_threshold(imgs) -> float:
+    """Leave-one-out: how far the owner's own crops sit from each other, scaled and clamped."""
+    if len(imgs) < 3:
+        return THRESHOLD
+    dists = [_recognizer([im for j, im in enumerate(imgs) if j != i]).predict(imgs[i])[1] for i in range(len(imgs))]
+    return float(np.clip(THRESHOLD_FACTOR * np.quantile(dists, 0.9), *THRESHOLD_RANGE))
+
+
 def _model(user: str):
-    """LBPH recognizer trained on the user's crops, cached by folder mtime. None if no samples."""
+    """LBPH recognizer trained on the user's crops plus that user's threshold, cached by folder mtime."""
     cv2 = _cv2()
     d = user_dir(user)
     if not d.exists():
-        return None, 0
+        return None, 0, THRESHOLD
     files = sorted(d.glob("*.png"))
     if not files:
-        return None, 0
+        return None, 0, THRESHOLD
     mtime = max(p.stat().st_mtime for p in files)
     hit = _models.get(user)
     if hit and hit[0] == mtime:
-        return hit[1], hit[2]
+        return hit[1], hit[2], hit[3]
     imgs = [cv2.imread(str(p), cv2.IMREAD_GRAYSCALE) for p in files]
     imgs = [i for i in imgs if i is not None]
-    rec = cv2.face.LBPHFaceRecognizer_create(radius=1, neighbors=8, grid_x=8, grid_y=8)
-    rec.train(imgs, np.zeros(len(imgs), dtype=np.int32))
-    _models[user] = (mtime, rec, len(imgs))
-    return rec, len(imgs)
+    rec, thr = _recognizer(imgs), own_threshold(imgs)
+    _models[user] = (mtime, rec, len(imgs), thr)
+    return rec, len(imgs), thr
 
 
-def verify(user: str, jpeg: bytes, threshold: float = THRESHOLD) -> dict:
+def threshold_for(user: str) -> float:
+    return _model(user)[2]
+
+
+def verify(user: str, jpeg: bytes, threshold: float | None = None) -> dict:
     """
     Is the largest face in this frame the enrolled owner `user`?
     match True/False when there is a face and an enrolment; None when either is missing.
+    The threshold is the owner's own (own_threshold) unless given.
     """
+    rec, n, thr = _model(user)
+    if threshold is not None:
+        thr = threshold
     try:
         gray = _gray(jpeg)
     except Exception as e:
-        return {"face": False, "match": None, "distance": None, "threshold": threshold, "enrolled": n_samples(user), "reason": str(e)}
+        return {"face": False, "match": None, "distance": None, "threshold": thr, "enrolled": n, "reason": str(e)}
     box = largest_face(gray)
     if box is None:
-        return {"face": False, "match": None, "distance": None, "threshold": threshold, "enrolled": n_samples(user), "reason": "no face in frame"}
-    rec, n = _model(user)
+        return {"face": False, "match": None, "distance": None, "threshold": thr, "enrolled": n, "reason": "no face in frame"}
     if rec is None:
-        return {"face": True, "match": None, "distance": None, "threshold": threshold, "enrolled": 0, "reason": "owner face not enrolled"}
+        return {"face": True, "match": None, "distance": None, "threshold": thr, "enrolled": 0, "reason": "owner face not enrolled"}
     _, dist = rec.predict(_crop(gray, box))
-    return {"face": True, "match": bool(dist < threshold), "distance": round(float(dist), 1), "threshold": threshold, "enrolled": n}
+    return {"face": True, "match": bool(dist < thr), "distance": round(float(dist), 1), "threshold": round(thr, 1), "enrolled": n}
 
 
 # ---------------------------------------------------------------------------

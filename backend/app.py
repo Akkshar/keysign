@@ -307,7 +307,7 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
 @app.get("/api/faces/{user}")
 def faces_status(user: str):
     from backend import faces
-    return {"user": user, "n_samples": faces.n_samples(user), "threshold": faces.THRESHOLD}
+    return {"user": user, "n_samples": faces.n_samples(user), "threshold": round(faces.threshold_for(user), 1)}
 
 
 @app.post("/api/faces/{user}")

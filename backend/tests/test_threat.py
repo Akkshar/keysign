@@ -257,3 +257,14 @@ def test_ntfy_request_shape(monkeypatch):
     notify._post({"ts": 0, "user": "Akkshar", "kind": "intruder", "distance": 3.7, "sustained_ticks": 3})
     assert captured["url"] == "https://ntfy.sh/keysign-abc"
     assert "intruder" in captured["headers"].get("Title", "") and "3.7" in captured["body"]
+
+
+def test_face_threshold_is_derived_from_the_owners_own_crops():
+    import numpy as np
+    from backend import faces
+    rng = np.random.default_rng(0)
+    base = rng.integers(0, 255, (faces.CROP, faces.CROP), dtype=np.uint8)
+    crops = [np.clip(base.astype(int) + rng.integers(-6, 7, base.shape), 0, 255).astype(np.uint8) for _ in range(6)]
+    thr = faces.own_threshold(crops)
+    assert faces.THRESHOLD_RANGE[0] <= thr <= faces.THRESHOLD_RANGE[1]
+    assert faces.own_threshold(crops[:2]) == faces.THRESHOLD          # too few to measure: fallback
