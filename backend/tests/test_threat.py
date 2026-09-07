@@ -189,6 +189,7 @@ def test_duress_needs_load_but_intruder_does_not(baseline, alert_log):
     assert out["level"] == "alert" and out["kind"] == "intruder"
 
 
+
 def test_push_failure_is_swallowed(baseline, alert_log, monkeypatch):
     monkeypatch.setenv("KEYSIGN_NTFY_TOPIC", "t")
     def boom(alert): raise RuntimeError("offline")
@@ -338,7 +339,24 @@ def test_confident_mismatch_alerts_even_close_to_the_baseline(baseline, alert_lo
     for _ in range(heads.INTRUDER_PERSIST):
         out = heads.threat_head(close, baseline, sure)
     assert out["level"] == "alert" and out["kind"] == "intruder"
+
     unsure = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "unknown": False, "low_confidence": True})
     for _ in range(heads.INTRUDER_PERSIST * 2):
         out = heads.threat_head(close, baseline, unsure)
     assert out["level"] == "warn" and unsure["threat"]["alerts"] == 0
+
+
+def test_alert_carries_whether_the_duress_clock_was_full(baseline, alert_log):
+    """An intruder alert raised while the person was also far off AND loaded says so, so
+    backend/actions.py can turn it into duress when the camera sees the owner."""
+    loaded = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "low_confidence": True}, state={"load": 0.9})
+    out = None
+    for _ in range(heads.THREAT_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, loaded)
+    assert out["kind"] == "intruder" and out["duress_ready"] is True
+    assert json.loads(alert_log.read_text().splitlines()[-1])["duress_ready"] is True
+    # the same mismatch with no load: an intruder alert that is only an intruder alert
+    calm = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "low_confidence": True}, state={"load": 0.0})
+    for _ in range(heads.INTRUDER_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, calm)
+    assert out["kind"] == "intruder" and out["duress_ready"] is False

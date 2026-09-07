@@ -99,6 +99,27 @@ camera with `POST /api/faces/{user}/grab`; include looking down at the keys.
 `uv run python -m backend.faces check "<user>" <frames...>` scores frames by
 hand. `GET/POST/DELETE /api/faces/{user}` manage the enrolment.
 
+## Testing it end to end
+
+`uv run python -m pytest -q` is the unit suite (96 tests). The whole app,
+including the browser and the camera, is exercised by
+
+    uv run python ui/tests/e2e.py            # add --headed to watch it
+
+which starts its own backend, drives the built dashboard in Chromium, replays
+the team's recorded keystrokes to raise a real intruder alert and a real duress
+alert, posts stored webcam frames as those alerts' photos, and checks what the
+machine decided. It also starts the desktop agent and stops it again. It
+refuses to run while a backend with a phone topic is up (nothing may reach the
+phone), switches the screen lock off while it runs, and deletes the alerts,
+photos and recordings it made. Screenshots and the backend and agent logs land
+in `ui/tests/out/`.
+
+One thing to know when writing scripts against this backend: it binds
+`127.0.0.1`, and on Windows `localhost` resolves to `::1` first, so a Python
+client that calls `http://localhost:8000` waits out a two-second IPv6 connect
+on every request. Use `http://127.0.0.1:8000`. Browsers are unaffected.
+
 Run it as an app instead: `uv run python -m agent` starts this backend, a
 system-wide keystroke hook (pynput), a tray icon and a native window showing
 the built dashboard (`npm --prefix ui run build` first). Agent sessions say

@@ -17,7 +17,8 @@ const CAMERA_POLL_MS = [2500, 5000, 8000, 12000];
 
 type FaceInfo = {
   match?: boolean | null; face?: boolean | null; enrolled?: number; similarity?: number | null;
-  distance?: number | null; reason?: string; pushed?: boolean; final_kind?: string | null; frames?: number; method?: string;
+  distance?: number | null; reason?: string; pushed?: boolean; final_kind?: string | null; frames?: number;
+  method?: string; channel?: string; sent?: boolean;
 };
 
 export const AlertCard: React.FC = () => {
@@ -28,6 +29,7 @@ export const AlertCard: React.FC = () => {
   const declared = live.declaredUser || live.tick?.user || 'the declared user';
   const identity = live.tick?.heads?.identity;
   const [face, setFace] = useState<FaceInfo | null>(null);
+  const [row, setRow] = useState<any | null>(null);      // this alert's own row from the log
   const hover = useRef(false);
 
   const typedKind = last?.kind ?? th?.kind ?? 'duress';
@@ -35,18 +37,22 @@ export const AlertCard: React.FC = () => {
   const finalKind = face?.final_kind === undefined ? null : face.final_kind;   // null until the backend has decided
   const kind = finalKind ?? typedKind;
   const when = last ? new Date(last.ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null;
-  const drivers = ((th?.drivers ?? []) as [string, number][]).slice(0, 2);
+  const drivers = ((row?.drivers ?? th?.drivers ?? []) as [string, number][]).slice(0, 2);
+  const distance = row?.distance ?? th?.distance ?? null;
+  const heldTicks = row?.sustained_ticks ?? th?.sustained_ticks ?? 0;
+  const load = typeof row?.load === "number" ? row.load : th?.load;
 
   // The camera's verdict lands a few seconds after the alert: poll the alert log for it.
   useEffect(() => {
-    if (!alertCardOpen || !last) { setFace(null); return; }
+    if (!alertCardOpen || !last) { setFace(null); setRow(null); return; }
     let stop = false;
     const timers = CAMERA_POLL_MS.map((ms) => setTimeout(async () => {
       if (stop) return;
       try {
         const rows = await fetchAlerts(5);
-        const row = rows.find((a) => Math.abs((a.ts ?? 0) - last.ts) < 1.5);
-        if (row?.face && !stop) setFace(row.face as FaceInfo);
+        const hit = rows.find((a) => Math.abs((a.ts ?? 0) - last.ts) < 1.5);
+        if (hit && !stop) setRow(hit);
+        if (hit?.face && !stop) setFace(hit.face as FaceInfo);
       } catch { /* backend offline: the card keeps the typing's verdict */ }
     }, ms));
     return () => { stop = true; timers.forEach(clearTimeout); };
@@ -67,7 +73,9 @@ export const AlertCard: React.FC = () => {
         ? `The typing looked like ${declared} under duress, but the camera saw someone else at the keyboard.`
         : `Someone is typing under ${declared}'s name and the identity head disagrees${identity?.user && identity.user !== declared ? ` (closest match: ${identity.user})` : ''}.`)
       : kind === 'duress'
-        ? `${declared} is typing, more than 3σ from their calm baseline and under high load, for long enough to rule out a stumble.`
+        ? (typedKind === 'intruder'
+          ? `The typing drifted far enough that the identity head lost ${declared}, but the camera says ${declared} is in the chair and the load is high: ${declared} under pressure, not an impostor.`
+          : `${declared} is typing, more than 3σ from their calm baseline and under high load, for long enough to rule out a stumble.`)
         : `The typing disagreed with ${declared}, but the camera saw ${declared} at the keyboard. Nothing was pushed.`;
 
   const sim = typeof face?.similarity === 'number' ? ` (${face.similarity.toFixed(2)})` : '';
@@ -83,10 +91,12 @@ export const AlertCard: React.FC = () => {
 
   const whereLine = preview
     ? `A push to the phone over ntfy${th?.channel ? ` (channel ${th.channel})` : ''}, a tray notification on this machine, and the screen lock for a confirmed intruder.`
-    : face?.pushed === true ? `Pushed to the phone as ${kind}${kind === 'intruder' ? ' · locking this machine' : ''}. ${face.reason || ''}`.trim()
-    : face?.pushed === false ? `Kept on this machine: ${face.reason || 'the owner is at the keyboard'}.`
-    : last?.sent === false ? 'Logged on this machine; no phone channel is configured.'
-    : 'Waiting for the camera before pushing.';
+    : face?.pushed === true
+      ? (face.sent
+        ? `Pushed to the phone as ${kind}${kind === 'intruder' ? ', and this machine is locking' : ''}.`
+        : `Raised as ${kind} and written to the local alert log. No phone channel is configured (KEYSIGN_NTFY_TOPIC), so it went no further.`)
+    : face?.pushed === false ? 'Kept on this machine; nothing was pushed and nothing locked.'
+    : 'Waiting for the camera before deciding.';
 
   const close = () => setAlertCardOpen(false);
   const goToThreats = () => { setActiveArea('threats'); setAlertCardOpen(false); };
@@ -127,9 +137,9 @@ export const AlertCard: React.FC = () => {
             <div className="flex flex-col gap-space-2xs">
               <dt className="text-on-surface-variant text-xs">The numbers</dt>
               <dd className="font-telemetry text-on-surface text-xs">
-                {th?.distance != null ? `${th.distance.toFixed(2)}σ from calm` : 'no window yet'}
-                {th?.sustained_ticks ? ` · held ${th.sustained_ticks} ticks` : ''}
-                {typeof th?.load === 'number' ? ` · load ${Math.round(th.load * 100)}/100` : ''}
+                {distance != null ? `${distance.toFixed(2)}σ from calm` : 'no window yet'}
+                {heldTicks ? ` · held ${heldTicks} ticks` : ''}
+                {typeof load === 'number' ? ` · load ${Math.round(load * 100)}/100` : ''}
                 {drivers.length ? ` · ${drivers.map(([f, z]) => `${featureLabel(f)} ${z > 0 ? '+' : ''}${z.toFixed(1)}σ`).join(', ')}` : ''}
               </dd>
             </div>

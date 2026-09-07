@@ -150,6 +150,25 @@ def _sface_rec():
     return _sface
 
 
+def warm() -> str:
+    """
+    Load the face models now, in the background, so the first alert does not pay for it.
+    Cold, the first check costs ~220 ms of model loading on top of the webcam's own cold
+    open; warm, a five-frame burst is scored in ~100 ms. Never raises.
+    """
+    try:
+        if not sface_available():
+            return "lbph"
+        blank = np.zeros((ALIGNED * 3, ALIGNED * 3, 3), dtype=np.uint8)
+        _yunet_det().setInputSize((blank.shape[1], blank.shape[0]))
+        _yunet_det().detect(blank)
+        _sface_rec().feature(np.zeros((ALIGNED, ALIGNED, 3), dtype=np.uint8))
+        return "sface"
+    except Exception as e:                      # a broken build: the first real check reports it
+        log.warning("face model warm-up failed: %s", e)
+        return "cold"
+
+
 def _decode(jpeg: bytes, gray: bool):
     cv2 = _cv2()
     arr = np.frombuffer(jpeg, dtype=np.uint8)

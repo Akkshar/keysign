@@ -45,6 +45,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -238,6 +239,7 @@ def _maybe_alert_actions(session: Session, tick: dict) -> None:
             idn = (tick.get("heads") or {}).get("identity") or {}
             alert = {"ts": la.get("ts"), "kind": la.get("kind") or th.get("kind"), "user": session.user, "session": session.id,
                      "distance": th.get("distance"), "sustained_ticks": th.get("sustained_ticks"), "load": th.get("load"),
+                     "duress_ready": bool(th.get("duress_ready")),
                      "identity": idn.get("user"), "identity_confidence": idn.get("confidence")}
             actions.on_alert(alert, process_alert_photo)
     except Exception:
@@ -360,7 +362,9 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
     if not alerts:
         return JSONResponse({"ok": False, "error": "no alert at that time"}, status_code=404)
     alert = alerts[-1]
-    return process_alert_photo(alert, data, session)
+    # face detection, the embedding and the screen grab together take a few hundred ms: off the
+    # event loop, so ticks keep flowing to the dashboard while the alert is being decided.
+    return await run_in_threadpool(process_alert_photo, alert, data, session)
 
 
 @app.get("/api/settings")

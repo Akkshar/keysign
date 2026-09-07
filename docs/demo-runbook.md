@@ -57,6 +57,8 @@ streams to the backend, so either window can be the typing surface.
       `data/samples/all_new_page.json`). This is the fallback.
 - [ ] Wifi off test done once earlier: everything but the phone push still works.
 - [ ] Laptop on power, notifications muted, screen lock off.
+- [ ] `uv run python ui/tests/e2e.py` says ALL STEPS PASSED (it needs the
+      terminal's `KEYSIGN_NTFY_TOPIC` unset and no backend already running).
 - [ ] Face models present: `uv run python -m backend.faces fetch` says
       `engine now: sface`. Owner enrolled in Settings (facing the screen,
       glancing sideways, looking down at the keys) from BOTH cameras.

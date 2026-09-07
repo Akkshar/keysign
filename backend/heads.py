@@ -176,7 +176,8 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         level = "ok"
 
     out = {"level": level, "kind": kind if level != "ok" else None, "distance": round(d, 2),
-           "sustained_ticks": sustained, "stressed_ticks": stressed_ticks, "mismatch_ticks": st.get("mismatch_run", 0),
+           "sustained_ticks": sustained, "stressed_ticks": stressed_ticks, "duress_ready": bool(duress_ready),
+           "mismatch_ticks": st.get("mismatch_run", 0),
            "identity_mismatch": mismatch, "load": load, "load_above": round(load_above, 2), "stressed": bool(stressed),
            "warming_up": n_keys < THREAT_MIN_KEYS,
            "drivers": [[f, round(z, 2)] for f, z in baseline.explain(features, top=2)],
@@ -187,7 +188,10 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     if entering and now - st["last_alert_at"] >= THREAT_COOLDOWN_S:
         alert = {"ts": now, "session": ctx.get("session"), "user": ctx.get("user") or baseline.user, "kind": kind,
                  "distance": round(d, 2), "sustained_ticks": sustained, "identity": idn.get("user"),
-                 "identity_confidence": idn.get("confidence"), "load": load, "drivers": out["drivers"]}
+                 "identity_confidence": idn.get("confidence"), "load": load, "drivers": out["drivers"],
+                 # the duress conditions held too: if the camera then says the owner is in the chair, this
+                 # intruder alert is really the owner under pressure (backend/actions.decide)
+                 "duress_ready": bool(duress_ready)}
         res = notify.send(alert, _alert_log_path, push=False)   # backend/actions.py pushes after the camera has had its say
         st["last_alert_at"], st["alerts"] = now, st["alerts"] + 1
         st["last_alert"] = {"ts": now, "kind": kind, **res}

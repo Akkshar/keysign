@@ -45,6 +45,9 @@ def channel() -> str:
     return "ntfy" if enabled() else "log-only"
 
 
+channel_name = channel
+
+
 def record(alert: dict, path: Path | str | None = None) -> None:
     path = Path(path or ALERT_LOG)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -153,8 +156,12 @@ def push_alert(alert: dict, why: str = "") -> dict:
 
 
 def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str | None = None,
-                  kind: str | None = None) -> None:
-    """Write the final decision (pushed?, why, final kind) next to the alert's photo verdict so the log can show it."""
+                  kind: str | None = None, channel: str | None = None, sent: bool | None = None) -> None:
+    """
+    Write the final decision next to the alert's photo verdict so the log can show it:
+    `pushed` is what the decision said to do, `sent` whether a phone channel actually took it
+    (False with no KEYSIGN_NTFY_TOPIC: the alert is real, it just stayed in the local log).
+    """
     d = Path(photo_dir or PHOTO_DIR)
     d.mkdir(parents=True, exist_ok=True)
     p = d / (photo_name(alert.get("ts", 0), alert.get("session"))[:-4] + ".json")
@@ -162,7 +169,8 @@ def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str 
         cur = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
     except (OSError, json.JSONDecodeError):
         cur = {}
-    cur.update({"pushed": bool(pushed), "reason": reason, "final_kind": kind, "decided_at": time.time()})
+    cur.update({"pushed": bool(pushed), "reason": reason, "final_kind": kind, "decided_at": time.time(),
+                "channel": channel or channel_name(), "sent": bool(sent)})
     p.write_text(json.dumps(cur), encoding="utf-8")
 
 

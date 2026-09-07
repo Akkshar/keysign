@@ -101,6 +101,8 @@ def main(argv: list[str] | None = None) -> int:
         print("The dashboard is not built. Run:  npm --prefix ui run build", file=sys.stderr)
         return 1
 
+    from backend.__main__ import warm_faces
+    warm_faces()                                            # face models ready before the first alert
     run_backend(a.port)
     url = f"http://localhost:{a.port}/"       # localhost, not 127.0.0.1: Firebase authorises "localhost"
     log.info("backend up at %s", url)

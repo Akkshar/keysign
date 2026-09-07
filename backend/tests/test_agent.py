@@ -62,6 +62,7 @@ def test_agent_status_endpoint(client, monkeypatch):
 def test_alert_actions_webcam_fallback_then_lock(monkeypatch, tmp_path):
     monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
+    monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
     calls = []
     monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
@@ -163,11 +164,20 @@ def test_decision_table_combines_typing_and_camera():
     assert "0.61" in d["why"]
     d = actions.decide(dur, unsure);  assert (d["kind"], d["push"], d["lock"], d["images"]) == ("duress", True, False, False)
     d = actions.decide(dur, None);    assert d["kind"] == "duress" and d["lock"] is False and "no camera frame" in d["why"]
+    # real duress reaches the head as "intruder" (typing under pressure loses the classifier's
+    # confidence). The camera says the owner AND the duress clock was full: push it as duress
+    # rather than keeping it local, which is what would silence a genuine duress alert.
+    under_pressure = {**intr, "duress_ready": True}
+    d = actions.decide(under_pressure, owner)
+    assert (d["kind"], d["push"], d["lock"], d["images"]) == ("duress", True, False, False)
+    assert "under pressure" in d["why"]
+    d = actions.decide({**intr, "duress_ready": False}, owner);  assert d["kind"] is None and d["push"] is False
 
 
 def test_duress_with_a_stranger_in_frame_becomes_an_intruder_without_the_lock(monkeypatch, tmp_path):
     monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
+    monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
     calls, pushed, toasts = [], [], []
     monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
@@ -220,6 +230,7 @@ def test_agent_capture_drops_shortcut_chords():
 def test_alert_actions_do_not_lock_when_the_face_is_the_owner(monkeypatch, tmp_path):
     monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
+    monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
     calls = []
     monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
@@ -241,6 +252,37 @@ def test_alert_actions_do_not_lock_when_the_face_is_the_owner(monkeypatch, tmp_p
                      lambda alert, jpeg, source, verdict=None: {"ok": True, "face": dict(verdict)})
     time.sleep(0.6)
     assert calls == ["lock"] and pushed_text == ["camera: not the owner at the keyboard"]
+
+
+def test_a_frame_from_the_dashboard_stops_the_machine_opening_its_own_camera(monkeypatch, tmp_path):
+    """The usual case: a dashboard is open and posts a frame. The alert must be decided from
+    that frame, as soon as its face check lands, without the backend opening the camera too."""
+    monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
+    monkeypatch.setattr(actions, "PHOTO_GRACE_S", 1.0)
+    monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.2)
+    monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
+    grabs, pushed, calls = [], [], []
+    monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: grabs.append("grab") or [b"\xff\xd8jpeg"])
+    monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)
+    from backend import notify
+    monkeypatch.setattr(notify, "PHOTO_DIR", tmp_path / "photos")
+    monkeypatch.setattr(notify, "push_alert", lambda a, why="": pushed.append((a["kind"], why)) or {"sent": True, "channel": "ntfy"})
+    actions.update_settings({"lock_on_intruder": True, "photo_on_intruder": True})
+    alert = {"ts": 900.0, "kind": "intruder", "user": "owner", "session": "s", "identity": "Someone Else"}
+    t0 = time.time()
+    actions.on_alert(alert, lambda *a, **k: None)
+    time.sleep(0.2)                                          # the dashboard's frame lands mid-grace
+    notify.save_verdict(900.0, "s", {"face": True, "match": True, "similarity": 0.62, "enrolled": 5})
+    actions.photo_arrived(900.0)
+    for _ in range(40):                                      # let the alert thread finish
+        if json.loads((tmp_path / "photos" / "900_s.json").read_text()).get("reason"):
+            break
+        time.sleep(0.05)
+    decided = json.loads((tmp_path / "photos" / "900_s.json").read_text())
+    assert grabs == [], "the machine opened its own camera even though a frame had arrived"
+    assert pushed == [] and calls == []                      # the frame says the owner: kept local, no lock
+    assert decided["pushed"] is False and "owner" in decided["reason"]
+    assert time.time() - t0 < 1.0, "it waited out the whole grace instead of taking the frame when it landed"
 
 
 def test_bystander_faces_are_ignored_and_best_frame_wins(monkeypatch):

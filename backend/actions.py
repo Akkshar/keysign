@@ -12,11 +12,21 @@ is not the owner" (intruder) or "the owner, but far off and under load"
 
     typing    camera         final      push   lock   images to the phone
     intruder  someone else   intruder   yes    yes    frame + screen
+    intruder  the owner *    duress     yes    no     no      the owner under pressure, not an impostor
     intruder  the owner      (none)     no     no     no      owner typing oddly: kept local
     intruder  no say         intruder   yes    yes    frame if any + screen
     duress    someone else   intruder   yes    NO     frame + screen     typing and camera disagree: alert, don't lock
     duress    the owner      duress     yes    no     no      camera confirms the victim is the owner
     duress    no say         duress     yes    no     no
+
+  * with alert["duress_ready"]: the duress clock was full too (6 ticks over 3 sigma AND at or
+    above this person's high-load cut-off). Real duress reaches the Threat head as "intruder":
+    typing under pressure drifts far enough that the identity classifier loses confidence, and
+    low confidence is positive evidence of another person. Measured 2026-09-07 by replaying the
+    owner's own calm samples sped up 1.7-2.5x through the real models: identity named a teammate
+    at 0.67-0.73 confidence on every window, so the head called it an intruder while the load
+    gate was full. Without this row the camera would then keep it local and a real duress alert
+    would never leave the machine.
 
 "No say": no camera, no face in the burst, owner not enrolled, or a face the
 engine cannot place (turned away). Duress never pushes the frame: the person
@@ -46,7 +56,12 @@ DEFAULTS = {"lock_on_intruder": os.environ.get("KEYSIGN_LOCK_ON_INTRUDER", "1") 
             "declared_user": "",
             "photo_on_intruder": True,        # camera burst on every alert kind (name kept for the dashboard's setting)
             "toast_on_alert": True}           # tray notification in the corner for every final alert
-PHOTO_GRACE_S = 1.5          # wait this long for the dashboard's frame before grabbing one ourselves
+PHOTO_GRACE_S = float(os.environ.get("KEYSIGN_PHOTO_GRACE_S", "1.5"))
+                             # how long to wait for a frame from the dashboard before opening the camera
+                             # ourselves. The wait ends the moment that frame's face check lands, so an
+                             # open dashboard decides the alert in well under a second and the machine's
+                             # own camera never opens. The env var is for tests and slow cameras.
+PHOTO_SETTLE_S = 1.5         # extra wait when a dashboard frame is in flight but its face check has not landed
 LOCK_DELAY_S = 2.5           # lock after the frame and the screen snapshot are taken
 
 _photo_seen: set[float] = set()          # alert ts that already got a photo (from the dashboard or us)
@@ -138,9 +153,34 @@ def face_verdict(alert: dict) -> dict | None:
     try:
         from backend import notify
         p = notify.PHOTO_DIR / (notify.photo_name(alert["ts"], alert.get("session"))[:-4] + ".json")
-        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+        v = json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+        return v if isinstance(v, dict) and "face" in v else None       # a delivery note alone is not a verdict
     except Exception:
         return None
+
+
+def await_dashboard_frame(alert: dict, grace: float | None = None) -> dict | None:
+    """
+    Wait for a webcam frame posted by an open dashboard, up to `grace` seconds, and return its
+    face verdict. Returns as soon as the verdict is on disk, so the usual case (a dashboard is
+    open) decides in a few hundred milliseconds instead of always waiting out the grace. A
+    frame whose POST is still being face-checked when the grace runs out gets a moment longer,
+    so the machine never opens its own camera on top of one that is already in flight.
+    """
+    deadline = time.time() + (PHOTO_GRACE_S if grace is None else grace)
+    while time.time() < deadline:
+        v = face_verdict(alert)
+        if v is not None:
+            return v
+        time.sleep(0.05)
+    if _seen(alert["ts"]):
+        settle = time.time() + PHOTO_SETTLE_S
+        while time.time() < settle:
+            v = face_verdict(alert)
+            if v is not None:
+                return v
+            time.sleep(0.05)
+    return None
 
 
 # ---- the decision ----
@@ -162,6 +202,10 @@ def decide(alert: dict, verdict: dict | None) -> dict:
         if typed == "duress":
             return {"kind": "duress", "push": True, "lock": False, "images": False,
                     "why": "camera: the owner is at the keyboard" + seen + "; the typing is off under load"}
+        if alert.get("duress_ready"):
+            return {"kind": "duress", "push": True, "lock": False, "images": False,
+                    "why": "camera: the owner is at the keyboard" + seen + "; the typing said intruder but the "
+                           "duress clock was full too, so this is the owner under pressure"}
         return {"kind": None, "push": False, "lock": False, "images": False,
                 "why": "face matched the owner" + seen + ": the owner typing oddly, kept local"}
     # the camera had no say
@@ -222,8 +266,8 @@ def on_alert(alert: dict, process_photo) -> None:
         try:
             verdict = None
             if cfg.get("photo_on_intruder", True):
-                time.sleep(PHOTO_GRACE_S)
-                if not _seen(alert["ts"]):
+                verdict = await_dashboard_frame(alert)
+                if verdict is None and not _seen(alert["ts"]):
                     frames = grab_webcam_burst()
                     if frames:
                         from backend import faces
@@ -235,12 +279,15 @@ def on_alert(alert: dict, process_photo) -> None:
                     verdict = face_verdict(alert)
             d = decide(alert, verdict)
             final = {**alert, "kind": d["kind"] or alert.get("kind"), "typed_kind": alert.get("kind")}
+            res = {}
             if d["push"]:
-                notify.push_alert(final, d["why"])
-                log.warning("%s alert on %s's session: %s; pushed", final["kind"], alert.get("user"), d["why"])
+                res = notify.push_alert(final, d["why"]) or {}
+                log.warning("%s alert on %s's session: %s; pushed (%s)", final["kind"], alert.get("user"),
+                            d["why"], res.get("channel"))
             else:
                 log.warning("alert on %s's session: %s; kept local", alert.get("user"), d["why"])
-            notify.mark_delivery(alert, pushed=bool(d["push"]), reason=d["why"], kind=d["kind"])
+            notify.mark_delivery(alert, pushed=bool(d["push"]), reason=d["why"], kind=d["kind"],
+                                 channel=res.get("channel") or notify.channel(), sent=bool(res.get("sent")))
             if d["push"]:
                 toast(*_toast_text(final, d))
             if cfg.get("lock_on_intruder") and d["lock"]:
