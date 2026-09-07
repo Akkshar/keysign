@@ -95,9 +95,13 @@ keeps typing the same prompt. Don't touch the user field. Within about
 two seconds:
 
 - Identity flips to `Shourya` (or UNKNOWN USER if B is stressed), 3-4σ.
-- Threats view: Level 1 Caution at once, then **DURESS DETECTED** after
-  three seconds of sustained deviation (six ticks; the first seconds of any
-  session never count, so B must keep typing);
+- Threats view: Caution at once, then **Alert · intruder** after about six
+  windows (~3 s) of identity naming B while the declared user is still A
+  (the first seconds of any session never count, so B must keep typing).
+  Then, if "Photo on intruder alert" is on: the camera opens for one frame,
+  the backend checks it against A's enrolled face, and B's face plus a
+  screen snapshot go to the phone because it is not A. The Threats log
+  shows the thumbnail, the verdict and the distance;
   the duress modal pops on the dashboard (dismiss it, it's the operator's view).
 - The phone buzzes: "KeySign: possible intruder". Hold it up.
 
@@ -145,7 +149,9 @@ on this laptop. Questions."
 | Nothing moves when typing | Cursor isn't in the textarea, or Live is off. Click into the box. |
 | Stranger is called a teammate | The distance rule passes people whose timing sits inside that teammate's calm spread. Fix after the demo: `uv run python -m backend.sessions export` their recording as `Stranger N`, merge into `data/samples/strangers.json`, rebuild windows, retrain. |
 | Identity says UNKNOWN for A | A is typing far from calm (nervous). Take a breath, type one slow sentence; it settles in 5 s. Or say "and that's the open-set rule working" and move on. |
-| Threat never reaches ALERT | Needs 6 consecutive ticks over 3σ (~3 s) with 25+ keys in the 10 s window. B keeps typing; do not press reset. |
+| Threat never reaches ALERT | Intruder: 6 windows (~3 s) of identity disagreeing with the declared user, with 25+ keys in the 10 s window. Keep typing; do not press Reset mid-swap (it restarts the clock). Duress (same person): 6 windows over 3σ. |
+| Alert arrived, no photo on the phone | Settings: "Photo on intruder alert" must be On and the owner enrolled ("Enrol my face"). If the log says "matched owner", the person in frame scored under the owner's threshold: enrol five more frames in this lighting. Photos are always kept in data/alert_photos. |
+| A teammate shows as UNKNOWN USER | Their live typing is under the 85% confidence bar. Ten calm samples from them on this laptop, then `uv run python -m pipeline.rebuild` (snapshots first). |
 | Phone silent | Wifi. Say "the alert is in the local log" and open http://localhost:8000/api/alerts. |
 | Anything else | Replay. Capture page → Replay row → pick a sample → Replay. It streams a real recording at its original pace: `Shourya · stress` for the chair swap, `Akkshar Ranjan · calm` to reset. |
 
