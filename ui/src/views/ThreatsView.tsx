@@ -78,6 +78,8 @@ export const ThreatsView: React.FC = () => {
     identity: a.identity ? `${a.identity} (${Math.round((a.identity_confidence ?? 0) * 100)}%)` : 'declared user',
     sent: a.sent === false ? 'logged only' : 'pushed',
     photo: a.photo ? alertPhotoUrl(a.photo) : null,
+    screen: a.screen ? alertPhotoUrl(a.screen) : null,
+    face: a.face ? (a.face.match === true ? 'matched owner' : a.face.match === false ? `not ${a.face.owner || 'the owner'}` : a.face.face === false ? 'no face' : 'not enrolled') : null,
     raw: a,
   }));
 
@@ -192,9 +194,15 @@ export const ThreatsView: React.FC = () => {
                     <td className="py-space-md pr-space-lg text-on-surface-variant">{row.sent}</td>
                     <td className="py-space-md pr-space-lg">
                       {row.photo ? (
-                        <a href={row.photo} target="_blank" rel="noreferrer" title="Webcam frame taken when the alert fired">
-                          <img src={row.photo} alt="Webcam frame at the alert" className="h-10 w-14 object-cover rounded-md border border-outline-variant/60" />
-                        </a>
+                        <span className="inline-flex items-center gap-2">
+                          <a href={row.photo} target="_blank" rel="noreferrer" title={`Webcam frame when the alert fired · face: ${row.face ?? 'unchecked'}`}>
+                            <img src={row.photo} alt="Webcam frame at the alert" className="h-10 w-14 object-cover rounded-md border border-outline-variant/60" />
+                          </a>
+                          <span className="flex flex-col text-[11px] leading-tight">
+                            <span className={row.face === 'matched owner' ? 'text-secondary' : 'text-error'}>{row.face ?? 'unchecked'}</span>
+                            {row.screen && <a href={row.screen} target="_blank" rel="noreferrer" className="text-primary hover:underline">screen</a>}
+                          </span>
+                        </span>
                       ) : (
                         <span className="text-on-surface-variant">{row.kind === 'Intruder' ? 'off' : '—'}</span>
                       )}

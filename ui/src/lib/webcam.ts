@@ -1,10 +1,11 @@
 /**
  * Webcam snapshot for intruder alerts.
  *
- * Opt-in (Settings). When enabled, the dashboard keeps a low-resolution
- * camera stream open and, the moment the backend raises an INTRUDER alert,
- * grabs one JPEG frame and posts it to the local backend, which stores it
- * next to the alert log and forwards it with the silent phone push.
+ * Opt-in (Settings). The camera is NOT kept open: when the backend raises an
+ * INTRUDER alert the dashboard opens it, takes one JPEG frame, closes it and
+ * posts the frame to the local backend. The backend checks the face against
+ * the owner's enrolled face and grabs the screen; the images leave the
+ * machine (phone push) only when the face is not the owner's.
  * Duress alerts never take a photo: the person at the keyboard is the victim.
  */
 import { BACKEND_HTTP } from './keysign';
@@ -51,6 +52,31 @@ export class WebcamSnap {
     c.getContext('2d')?.drawImage(v, 0, 0);
     return new Promise((resolve) => c.toBlob((b) => resolve(b), 'image/jpeg', quality));
   }
+
+  /** Open, wait for exposure to settle, take one frame, close. ~0.5-1.5 s. */
+  async snap(settleMs = 350): Promise<Blob | null> {
+    const wasReady = this.ready;
+    if (!wasReady && !(await this.enable())) return null;
+    await new Promise((r) => setTimeout(r, settleMs));
+    for (let i = 0; i < 20 && (this.video?.videoWidth ?? 0) === 0; i++) await new Promise((r) => setTimeout(r, 50));
+    const blob = await this.capture();
+    if (!wasReady) this.disable();
+    return blob;
+  }
+}
+
+/** Owner face enrolment: the backend crops and stores the largest face. */
+export async function postFaceSample(user: string, blob: Blob): Promise<{ ok: boolean; face?: boolean; n_samples?: number; reason?: string }> {
+  const r = await fetch(`${BACKEND_HTTP}/api/faces/${encodeURIComponent(user)}`, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
+  return r.json();
+}
+export async function fetchFaceStatus(user: string): Promise<{ n_samples: number; threshold: number }> {
+  const r = await fetch(`${BACKEND_HTTP}/api/faces/${encodeURIComponent(user)}`);
+  if (!r.ok) return { n_samples: 0, threshold: 0 };
+  return r.json();
+}
+export async function clearFaceSamples(user: string): Promise<void> {
+  await fetch(`${BACKEND_HTTP}/api/faces/${encodeURIComponent(user)}`, { method: 'DELETE' });
 }
 
 /** Store the frame with the alert it belongs to. The backend forwards it with the push. */

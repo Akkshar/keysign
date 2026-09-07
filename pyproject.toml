@@ -9,6 +9,8 @@ dependencies = [
     "scikit-learn>=1.4",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
+    "opencv-contrib-python-headless>=5.0.0.93",
+    "pillow>=12.3.0",
 ]
 
 [dependency-groups]

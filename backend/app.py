@@ -227,6 +227,7 @@ def index():
     return {"service": "KeySign backend", "ok": True,
             "endpoints": ["/health", "/api/users", "/api/baseline/{user}", "/api/state", "/api/alerts",
                           "POST /api/alerts/photo?ts=", "/api/alerts/photo/{name}",
+                          "GET/POST/DELETE /api/faces/{user}",
                           "WS /ws/capture", "WS /ws/dashboard"],
             "heads": list(HEADS),
             "alerts": notify.channel(), "explainer": "gemini" if explain.enabled() else "template",
@@ -267,7 +268,7 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
     in data/alert_photos/ and, if a phone topic is configured, pushed as an
     attachment. The dashboard only posts this for INTRUDER alerts.
     """
-    from backend import notify
+    from backend import faces, notify
     data = await request.body()
     if not data or len(data) > MAX_PHOTO_BYTES or not data.startswith(b"\xff\xd8"):
         return JSONResponse({"ok": False, "error": "expected a JPEG under 2 MB"}, status_code=400)
@@ -277,9 +278,55 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
     alert = alerts[-1]
     if alert.get("kind") != "intruder":
         return JSONResponse({"ok": False, "error": "photos are only taken for intruder alerts"}, status_code=400)
-    p = notify.save_photo(alert["ts"], alert.get("session") or session, data)
-    push = notify.send_photo(alert, p)
-    return {"ok": True, "photo": p.name, **push}
+    sess = alert.get("session") or session
+    p = notify.save_photo(alert["ts"], sess, data)
+    # Is this the owner? The owner of the session is the declared user.
+    owner = alert.get("user") or ""
+    try:
+        verdict = faces.verify(owner, data)
+    except Exception as e:                       # OpenCV missing or broken: never block the alert
+        log.warning("face check failed: %s", e)
+        verdict = {"face": None, "match": None, "distance": None, "threshold": faces.THRESHOLD, "enrolled": 0, "reason": str(e)}
+    verdict["owner"] = owner
+    notify.save_verdict(alert["ts"], sess, verdict)
+    screen_name = None
+    shot = faces.grab_screen()
+    if shot:
+        screen_name = notify.save_photo(alert["ts"], sess, shot, suffix="_screen").name
+    when = time.strftime("%H:%M:%S", time.localtime(alert["ts"]))
+    if verdict.get("match") is True:
+        push = {"sent": False, "channel": notify.channel(), "reason": "face matched the owner; kept local"}
+    else:
+        why = ("face does not match " + owner) if verdict.get("match") is False else ("no face in frame" if verdict.get("face") is False else "owner face not enrolled")
+        push = notify.send_photo(alert, p, "KeySign: who is at the keyboard", f"{when} · {why} · intruder alert on {owner}'s session")
+        if screen_name:
+            notify.send_photo(alert, notify.PHOTO_DIR / screen_name, "KeySign: what was on the screen", f"{when} · screen at the moment of the alert")
+    return {"ok": True, "photo": p.name, "screen": screen_name, "face": verdict, **push}
+
+
+@app.get("/api/faces/{user}")
+def faces_status(user: str):
+    from backend import faces
+    return {"user": user, "n_samples": faces.n_samples(user), "threshold": faces.THRESHOLD}
+
+
+@app.post("/api/faces/{user}")
+async def faces_enrol(user: str, request: Request):
+    """One webcam frame (JPEG body) of the owner. The largest face is cropped and stored under data/faces/<user>/."""
+    from backend import faces
+    data = await request.body()
+    if not data or len(data) > MAX_PHOTO_BYTES or not data.startswith(b"\xff\xd8"):
+        return JSONResponse({"ok": False, "error": "expected a JPEG under 2 MB"}, status_code=400)
+    try:
+        return faces.enrol(user, data)
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.delete("/api/faces/{user}")
+def faces_clear(user: str):
+    from backend import faces
+    return {"user": user, "removed": faces.clear(user), "n_samples": 0}
 
 
 @app.get("/api/alerts/photo/{name}")

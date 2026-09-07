@@ -6,9 +6,12 @@ KEYSIGN_NTFY_TOPIC is set, it is also pushed to a phone through ntfy
 (https://ntfy.sh, free, no account: install the app, subscribe to the topic).
 The push runs in a background thread so it can never stall the stream, and
 carries only the alert kind, user label, distance and time, never keystrokes.
-If the dashboard's "photo on intruder" setting is on, the browser posts one
-webcam frame for an INTRUDER alert to /api/alerts/photo; it is stored in
-data/alert_photos/ and pushed as a second message with the image attached.
+If the dashboard's "photo on intruder" setting is on, the browser opens the
+webcam for one frame when an INTRUDER alert fires and posts it to
+/api/alerts/photo. The backend checks the face against the owner's enrolled
+face (backend/faces.py) and grabs the screen. Everything is stored in
+data/alert_photos/; the webcam frame and the screen are pushed to the phone
+only when the face is NOT the owner's (or no face / no enrolment).
 Duress alerts never take a photo: the person at the keyboard is the victim.
 
     KEYSIGN_NTFY_TOPIC=keysign-duress-7f3k9      # required to push
@@ -53,11 +56,22 @@ def photo_name(ts: float, session: str | None) -> str:
     return f"{int(ts)}_{safe}.jpg"
 
 
-def save_photo(ts: float, session: str | None, data: bytes, photo_dir: Path | str | None = None) -> Path:
+def save_photo(ts: float, session: str | None, data: bytes, photo_dir: Path | str | None = None,
+               suffix: str = "") -> Path:
     d = Path(photo_dir or PHOTO_DIR)
     d.mkdir(parents=True, exist_ok=True)
-    p = d / photo_name(ts, session)
+    name = photo_name(ts, session)
+    p = d / (name[:-4] + suffix + ".jpg" if suffix else name)
     p.write_bytes(data)
+    return p
+
+
+def save_verdict(ts: float, session: str | None, verdict: dict, photo_dir: Path | str | None = None) -> Path:
+    """The face check result, next to the photo, so the alert log can show it later."""
+    d = Path(photo_dir or PHOTO_DIR)
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / (photo_name(ts, session)[:-4] + ".json")
+    p.write_text(json.dumps(verdict), encoding="utf-8")
     return p
 
 
@@ -75,33 +89,38 @@ def recent(n: int = 20, path: Path | str | None = None, photo_dir: Path | str | 
             continue
         name = photo_name(a.get("ts", 0), a.get("session"))
         a["photo"] = name if (d / name).exists() else None
+        screen = name[:-4] + "_screen.jpg"
+        a["screen"] = screen if (d / screen).exists() else None
+        verdict = d / (name[:-4] + ".json")
+        try:
+            a["face"] = json.loads(verdict.read_text(encoding="utf-8")) if verdict.exists() else None
+        except (OSError, json.JSONDecodeError):
+            a["face"] = None
         out.append(a)
     return out
 
 
-def send_photo(alert: dict, photo_path: Path | str) -> dict:
-    """Push the webcam frame for an intruder alert as an attachment (background thread)."""
+def send_photo(alert: dict, photo_path: Path | str, title: str, message: str) -> dict:
+    """Push an image for an intruder alert as an attachment (background thread)."""
     if not enabled():
         return {"sent": False, "channel": "log-only"}
-    threading.Thread(target=_push_photo_safely, args=(alert, Path(photo_path)), daemon=True).start()
+    threading.Thread(target=_push_photo_safely, args=(alert, Path(photo_path), title, message), daemon=True).start()
     return {"sent": True, "channel": "ntfy"}
 
 
-def _push_photo_safely(alert: dict, photo_path: Path) -> None:
+def _push_photo_safely(alert: dict, photo_path: Path, title: str, message: str) -> None:
     try:
-        _post_photo(alert, photo_path)
+        _post_photo(alert, photo_path, title, message)
     except Exception as e:
         log.warning("ntfy photo push failed: %s", e)
 
 
-def _post_photo(alert: dict, photo_path: Path) -> None:
+def _post_photo(alert: dict, photo_path: Path, title: str, message: str) -> None:
     topic = os.environ["KEYSIGN_NTFY_TOPIC"]
     server = os.environ.get("KEYSIGN_NTFY_SERVER", "https://ntfy.sh").rstrip("/")
-    when = time.strftime('%H:%M:%S', time.localtime(alert.get('ts', time.time())))
     req = urllib.request.Request(f"{server}/{topic}", data=photo_path.read_bytes(), method="PUT",
-                                 headers={"Title": "KeySign: who is at the keyboard",
-                                          "Message": f"Webcam frame at {when} for the intruder alert on {alert.get('user', '?')}'s session",
-                                          "Filename": photo_path.name, "Priority": "urgent", "Tags": "camera"})
+                                 headers={"Title": title, "Message": message, "Filename": photo_path.name,
+                                          "Priority": "urgent", "Tags": "camera"})
     with urllib.request.urlopen(req, timeout=PHOTO_TIMEOUT_S) as r:
         r.read()
 

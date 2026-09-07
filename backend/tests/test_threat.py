@@ -154,26 +154,67 @@ def test_alert_photo_stored_listed_and_pushed(alert_log, monkeypatch, tmp_path):
     pushed = []
     monkeypatch.setenv("KEYSIGN_NTFY_TOPIC", "keysign-test")
     monkeypatch.setattr(notify, "_post", lambda a: None)
-    monkeypatch.setattr(notify, "_post_photo", lambda a, p: pushed.append((a["kind"], p.name)))
+    monkeypatch.setattr(notify, "_post_photo", lambda a, p, title, msg: pushed.append((a["kind"], p.name)))
+    from backend import faces
+    monkeypatch.setattr(faces, "verify", lambda user, data: {"face": True, "match": False, "distance": 91.0, "threshold": 70.0, "enrolled": 5})
+    monkeypatch.setattr(faces, "grab_screen", lambda: b"\xff\xd8\xff\xe0screen")
     notify.record({"ts": 1000.0, "session": "abc", "kind": "intruder", "user": "u"}, alert_log)
     notify.record({"ts": 2000.0, "session": "abc", "kind": "duress", "user": "u"}, alert_log)
     jpeg = b"\xff\xd8\xff\xe0" + b"0" * 100
     r = client.post("/api/alerts/photo?ts=1000.3&session=abc", content=jpeg, headers={"Content-Type": "image/jpeg"})
     assert r.status_code == 200 and r.json()["photo"] == "1000_abc.jpg" and r.json()["sent"] is True
+    assert r.json()["screen"] == "1000_abc_screen.jpg" and r.json()["face"]["match"] is False
     assert (tmp_path / "photos" / "1000_abc.jpg").read_bytes() == jpeg
     assert client.get("/api/alerts/photo/1000_abc.jpg").status_code == 200
+    assert client.get("/api/alerts/photo/1000_abc_screen.jpg").status_code == 200
     listed = client.get("/api/alerts").json()["alerts"]
-    assert listed[0]["photo"] == "1000_abc.jpg" and listed[1]["photo"] is None
+    assert listed[0]["photo"] == "1000_abc.jpg" and listed[0]["screen"] == "1000_abc_screen.jpg"
+    assert listed[0]["face"]["match"] is False and listed[0]["face"]["owner"] == "u" and listed[1]["photo"] is None
     # duress never gets a photo; garbage is refused; unknown alert time is refused
     assert client.post("/api/alerts/photo?ts=2000", content=jpeg, headers={"Content-Type": "image/jpeg"}).status_code == 400
     assert client.post("/api/alerts/photo?ts=1000", content=b"not a jpeg", headers={"Content-Type": "image/jpeg"}).status_code == 400
     assert client.post("/api/alerts/photo?ts=5000", content=jpeg, headers={"Content-Type": "image/jpeg"}).status_code == 404
     import time
     for _ in range(50):
-        if pushed:
+        if len(pushed) >= 2:
             break
         time.sleep(0.02)
-    assert pushed == [("intruder", "1000_abc.jpg")]
+    assert sorted(pushed) == [("intruder", "1000_abc.jpg"), ("intruder", "1000_abc_screen.jpg")]
+
+
+def test_alert_photo_stays_local_when_face_matches_owner(alert_log, monkeypatch, tmp_path):
+    client = TestClient(backend.app)
+    monkeypatch.setattr(notify, "PHOTO_DIR", tmp_path / "photos")
+    monkeypatch.setenv("KEYSIGN_NTFY_TOPIC", "keysign-test")
+    pushed = []
+    monkeypatch.setattr(notify, "_post_photo", lambda a, p, title, msg: pushed.append(p.name))
+    from backend import faces
+    monkeypatch.setattr(faces, "verify", lambda user, data: {"face": True, "match": True, "distance": 41.0, "threshold": 70.0, "enrolled": 5})
+    monkeypatch.setattr(faces, "grab_screen", lambda: None)
+    notify.record({"ts": 3000.0, "session": "s", "kind": "intruder", "user": "owner"}, alert_log)
+    jpeg = b"\xff\xd8\xff\xe0" + b"0" * 50
+    r = client.post("/api/alerts/photo?ts=3000", content=jpeg, headers={"Content-Type": "image/jpeg"}).json()
+    assert r["sent"] is False and r["face"]["match"] is True and r["screen"] is None
+    assert (tmp_path / "photos" / "3000_s.jpg").exists()          # kept on disk regardless
+    import time; time.sleep(0.1)
+    assert pushed == []
+
+
+def test_face_enrolment_api_and_no_face_frames(monkeypatch, tmp_path):
+    from backend import faces
+    monkeypatch.setattr(faces, "FACE_DIR", tmp_path / "faces")
+    client = TestClient(backend.app)
+    assert client.get("/api/faces/Someone").json()["n_samples"] == 0
+    # a flat grey JPEG has no face: refused as an enrolment, and verify says no face
+    import io
+    from PIL import Image
+    buf = io.BytesIO(); Image.new("L", (320, 240), 128).save(buf, format="JPEG"); blank = buf.getvalue()
+    r = client.post("/api/faces/Someone", content=blank, headers={"Content-Type": "image/jpeg"}).json()
+    assert r["ok"] is False and r["face"] is False and r["n_samples"] == 0
+    v = faces.verify("Someone", blank)
+    assert v["face"] is False and v["match"] is None
+    assert client.post("/api/faces/Someone", content=b"nope", headers={"Content-Type": "image/jpeg"}).status_code == 400
+    assert client.delete("/api/faces/Someone").json()["removed"] == 0
 
 
 def test_alerts_api(alert_log, monkeypatch):

@@ -17,7 +17,7 @@ import {
   kpsToWpm,
   subscribeFeed,
 } from '../lib/keysign';
-import { WebcamSnap, postAlertPhoto } from '../lib/webcam';
+import { WebcamSnap, postAlertPhoto, postFaceSample } from '../lib/webcam';
 
 /**
  * Single source of truth for everything the views display.
@@ -40,10 +40,11 @@ export interface LiveState {
   setDeclaredUser: (u: string) => void;
   reset: () => void;           // "someone new sits down": clear the backend window
   sessionId: string;
-  photoOnIntruder: boolean;    // webcam frame posted with an INTRUDER alert (never duress)
+  photoOnIntruder: boolean;    // webcam frame taken (camera opened for one frame) on an INTRUDER alert, never duress
   setPhotoOnIntruder: (on: boolean) => Promise<boolean>;
   cameraError: string | null;
   lastPhoto: string | null;    // file name of the most recent frame this session
+  enrolFace: (user: string, frames?: number) => Promise<{ ok: boolean; n_samples: number; reason?: string }>;
 }
 
 interface BiometricsContextType {
@@ -323,9 +324,10 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         lastAlerts.current = dv.alertsTotal;
         setDuressModalOpen(true);
         const th = m.heads?.threat;
-        if (photoRef.current && th?.kind === 'intruder' && th.last_alert?.ts && camRef.current?.ready) {
+        if (photoRef.current && th?.kind === 'intruder' && th.last_alert?.ts) {
           const ts = th.last_alert.ts;
-          camRef.current.capture().then((blob) => blob && postAlertPhoto(ts, m.session, blob))
+          const cam = camRef.current ?? (camRef.current = new WebcamSnap());
+          cam.snap().then((blob) => blob && postAlertPhoto(ts, m.session, blob))
             .then((r) => { if (r && r.ok && r.photo) setLastPhoto(r.photo); })
             .catch(() => {});
         }
@@ -361,6 +363,8 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTick(null);
   }, []);
 
+  // Switching on asks for the camera once (so the permission is granted before it matters),
+  // then closes it again. From then on the camera opens only for the one frame of an alert.
   const setPhotoOnIntruder = useCallback(async (on: boolean) => {
     if (!on) {
       camRef.current?.disable(); camRef.current = null;
@@ -368,8 +372,9 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try { localStorage.setItem(PHOTO_KEY, '0'); } catch { /* ignore */ }
       return false;
     }
-    const cam = camRef.current ?? new WebcamSnap();
+    const cam = new WebcamSnap();
     const ok = await cam.enable();
+    cam.disable();
     camRef.current = ok ? cam : null;
     setCameraError(ok ? null : cam.error);
     setPhotoOnIntruderState(ok);
@@ -377,11 +382,22 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return ok;
   }, []);
 
-  // remembered setting: open the camera again on load (the browser remembers the permission)
-  useEffect(() => {
-    if (photoOnIntruder && !camRef.current) void setPhotoOnIntruder(true);
-    return () => { camRef.current?.disable(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => { camRef.current?.disable(); }, []);
+
+  // Owner face enrolment: a few frames over ~2 s, cropped and stored by the backend.
+  const enrolFace = useCallback(async (user: string, frames = 5) => {
+    const cam = new WebcamSnap();
+    if (!(await cam.enable())) { setCameraError(cam.error); return { ok: false, n_samples: 0, reason: cam.error || 'camera unavailable' }; }
+    let last: { ok: boolean; n_samples?: number; reason?: string } = { ok: false };
+    try {
+      await new Promise((r) => setTimeout(r, 400));
+      for (let i = 0; i < frames; i++) {
+        const blob = await cam.capture();
+        if (blob) last = await postFaceSample(user, blob);
+        await new Promise((r) => setTimeout(r, 350));
+      }
+    } finally { cam.disable(); }
+    return { ok: !!last.ok, n_samples: last.n_samples ?? 0, reason: last.reason };
   }, []);
 
   // minutes in the current focus stretch (counted while the state head says deep focus / engaged)
@@ -458,8 +474,8 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const live = useMemo<LiveState>(() => ({
     connected, streaming, tick, users, declaredUser, setDeclaredUser, reset,
     sessionId: captureRef.current?.session ?? '',
-    photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto,
-  }), [connected, streaming, tick, users, declaredUser, setDeclaredUser, reset, photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto]);
+    photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto, enrolFace,
+  }), [connected, streaming, tick, users, declaredUser, setDeclaredUser, reset, photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto, enrolFace]);
 
   return (
     <BiometricsContext.Provider

@@ -61,6 +61,15 @@ stored in `data/alert_photos/` (gitignored), listed with the alert in
 to the phone as a second message with the image attached. Duress alerts
 never take a photo.
 
+The camera is opened only for that one frame. Before pushing, the backend
+checks the face against the owner's enrolled face (`backend/faces.py`:
+OpenCV Haar detection + LBPH, enrolled from Settings into `data/faces/<user>/`,
+gitignored) and grabs the screen with Pillow (`KEYSIGN_SCREEN_SNAPSHOT=0`
+to disable). If the face matches the owner the images stay on disk; if it
+does not, or there is no face or no enrolment, the webcam frame and the
+screen go to the phone with the alert. `GET/POST/DELETE /api/faces/{user}`
+manage the enrolment.
+
 Every live session is recorded to `data/sessions/<date>_<session>.jsonl`
 (raw events plus each tick's features and head outputs; gitignored;
 `KEYSIGN_RECORD=0` disables). A demo run is data: when someone is misjudged,

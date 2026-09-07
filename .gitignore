@@ -39,6 +39,7 @@ capture/replay*.json
 # Silent alert log and intruder webcam frames (personal)
 data/alerts*.jsonl
 data/alert_photos/
+data/faces/
 
 # Live session recordings (raw keystrokes, personal)
 data/sessions/

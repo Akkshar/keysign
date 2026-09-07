@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
+import { clearFaceSamples, fetchFaceStatus } from '../lib/webcam';
 import { useTheme } from '../context/ThemeContext';
 import { Reveal } from '../components/motion/Reveal';
 
@@ -68,8 +69,9 @@ export const SettingsView: React.FC = () => {
           <div>
             <span className="text-sm font-medium text-on-surface">Photo on intruder alert</span>
             <p className="text-xs text-on-surface-variant">
-              Keeps the webcam open and, when the Threat head raises an intruder alert, stores one frame with the alert
-              and sends it with the phone push. Never for duress. Stored in data/alert_photos on this machine.
+              The camera stays off. When the Threat head raises an intruder alert it opens for one frame, the backend
+              checks the face against your enrolled face and grabs the screen, and the images go with the phone push
+              only if the face is not yours. Never for duress. Stored in data/alert_photos on this machine.
               {live.cameraError ? ` Camera: ${live.cameraError}.` : ''}
             </p>
           </div>
@@ -85,6 +87,8 @@ export const SettingsView: React.FC = () => {
             {live.photoOnIntruder ? 'On · camera open' : 'Off'}
           </button>
         </div>
+
+        <FaceEnrolment />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
           <div>
@@ -124,5 +128,55 @@ export const SettingsView: React.FC = () => {
         </dl>
       </section>
     </Reveal>
+  );
+};
+
+
+/** Owner face enrolment for the intruder photo check. Five frames, ~2 s, stored as face crops on this machine. */
+const FaceEnrolment: React.FC = () => {
+  const { live } = useBiometrics();
+  const [n, setN] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const user = live.declaredUser;
+  useEffect(() => {
+    if (!user || !live.connected) { setN(null); return; }
+    fetchFaceStatus(user).then((s) => setN(s.n_samples)).catch(() => setN(null));
+  }, [user, live.connected]);
+  const enrol = async () => {
+    if (!user) return;
+    setBusy(true); setMsg('Look at the camera…');
+    const r = await live.enrolFace(user, 5);
+    setBusy(false);
+    setN(r.n_samples);
+    setMsg(r.ok ? `Stored ${r.n_samples} face samples for ${user}.` : `No face captured${r.reason ? `: ${r.reason}` : ''}.`);
+  };
+  const clear = async () => {
+    if (!user) return;
+    await clearFaceSamples(user); setN(0); setMsg(`Cleared ${user}'s face samples.`);
+  };
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+      <div>
+        <span className="text-sm font-medium text-on-surface">Your face, for the intruder check</span>
+        <p className="text-xs text-on-surface-variant">
+          {user ? `${user}: ` : ''}{n == null ? 'not enrolled' : n === 0 ? 'no face samples yet' : `${n} face samples on this machine`}.
+          {' '}Five frames from the webcam, cropped to the face and kept in data/faces. A photo taken at an alert is
+          compared with these; if it matches, it stays here.{msg ? ` ${msg}` : ''}
+        </p>
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <button type="button" onClick={enrol} disabled={busy || !user || !live.connected}
+          className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          {busy ? 'Capturing…' : n ? 'Add 5 more frames' : 'Enrol my face'}
+        </button>
+        {!!n && (
+          <button type="button" onClick={clear} disabled={busy}
+            className="px-3 py-2 rounded-lg border border-outline-variant/60 text-sm text-on-surface-variant hover:border-outline transition-colors">
+            Clear
+          </button>
+        )}
+      </div>
+    </div>
   );
 };
