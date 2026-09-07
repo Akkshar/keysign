@@ -3,6 +3,7 @@ import { mockHealthConditions } from '../data/healthConditions';
 import { HealthCondition, HealthSignalCard } from '../components/health/HealthSignalCard';
 import { MedicalDisclaimer } from '../components/health/MedicalDisclaimer';
 import { ClinicalResearchSection } from '../components/health/ClinicalResearchSection';
+import { StabilityCard } from '../components/health/StabilityCard';
 import { Reveal } from '../components/motion/Reveal';
 import { CardSpotlight } from '../components/motion/CardSpotlight';
 
@@ -80,6 +81,9 @@ export const HealthSignalsView: React.FC = () => {
           </CardSpotlight>
         </div>
       </div>
+
+      {/* How steady the rhythm has been while this window has been open */}
+      <StabilityCard />
 
       {/* The published work behind the drift head. Every DOI here was checked against
           Crossref; see the note in the component. */}

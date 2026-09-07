@@ -2,6 +2,9 @@ import React from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
 import { Interactive3DTypewriter } from '../components/3d/Interactive3DTypewriter';
 import { LiveTypingWell } from '../components/telemetry/LiveTypingWell';
+import { WaveformVisualizer } from '../components/telemetry/WaveformVisualizer';
+import { IntervalTape } from '../components/instrumentation/IntervalTape';
+import { MonkeyTypeArena } from '../components/lab/MonkeyTypeArena';
 import { WaterfallChart, STATUS_TONE } from '../components/telemetry/WaterfallChart';
 import { AnimatedCounter } from '../components/common/AnimatedCounter';
 import { CardSpotlight } from '../components/motion/CardSpotlight';
@@ -27,7 +30,7 @@ const PRESETS: { id: StressPreset; label: string }[] = [
  * backend. The presets at the bottom are the one exception and say so.
  */
 export const LiveMonitoringView: React.FC = () => {
-  const { live, liveDwell, liveFlight, liveWpm, recentPulses, terminalLogs, activePreset, setPreset } = useBiometrics();
+  const { live, liveDwell, liveFlight, liveWpm, recentPulses, isTyping, terminalLogs, activePreset, setPreset } = useBiometrics();
   const distance = live.tick?.distance ?? null;
   const connection = !live.connected
     ? { text: 'Start the backend: uv run python -m backend', dot: 'bg-error dark:bg-error-dark' }
@@ -169,6 +172,15 @@ export const LiveMonitoringView: React.FC = () => {
           </details>
         </div>
       </div>
+
+      {/* The last keystrokes as physical intervals, then the same numbers as a wave. Each gets
+          its own row: side by side, the visualiser's readouts wrapped a word to a line. */}
+      <IntervalTape pulses={recentPulses} liveDwell={liveDwell} liveFlight={liveFlight} isTyping={isTyping} />
+      <WaveformVisualizer />
+
+      {/* A typing test to type into, so a demo has somewhere to put its hands. Every key here
+          reaches the backend the same way any other application's does. */}
+      <MonkeyTypeArena defaultMode="testing" />
 
       <WaterfallChart />
     </Reveal>
