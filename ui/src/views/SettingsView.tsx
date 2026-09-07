@@ -66,6 +66,28 @@ export const SettingsView: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
           <div>
+            <span className="text-sm font-medium text-on-surface">Photo on intruder alert</span>
+            <p className="text-xs text-on-surface-variant">
+              Keeps the webcam open and, when the Threat head raises an intruder alert, stores one frame with the alert
+              and sends it with the phone push. Never for duress. Stored in data/alert_photos on this machine.
+              {live.cameraError ? ` Camera: ${live.cameraError}.` : ''}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { void live.setPhotoOnIntruder(!live.photoOnIntruder); }}
+            className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
+              live.photoOnIntruder
+                ? 'border-primary bg-primary text-white hover:bg-primary/90'
+                : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'
+            }`}
+          >
+            {live.photoOnIntruder ? 'On · camera open' : 'Off'}
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+          <div>
             <span className="text-sm font-medium text-on-surface">Theme</span>
             <p className="text-xs text-on-surface-variant">Currently {theme}.</p>
           </div>

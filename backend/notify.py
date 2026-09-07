@@ -6,6 +6,10 @@ KEYSIGN_NTFY_TOPIC is set, it is also pushed to a phone through ntfy
 (https://ntfy.sh, free, no account: install the app, subscribe to the topic).
 The push runs in a background thread so it can never stall the stream, and
 carries only the alert kind, user label, distance and time, never keystrokes.
+If the dashboard's "photo on intruder" setting is on, the browser posts one
+webcam frame for an INTRUDER alert to /api/alerts/photo; it is stored in
+data/alert_photos/ and pushed as a second message with the image attached.
+Duress alerts never take a photo: the person at the keyboard is the victim.
 
     KEYSIGN_NTFY_TOPIC=keysign-duress-7f3k9      # required to push
     KEYSIGN_NTFY_SERVER=https://ntfy.sh          # optional, default
@@ -24,7 +28,9 @@ log = logging.getLogger("keysign.notify")
 
 ROOT = Path(__file__).resolve().parent.parent
 ALERT_LOG = ROOT / "data" / "alerts.jsonl"
+PHOTO_DIR = ROOT / "data" / "alert_photos"      # webcam frames for intruder alerts (gitignored)
 TIMEOUT_S = 5.0
+PHOTO_TIMEOUT_S = 15.0
 
 
 def enabled() -> bool:
@@ -42,18 +48,62 @@ def record(alert: dict, path: Path | str | None = None) -> None:
         fh.write(json.dumps(alert) + "\n")
 
 
-def recent(n: int = 20, path: Path | str | None = None) -> list[dict]:
+def photo_name(ts: float, session: str | None) -> str:
+    safe = "".join(c for c in str(session or "s") if c.isalnum())[:16] or "s"
+    return f"{int(ts)}_{safe}.jpg"
+
+
+def save_photo(ts: float, session: str | None, data: bytes, photo_dir: Path | str | None = None) -> Path:
+    d = Path(photo_dir or PHOTO_DIR)
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / photo_name(ts, session)
+    p.write_bytes(data)
+    return p
+
+
+def recent(n: int = 20, path: Path | str | None = None, photo_dir: Path | str | None = None) -> list[dict]:
     path = Path(path or ALERT_LOG)
     if not path.exists():
         return []
     lines = path.read_text(encoding="utf-8").strip().splitlines()
+    d = Path(photo_dir or PHOTO_DIR)
     out = []
     for line in lines[-n:]:
         try:
-            out.append(json.loads(line))
+            a = json.loads(line)
         except json.JSONDecodeError:
             continue
+        name = photo_name(a.get("ts", 0), a.get("session"))
+        a["photo"] = name if (d / name).exists() else None
+        out.append(a)
     return out
+
+
+def send_photo(alert: dict, photo_path: Path | str) -> dict:
+    """Push the webcam frame for an intruder alert as an attachment (background thread)."""
+    if not enabled():
+        return {"sent": False, "channel": "log-only"}
+    threading.Thread(target=_push_photo_safely, args=(alert, Path(photo_path)), daemon=True).start()
+    return {"sent": True, "channel": "ntfy"}
+
+
+def _push_photo_safely(alert: dict, photo_path: Path) -> None:
+    try:
+        _post_photo(alert, photo_path)
+    except Exception as e:
+        log.warning("ntfy photo push failed: %s", e)
+
+
+def _post_photo(alert: dict, photo_path: Path) -> None:
+    topic = os.environ["KEYSIGN_NTFY_TOPIC"]
+    server = os.environ.get("KEYSIGN_NTFY_SERVER", "https://ntfy.sh").rstrip("/")
+    when = time.strftime('%H:%M:%S', time.localtime(alert.get('ts', time.time())))
+    req = urllib.request.Request(f"{server}/{topic}", data=photo_path.read_bytes(), method="PUT",
+                                 headers={"Title": "KeySign: who is at the keyboard",
+                                          "Message": f"Webcam frame at {when} for the intruder alert on {alert.get('user', '?')}'s session",
+                                          "Filename": photo_path.name, "Priority": "urgent", "Tags": "camera"})
+    with urllib.request.urlopen(req, timeout=PHOTO_TIMEOUT_S) as r:
+        r.read()
 
 
 def send(alert: dict, path: Path | str | None = None) -> dict:

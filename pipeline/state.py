@@ -18,6 +18,14 @@ pushed it, so the dashboard can say why.
 
 rule_load(z) is the no-model fallback: a fixed weighting of the four
 directions above, so the head works before anyone has trained anything.
+
+    uv run python -m pipeline.state calibrate data/features_windows.csv
+
+writes per-user label cut-offs into each baseline JSON. Measured on the team:
+calm typing scores 0.12-0.23 on the rule and stress 0.18-0.71, so one global
+cut-off (0.25 / 0.50) called everyone "deep focus" all day. Per person:
+deep focus below their calm p30, high load above the larger of their calm
+p85 and the midpoint between their calm and stress medians.
 """
 from __future__ import annotations
 
@@ -145,14 +153,59 @@ def train(features_csv: Path | str, baselines_dir: Path | str | None = "data/bas
     return m
 
 
+DEFAULT_FOCUS_BELOW, DEFAULT_LOAD_ABOVE = 0.10, 0.35     # global fallbacks, from the team's calm p30 / p85
+THRESHOLD_FLOOR = 0.04                                   # a person whose calm sits at 0 still needs a gap
+
+
+def calibrate_thresholds(windows_csv: Path | str, baselines_dir: Path | str = "data/baselines",
+                         min_keys: int = 20, min_rows: int = 20) -> dict[str, tuple[float, float]]:
+    """
+    Per-user State cut-offs from that person's own windows, saved into their
+    baseline JSON. Returns {user: (focus_below, load_above)}.
+    """
+    df = pd.read_csv(windows_csv)
+    if "n_keys" in df:
+        df = df[df["n_keys"] >= min_keys]
+    out: dict[str, tuple[float, float]] = {}
+    for user, g in df.groupby("user"):
+        path = Path(baselines_dir) / f"{_slug(user)}.json"
+        if not path.exists():
+            continue
+        b = Baseline.load(path)
+        Z = np.clip(b.zscores(g[b.features].to_numpy(dtype=float)), -Z_CLIP, Z_CLIP)
+        load = np.asarray([rule_load(dict(zip(b.features, row))) for row in Z])
+        calm, stress = load[(g["condition"] == "calm").to_numpy()], load[(g["condition"] == "stress").to_numpy()]
+        if len(calm) < min_rows:
+            continue
+        focus_below = float(max(THRESHOLD_FLOOR, np.quantile(calm, 0.30)))
+        load_above = float(np.quantile(calm, 0.85))
+        if len(stress) >= min_rows // 2:
+            load_above = max(load_above, float((np.median(calm) + np.median(stress)) / 2))
+        load_above = float(max(load_above, focus_below + 2 * THRESHOLD_FLOOR))
+        b.state = {"focus_below": round(focus_below, 3), "load_above": round(load_above, 3),
+                   "calibrated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                   "note": f"rule_load on {len(calm)} calm / {len(stress)} stress windows >= {min_keys} keys"}
+        b.save(path)
+        out[user] = (focus_below, load_above)
+    return out
+
+
 def _main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="KeySign state (cognitive load) model")
     sub = p.add_subparsers(dest="cmd", required=True)
     t = sub.add_parser("train"); t.add_argument("features_csv"); t.add_argument("--baselines", default="data/baselines"); t.add_argument("-o", "--out", default=str(DEFAULT_MODEL_PATH))
     e = sub.add_parser("eval"); e.add_argument("features_csv"); e.add_argument("--baselines", default="data/baselines")
+    c = sub.add_parser("calibrate", help="per-user deep-focus / high-load cut-offs into the baselines")
+    c.add_argument("windows_csv"); c.add_argument("--baselines", default="data/baselines")
     a = p.parse_args(argv)
     if a.cmd == "train":
         train(a.features_csv, a.baselines, a.out)
+    elif a.cmd == "calibrate":
+        thr = calibrate_thresholds(a.windows_csv, a.baselines)
+        for u, (lo, hi) in thr.items():
+            print(f"{u:16s} deep focus < {lo:.2f}   high load >= {hi:.2f}")
+        if not thr:
+            print("no user with a baseline and enough windows", file=sys.stderr); return 1
     else:
         df = pd.read_csv(a.features_csv)
         Z, y, users = zscore_frame(df, a.baselines)

@@ -17,6 +17,7 @@ import {
   kpsToWpm,
   subscribeFeed,
 } from '../lib/keysign';
+import { WebcamSnap, postAlertPhoto } from '../lib/webcam';
 
 /**
  * Single source of truth for everything the views display.
@@ -39,6 +40,10 @@ export interface LiveState {
   setDeclaredUser: (u: string) => void;
   reset: () => void;           // "someone new sits down": clear the backend window
   sessionId: string;
+  photoOnIntruder: boolean;    // webcam frame posted with an INTRUDER alert (never duress)
+  setPhotoOnIntruder: (on: boolean) => Promise<boolean>;
+  cameraError: string | null;
+  lastPhoto: string | null;    // file name of the most recent frame this session
 }
 
 interface BiometricsContextType {
@@ -72,6 +77,7 @@ interface BiometricsContextType {
 export interface StateTimelineEvent { num: number; time: string; title: string; color: string; textColor: string; desc: string }
 
 const USER_KEY = 'keysign.ui.user';
+const PHOTO_KEY = 'keysign.ui.photoOnIntruder';
 
 const defaultProfile: UserProfile = {
   id: 'demo',
@@ -258,6 +264,15 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const captureRef = useRef<CaptureStream | null>(null);
   const declaredRef = useRef(declaredUser);
   const lastAlerts = useRef(0);
+  // ---- webcam frame on intruder alerts (opt-in, Settings) ----
+  const camRef = useRef<WebcamSnap | null>(null);
+  const [photoOnIntruder, setPhotoOnIntruderState] = useState<boolean>(() => {
+    try { return localStorage.getItem(PHOTO_KEY) === '1'; } catch { return false; }
+  });
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [lastPhoto, setLastPhoto] = useState<string | null>(null);
+  const photoRef = useRef(photoOnIntruder);
+  useEffect(() => { photoRef.current = photoOnIntruder; }, [photoOnIntruder]);
   const usersRef = useRef<BaselineInfo[]>([]);
   const baselineRef = useRef<BaselineDoc | null>(null);
   useEffect(() => { usersRef.current = users; }, [users]);
@@ -307,6 +322,13 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (dv.alertsTotal > lastAlerts.current) {
         lastAlerts.current = dv.alertsTotal;
         setDuressModalOpen(true);
+        const th = m.heads?.threat;
+        if (photoRef.current && th?.kind === 'intruder' && th.last_alert?.ts && camRef.current?.ready) {
+          const ts = th.last_alert.ts;
+          camRef.current.capture().then((blob) => blob && postAlertPhoto(ts, m.session, blob))
+            .then((r) => { if (r && r.ok && r.photo) setLastPhoto(r.photo); })
+            .catch(() => {});
+        }
       }
     }, setConnected);
     return stop;
@@ -337,6 +359,29 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const reset = useCallback(() => {
     captureRef.current?.reset();
     setTick(null);
+  }, []);
+
+  const setPhotoOnIntruder = useCallback(async (on: boolean) => {
+    if (!on) {
+      camRef.current?.disable(); camRef.current = null;
+      setPhotoOnIntruderState(false); setCameraError(null);
+      try { localStorage.setItem(PHOTO_KEY, '0'); } catch { /* ignore */ }
+      return false;
+    }
+    const cam = camRef.current ?? new WebcamSnap();
+    const ok = await cam.enable();
+    camRef.current = ok ? cam : null;
+    setCameraError(ok ? null : cam.error);
+    setPhotoOnIntruderState(ok);
+    try { localStorage.setItem(PHOTO_KEY, ok ? '1' : '0'); } catch { /* ignore */ }
+    return ok;
+  }, []);
+
+  // remembered setting: open the camera again on load (the browser remembers the permission)
+  useEffect(() => {
+    if (photoOnIntruder && !camRef.current) void setPhotoOnIntruder(true);
+    return () => { camRef.current?.disable(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // minutes in the current focus stretch (counted while the state head says deep focus / engaged)
@@ -413,7 +458,8 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const live = useMemo<LiveState>(() => ({
     connected, streaming, tick, users, declaredUser, setDeclaredUser, reset,
     sessionId: captureRef.current?.session ?? '',
-  }), [connected, streaming, tick, users, declaredUser, setDeclaredUser, reset]);
+    photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto,
+  }), [connected, streaming, tick, users, declaredUser, setDeclaredUser, reset, photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto]);
 
   return (
     <BiometricsContext.Provider

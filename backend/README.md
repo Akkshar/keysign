@@ -53,6 +53,14 @@ name, set the same name in the env). `KEYSIGN_NTFY_SERVER` overrides the
 server. An alert needs 3 consecutive ticks above 3 sigma; one push per
 minute per session. The push carries kind, user label, distance and time only.
 
+Intruder alerts can carry a webcam frame: with "Photo on intruder alert"
+switched on in the dashboard's Settings, the browser posts one JPEG to
+`POST /api/alerts/photo?ts=<alert ts>` the moment the alert lands. It is
+stored in `data/alert_photos/` (gitignored), listed with the alert in
+`/api/alerts` as `photo`, served from `/api/alerts/photo/<name>`, and pushed
+to the phone as a second message with the image attached. Duress alerts
+never take a photo.
+
 Every live session is recorded to `data/sessions/<date>_<session>.jsonl`
 (raw events plus each tick's features and head outputs; gitignored;
 `KEYSIGN_RECORD=0` disables). A demo run is data: when someone is misjudged,

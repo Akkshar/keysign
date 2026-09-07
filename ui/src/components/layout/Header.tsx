@@ -18,7 +18,8 @@ export const Header: React.FC = () => {
       case 'threats': return 'Threats';
       case 'drift': return 'Drift';
       case 'history': return 'History & Trends';
-      case 'privacy': return 'Privacy & Enclave';
+      case 'privacy': return 'Privacy & Architecture';
+      case 'settings': return 'Settings';
       default: return 'Overview';
     }
   };

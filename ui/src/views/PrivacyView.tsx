@@ -86,6 +86,11 @@ export const PrivacyView: React.FC = () => {
             </p>
             <dl className="space-y-4">
               <div>
+                <dt className="text-sm font-medium text-on-surface">Webcam frame on an intruder alert (optional, off by default)</dt>
+                <dd className="text-xs text-on-surface-variant">
+                  Switched on in Settings. One JPEG from the webcam, taken the moment an intruder alert fires, stored in
+                  data/alert_photos on this machine and sent with the phone push if one is configured. Never for a duress alert.
+                </dd>
                 <dt className="text-sm font-medium text-on-surface">Silent phone alert (ntfy)</dt>
                 <dd className="text-sm text-on-surface-variant leading-relaxed">
                   Needs <code className="font-telemetry text-xs">KEYSIGN_NTFY_TOPIC</code>. The push carries the alert kind

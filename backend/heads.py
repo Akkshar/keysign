@@ -174,9 +174,10 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
 # ---------------------------------------------------------------------------
 STATE_MODEL_PATH = ROOT / "data" / "models" / "state.joblib"
 STATE_EMA = 0.35              # weight of the newest tick
-# Label cut-offs, from the measured rule-score distribution on the team set:
-# calm median 0.14, timed-stress median 0.38. A real interrupter pushes higher.
-FOCUS_BELOW, LOAD_ABOVE = 0.25, 0.50
+# Label cut-offs. Per user when `pipeline.state calibrate` has written them into the
+# baseline (calm typing scores 0.12-0.23 on the rule, stress 0.18-0.71, and people
+# differ a lot); these globals are the fallback, set at the team's calm p30 / p85.
+FOCUS_BELOW, LOAD_ABOVE = 0.10, 0.35
 # A trained model must beat the fixed rule to be used. Measured leave-one-user-out
 # on 4 people: rule 0.79, logistic model 0.66 (it learns the people, not the stress).
 MODEL_MIN_AUC = 0.80
@@ -209,12 +210,15 @@ def state_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     st = ctx.setdefault("state", {"ema": None})
     st["ema"] = raw if st["ema"] is None else STATE_EMA * raw + (1 - STATE_EMA) * st["ema"]
     load = float(st["ema"])
-    label = "deep focus" if load < FOCUS_BELOW else "engaged" if load < LOAD_ABOVE else "high load"
+    cut = baseline.state or {}
+    focus_below, load_above = float(cut.get("focus_below", FOCUS_BELOW)), float(cut.get("load_above", LOAD_ABOVE))
+    label = "deep focus" if load < focus_below else "engaged" if load < load_above else "high load"
     advice = "defer" if label == "deep focus" or label == "high load" else "ok"
     user = ctx.get("user") or baseline.user
     return {
         "load": round(load, 2), "raw": round(float(raw), 2), "label": label,
         "advice": advice,                      # what other apps should do with notifications right now
+        "cutoffs": {"focus_below": round(focus_below, 2), "load_above": round(load_above, 2), "per_user": bool(cut)},
         "drivers": drivers, "source": source,
         "explanation": explain.get(st, user, label, load, drivers),
         "explainer": "gemini" if explain.enabled() else "template",

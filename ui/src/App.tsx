@@ -14,6 +14,7 @@ import { IdentityView } from './views/IdentityView';
 import { StateView } from './views/StateView';
 import { ThreatsView } from './views/ThreatsView';
 import { DriftView } from './views/DriftView';
+import { SettingsView } from './views/SettingsView';
 import { DuressModal } from './components/telemetry/DuressModal';
 import { ShootingStars } from './components/motion/ShootingStars';
 
@@ -66,6 +67,8 @@ const MainContent: React.FC = () => {
         return <ThreatsView />;
       case 'drift':
         return <DriftView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return <OverviewView />;
     }

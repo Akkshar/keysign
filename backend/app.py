@@ -44,8 +44,9 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Callable
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 
 from pipeline.baseline import BASELINE_FEATURES, Baseline, _slug
 from pipeline.features import FEATURE_NAMES, extract_features
@@ -225,6 +226,7 @@ def index():
     from backend import explain, notify
     return {"service": "KeySign backend", "ok": True,
             "endpoints": ["/health", "/api/users", "/api/baseline/{user}", "/api/state", "/api/alerts",
+                          "POST /api/alerts/photo?ts=", "/api/alerts/photo/{name}",
                           "WS /ws/capture", "WS /ws/dashboard"],
             "heads": list(HEADS),
             "alerts": notify.channel(), "explainer": "gemini" if explain.enabled() else "template",
@@ -253,6 +255,40 @@ def alerts_api(n: int = 20):
     """Silent alerts raised by the Threat head, newest last. Local log; pushed to a phone if KEYSIGN_NTFY_TOPIC is set."""
     from backend import notify
     return {"channel": notify.channel(), "alerts": notify.recent(n)}
+
+
+MAX_PHOTO_BYTES = 2_000_000
+
+
+@app.post("/api/alerts/photo")
+async def alert_photo(request: Request, ts: float, session: str | None = None):
+    """
+    One webcam frame (JPEG body) for the intruder alert raised at `ts`. Stored
+    in data/alert_photos/ and, if a phone topic is configured, pushed as an
+    attachment. The dashboard only posts this for INTRUDER alerts.
+    """
+    from backend import notify
+    data = await request.body()
+    if not data or len(data) > MAX_PHOTO_BYTES or not data.startswith(b"\xff\xd8"):
+        return JSONResponse({"ok": False, "error": "expected a JPEG under 2 MB"}, status_code=400)
+    alerts = [a for a in notify.recent(50) if abs(float(a.get("ts", 0)) - ts) < 2.0]
+    if not alerts:
+        return JSONResponse({"ok": False, "error": "no alert at that time"}, status_code=404)
+    alert = alerts[-1]
+    if alert.get("kind") != "intruder":
+        return JSONResponse({"ok": False, "error": "photos are only taken for intruder alerts"}, status_code=400)
+    p = notify.save_photo(alert["ts"], alert.get("session") or session, data)
+    push = notify.send_photo(alert, p)
+    return {"ok": True, "photo": p.name, **push}
+
+
+@app.get("/api/alerts/photo/{name}")
+def alert_photo_file(name: str):
+    from backend import notify
+    p = notify.PHOTO_DIR / Path(name).name
+    if not p.exists():
+        return JSONResponse({"error": "no such photo"}, status_code=404)
+    return FileResponse(p, media_type="image/jpeg")
 
 
 @app.get("/api/state")

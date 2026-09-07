@@ -95,7 +95,10 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
   `uv run python -m backend.sessions harvest -o data/samples/live_turns.json` (teammates' own
   live turns from recorded sessions; live typing runs hotter than enrolment), then
   `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json data/samples/strangers.json data/samples/live_turns.json --windows -o data/features_windows.csv`
-  and `uv run python -m pipeline.identity train data/features_windows.csv`.
+  and `uv run python -m pipeline.identity train data/features_windows.csv`,
+  then `uv run python -m pipeline.state calibrate data/features_windows.csv`
+  (per-user deep-focus / high-load cut-offs into the baselines; without it
+  everyone reads "deep focus" all day).
   Unknown-user bar is 85% classifier confidence (team decision): a stranger is
   never shown as a teammate, at the cost of Utkarsh being shown unknown about
   half the time until he records more calm samples on the demo laptop.

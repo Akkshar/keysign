@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useBiometrics } from '../context/BiometricsContext';
 import { BACKEND_HTTP, fetchAlerts } from '../lib/keysign';
+import { alertPhotoUrl } from '../lib/webcam';
 import { DuressModal } from '../components/telemetry/DuressModal';
 import { Reveal, Swap } from '../components/motion/Reveal';
 import { CardSpotlight } from '../components/motion/CardSpotlight';
@@ -67,7 +68,7 @@ export const ThreatsView: React.FC = () => {
     load();
     const id = setInterval(load, 10000);
     return () => { stop = true; clearInterval(id); };
-  }, [alertsTotal, live.connected]);
+  }, [alertsTotal, live.connected, live.lastPhoto]);
   const rows = alerts.map((a) => ({
     timestamp: new Date(a.ts * 1000).toLocaleString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: 'short' }),
     kind: a.kind === 'intruder' ? 'Intruder' : 'Duress',
@@ -76,6 +77,7 @@ export const ThreatsView: React.FC = () => {
     ticks: `${a.sustained_ticks ?? 0} ticks`,
     identity: a.identity ? `${a.identity} (${Math.round((a.identity_confidence ?? 0) * 100)}%)` : 'declared user',
     sent: a.sent === false ? 'logged only' : 'pushed',
+    photo: a.photo ? alertPhotoUrl(a.photo) : null,
     raw: a,
   }));
 
@@ -171,6 +173,7 @@ export const ThreatsView: React.FC = () => {
                   <th className="py-space-sm pr-space-lg font-medium">Held for</th>
                   <th className="py-space-sm pr-space-lg font-medium">Identity read</th>
                   <th className="py-space-sm pr-space-lg font-medium">Delivery</th>
+                  <th className="py-space-sm pr-space-lg font-medium">Photo</th>
                   <th className="py-space-sm text-right font-medium"></th>
                 </tr>
               </thead>
@@ -187,6 +190,15 @@ export const ThreatsView: React.FC = () => {
                     <td className="py-space-md pr-space-lg font-telemetry text-on-surface">{row.ticks}</td>
                     <td className="py-space-md pr-space-lg text-on-surface-variant">{row.identity}</td>
                     <td className="py-space-md pr-space-lg text-on-surface-variant">{row.sent}</td>
+                    <td className="py-space-md pr-space-lg">
+                      {row.photo ? (
+                        <a href={row.photo} target="_blank" rel="noreferrer" title="Webcam frame taken when the alert fired">
+                          <img src={row.photo} alt="Webcam frame at the alert" className="h-10 w-14 object-cover rounded-md border border-outline-variant/60" />
+                        </a>
+                      ) : (
+                        <span className="text-on-surface-variant">{row.kind === 'Intruder' ? 'off' : '—'}</span>
+                      )}
+                    </td>
                     <td className="py-space-md text-right">
                       <button
                         type="button"

@@ -62,6 +62,9 @@ class Baseline:
     condition: str = "calm"
     method: str = "median_mad"
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    # Per-user State cut-offs written by `pipeline.state calibrate`:
+    # {"focus_below": float, "load_above": float, "calibrated_at": str, "note": str} or None.
+    state: dict | None = None
 
     # ---- scoring ----
     def _vec(self, x) -> np.ndarray:
@@ -97,6 +100,7 @@ class Baseline:
             "features": self.features,
             "center": [float(v) for v in self.center],
             "scale": [float(v) for v in self.scale],
+            "state": self.state,
         }
 
     @classmethod
@@ -104,7 +108,8 @@ class Baseline:
         return cls(user=d["user"], features=list(d["features"]),
                    center=np.asarray(d["center"], dtype=float), scale=np.asarray(d["scale"], dtype=float),
                    n_samples=int(d["n_samples"]), condition=d.get("condition", "calm"),
-                   method=d.get("method", "median_mad"), created_at=d.get("created_at", ""))
+                   method=d.get("method", "median_mad"), created_at=d.get("created_at", ""),
+                   state=d.get("state"))
 
     def save(self, path: Path | str) -> Path:
         path = Path(path)

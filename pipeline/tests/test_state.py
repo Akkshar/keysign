@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -69,3 +71,30 @@ def test_train_cli_and_roundtrip(tmp_path, capsys):
     z = zscore_frame(df, None)[0].iloc[3].to_dict()
     assert m2.predict(z)["load"] == pytest.approx(m.predict(z)["load"])
     assert m2.features == STATE_FEATURES and m2.n_train == len(df)
+
+
+def test_calibrate_thresholds_writes_per_user_cutoffs(tmp_path):
+    from pipeline.baseline import Baseline, build_baseline
+    from pipeline.features import FEATURE_NAMES
+    from pipeline.state import calibrate_thresholds
+    rng = np.random.default_rng(0)
+    rows = []
+    for i in range(60):
+        f = {name: 50 + rng.normal(0, 3) for name in FEATURE_NAMES}
+        stress = i >= 40
+        f["speed_kps"] = 5 + (2.5 if stress else 0) + rng.normal(0, 0.3)
+        f["error_rate"] = 0.02 + (0.08 if stress else 0) + rng.normal(0, 0.01)
+        f["rp_negative_ratio"] = 0.1 + (0.2 if stress else 0) + rng.normal(0, 0.02)
+        f["n_keys"] = 40
+        rows.append({"sample_id": f"s{i}", "user": "ann", "condition": "stress" if stress else "calm", "started_at": "", **f})
+    import pandas as pd
+    df = pd.DataFrame(rows)
+    bdir = tmp_path / "b"; bdir.mkdir()
+    build_baseline(df, "ann").save(bdir / "ann.json")
+    csv = tmp_path / "w.csv"; df.to_csv(csv, index=False)
+    thr = calibrate_thresholds(csv, bdir)
+    lo, hi = thr["ann"]
+    assert 0 < lo < hi < 1
+    b = Baseline.load(bdir / "ann.json")
+    assert b.state["focus_below"] == round(lo, 3) and b.state["load_above"] == round(hi, 3)
+    assert json.loads((bdir / "ann.json").read_text())["state"]["load_above"] == round(hi, 3)

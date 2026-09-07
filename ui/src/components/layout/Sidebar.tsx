@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
   { id: 'health-signals', label: 'Health Signals' },
   { id: 'history', label: 'History' },
   { id: 'privacy', label: 'Privacy & Architecture' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 export const Sidebar: React.FC = () => {

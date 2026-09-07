@@ -148,12 +148,40 @@ def test_push_failure_is_swallowed(baseline, alert_log, monkeypatch):
     assert out["level"] == "alert" and len(alert_log.read_text().splitlines()) == 1
 
 
+def test_alert_photo_stored_listed_and_pushed(alert_log, monkeypatch, tmp_path):
+    client = TestClient(backend.app)
+    monkeypatch.setattr(notify, "PHOTO_DIR", tmp_path / "photos")
+    pushed = []
+    monkeypatch.setenv("KEYSIGN_NTFY_TOPIC", "keysign-test")
+    monkeypatch.setattr(notify, "_post", lambda a: None)
+    monkeypatch.setattr(notify, "_post_photo", lambda a, p: pushed.append((a["kind"], p.name)))
+    notify.record({"ts": 1000.0, "session": "abc", "kind": "intruder", "user": "u"}, alert_log)
+    notify.record({"ts": 2000.0, "session": "abc", "kind": "duress", "user": "u"}, alert_log)
+    jpeg = b"\xff\xd8\xff\xe0" + b"0" * 100
+    r = client.post("/api/alerts/photo?ts=1000.3&session=abc", content=jpeg, headers={"Content-Type": "image/jpeg"})
+    assert r.status_code == 200 and r.json()["photo"] == "1000_abc.jpg" and r.json()["sent"] is True
+    assert (tmp_path / "photos" / "1000_abc.jpg").read_bytes() == jpeg
+    assert client.get("/api/alerts/photo/1000_abc.jpg").status_code == 200
+    listed = client.get("/api/alerts").json()["alerts"]
+    assert listed[0]["photo"] == "1000_abc.jpg" and listed[1]["photo"] is None
+    # duress never gets a photo; garbage is refused; unknown alert time is refused
+    assert client.post("/api/alerts/photo?ts=2000", content=jpeg, headers={"Content-Type": "image/jpeg"}).status_code == 400
+    assert client.post("/api/alerts/photo?ts=1000", content=b"not a jpeg", headers={"Content-Type": "image/jpeg"}).status_code == 400
+    assert client.post("/api/alerts/photo?ts=5000", content=jpeg, headers={"Content-Type": "image/jpeg"}).status_code == 404
+    import time
+    for _ in range(50):
+        if pushed:
+            break
+        time.sleep(0.02)
+    assert pushed == [("intruder", "1000_abc.jpg")]
+
+
 def test_alerts_api(alert_log, monkeypatch):
     client = TestClient(backend.app)
     assert client.get("/api/alerts").json() == {"channel": "log-only", "alerts": []}
     notify.record({"ts": 1, "kind": "duress", "user": "u"}, alert_log)
     r = client.get("/api/alerts").json()
-    assert r["alerts"][0]["kind"] == "duress"
+    assert r["alerts"][0]["kind"] == "duress" and r["alerts"][0]["photo"] is None
 
 
 def test_ntfy_request_shape(monkeypatch):

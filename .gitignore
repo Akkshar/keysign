@@ -36,8 +36,9 @@ data/models/
 # ad-hoc replay files
 capture/replay*.json
 
-# Silent alert log (personal)
+# Silent alert log and intruder webcam frames (personal)
 data/alerts*.jsonl
+data/alert_photos/
 
 # Live session recordings (raw keystrokes, personal)
 data/sessions/
