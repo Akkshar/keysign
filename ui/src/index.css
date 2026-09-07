@@ -43,8 +43,10 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+  /* The new design sets headings in Newsreader; Plus Jakarta stays available as
+     font-headline for anything that wants the sans cut. */
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
   }
 
   code, pre, .font-telemetry {

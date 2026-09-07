@@ -29,6 +29,7 @@ const MORE: { id: DetectionArea; label: string }[] = [
   { id: 'drift', label: 'Drift' },
   { id: 'history', label: 'History' },
   { id: 'privacy', label: 'Privacy & Architecture' },
+  { id: 'live-demo', label: 'Presets & playground' },
 ];
 
 export const TopNav: React.FC = () => {

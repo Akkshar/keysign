@@ -8,6 +8,7 @@ import { TopNav } from './components/layout/TopNav';
 import { TypewriterWatermark } from './components/layout/TypewriterWatermark';
 
 import { MainOverviewFlow } from './views/MainOverviewFlow';
+import { LiveDemoView } from './views/LiveDemoView';
 import { OverviewView } from './views/OverviewView';
 import { HealthSignalsView } from './views/HealthSignalsView';
 import { LiveMonitoringView } from './views/LiveMonitoringView';
@@ -110,6 +111,8 @@ const MainContent: React.FC = () => {
         return <ThreatsView />;
       case 'drift':
         return <DriftView />;
+      case 'live-demo':
+        return <LiveDemoView />;
       case 'settings':
         return <SettingsView />;
       default:

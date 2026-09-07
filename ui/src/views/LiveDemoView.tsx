@@ -6,6 +6,7 @@ import { LiveTypingWell } from '../components/telemetry/LiveTypingWell';
 import { Reveal, Swap } from '../components/motion/Reveal';
 import { AnimatedCounter } from '../components/common/AnimatedCounter';
 import { StressPreset } from '../types/biometrics';
+import { BikeCadenceGraph } from '../components/instrumentation/BikeCadenceGraph';
 
 /**
  * Judge presets. Without a backend the four buttons put the dashboard into a
@@ -142,6 +143,19 @@ export const LiveDemoView: React.FC = () => {
           One line per tick from the local backend, newest last: keys in the window, declared and predicted user,
           confidence, baseline distance, load and threat level.
         </p>
+      </section>
+
+      {/* A toy, and labelled as one: steer the bike along a cadence curve with the arrow keys.
+          It illustrates what rhythm looks like; it is not reading anybody's typing. */}
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="font-serif text-2xl font-medium text-on-surface">Cadence, to play with</h2>
+          <p className="text-sm text-on-surface-variant">
+            Arrow keys or A and D. An illustration of rhythm, drawn from nothing: no keystroke on this
+            panel is measured, and none of it reaches the backend.
+          </p>
+        </div>
+        <BikeCadenceGraph />
       </section>
     </Reveal>
   );
