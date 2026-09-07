@@ -111,7 +111,10 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
   class named "Stranger ..." as unknown. Add another with
   `uv run python -m backend.sessions export data/sessions/<file>.jsonl --user "Stranger 2" -o data/samples/stranger2.json`
   and merge into strangers.json. Strangers never go into features.csv, so
-  they get no baseline.
+  they get no baseline. A person with fewer than 5 samples must not be added as a
+  class at all (measured: 2 samples of "Aditya" were recognised 23% of the time
+  and stole 8 of Akkshar's windows); park them in `data/samples/pending_<name>.json`
+  until there are more.
   Every live session is recorded to `data/sessions/` (see `backend/sessions.py`):
   when the demo misjudges someone, their typing is already on disk to score or
   export, no separate recording needed.
