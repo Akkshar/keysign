@@ -134,9 +134,11 @@ export const IntroductionView: React.FC = () => {
   ];
 
   const handleScrollToDashboard = () => {
+    // In the story flow the dashboard is further down the same page; on its own, it is a view.
     const el = document.getElementById('dashboard-section');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
+      return;
     }
     setActiveArea('overview');
   };

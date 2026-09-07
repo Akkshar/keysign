@@ -7,7 +7,7 @@ import { setCalibrating } from './lib/enrol';
 import { TopNav } from './components/layout/TopNav';
 import { TypewriterWatermark } from './components/layout/TypewriterWatermark';
 
-import { IntroductionView } from './views/IntroductionView';
+import { MainOverviewFlow } from './views/MainOverviewFlow';
 import { OverviewView } from './views/OverviewView';
 import { HealthSignalsView } from './views/HealthSignalsView';
 import { LiveMonitoringView } from './views/LiveMonitoringView';
@@ -91,7 +91,7 @@ const MainContent: React.FC = () => {
   const renderActiveView = () => {
     switch (activeArea) {
       case 'introduction':
-        return <IntroductionView />;
+        return <MainOverviewFlow />;
       case 'overview':
         return <OverviewView />;
       case 'health-signals':

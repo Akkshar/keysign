@@ -171,7 +171,7 @@ export const ClinicalResearchSection: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between text-xs font-mono text-stone-600 dark:text-stone-400 group-hover:text-stone-900 dark:group-hover:text-stone-100 pt-1 group-hover:translate-x-0.5 transition-all">
-                <span className="font-semibold text-[11px]">Inspect Statistics & Study</span>
+                <span className="font-semibold text-[11px]">Read the research</span>
                 <span>→</span>
               </div>
             </div>
