@@ -227,7 +227,7 @@ def index():
     return {"service": "KeySign backend", "ok": True,
             "endpoints": ["/health", "/api/users", "/api/baseline/{user}", "/api/state", "/api/alerts",
                           "POST /api/alerts/photo?ts=", "/api/alerts/photo/{name}",
-                          "GET/POST/DELETE /api/faces/{user}",
+                          "GET/POST/DELETE /api/faces/{user}", "GET/PUT/DELETE /api/accounts/{email}",
                           "WS /ws/capture", "WS /ws/dashboard"],
             "heads": list(HEADS),
             "alerts": notify.channel(), "explainer": "gemini" if explain.enabled() else "template",
@@ -302,6 +302,65 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
         if screen_name:
             notify.send_photo(alert, notify.PHOTO_DIR / screen_name, "KeySign: what was on the screen", f"{when} · screen at the moment of the alert")
     return {"ok": True, "photo": p.name, "screen": screen_name, "face": verdict, **push}
+
+
+# ---------------------------------------------------------------------------
+# Accounts: which enrolled typing profile a signed-in email belongs to.
+# Sign-in itself happens in the browser (Firebase); the backend only keeps this
+# local map so signing in selects the right baseline. Trust model: a browser on
+# this machine says who signed in; nothing here is verified against Firebase.
+# ---------------------------------------------------------------------------
+ACCOUNTS_PATH = ROOT / "data" / "accounts.json"
+
+
+def _accounts() -> dict:
+    try:
+        return json.loads(ACCOUNTS_PATH.read_text(encoding="utf-8")) if ACCOUNTS_PATH.exists() else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def _save_accounts(d: dict) -> None:
+    ACCOUNTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ACCOUNTS_PATH.write_text(json.dumps(d, indent=1), encoding="utf-8")
+
+
+def _account_view(email: str, entry: dict | None) -> dict:
+    user = (entry or {}).get("user")
+    return {"email": email, "user": user, "has_baseline": bool(user and load_baseline(user) is not None),
+            "linked_at": (entry or {}).get("linked_at")}
+
+
+@app.get("/api/accounts/{email}")
+def account_get(email: str):
+    email = email.strip().lower()
+    return _account_view(email, _accounts().get(email))
+
+
+@app.put("/api/accounts/{email}")
+async def account_link(email: str, request: Request):
+    """Body: {"user": "<baseline name>"}. Links the email to that typing profile (existing or to be enrolled)."""
+    email = email.strip().lower()
+    body = await request.json()
+    user = str((body or {}).get("user") or "").strip()
+    if not email or "@" not in email:
+        return JSONResponse({"error": "not an email"}, status_code=400)
+    if not user or len(user) > 64:
+        return JSONResponse({"error": "user name required (max 64 chars)"}, status_code=400)
+    d = _accounts()
+    d[email] = {"user": user, "linked_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
+    _save_accounts(d)
+    return _account_view(email, d[email])
+
+
+@app.delete("/api/accounts/{email}")
+def account_unlink(email: str):
+    email = email.strip().lower()
+    d = _accounts()
+    removed = d.pop(email, None) is not None
+    if removed:
+        _save_accounts(d)
+    return {"email": email, "removed": removed}
 
 
 @app.get("/api/faces/{user}")

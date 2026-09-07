@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useBiometrics } from '../../context/BiometricsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { RhythmStrip } from '../common/RhythmStrip';
+import { useAuth } from '../../context/AuthContext';
 
 export const Header: React.FC = () => {
-  const { activeArea, isTyping, live } = useBiometrics();
+  const { activeArea, isTyping, live, setActiveArea } = useBiometrics();
   const { theme, toggleTheme } = useTheme();
+  const auth = useAuth();
 
   const getAreaLabel = () => {
     switch (activeArea) {
@@ -109,7 +111,30 @@ export const Header: React.FC = () => {
           </motion.span>
         </motion.button>
 
-        {/* Declared user: whose baseline the typing is measured against. Identity is judged from the typing itself. */}
+        {/* Signed-in account: its linked typing profile is the declared user. Click for Settings. */}
+        {auth.status === 'signed-in' && auth.account ? (
+          <button
+            type="button"
+            onClick={() => setActiveArea('settings')}
+            className="flex items-center gap-2.5 pl-2 text-left group"
+            data-purpose="user-profile"
+            title={`${auth.account.email} · measured against ${live.declaredUser || 'no profile yet'}`}
+          >
+            {auth.account.photo ? (
+              <img src={auth.account.photo} alt="" referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover shadow-sm ring-2 ring-white/80 dark:ring-slate-800" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-slate-700 dark:bg-slate-600 text-white flex items-center justify-center font-medium text-xs shadow-sm ring-2 ring-white/80 dark:ring-slate-800">
+                {initials}
+              </div>
+            )}
+            <span className="hidden sm:flex flex-col leading-tight">
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                {auth.account.name || auth.account.email}
+              </span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">measured against {live.declaredUser || 'no profile yet'}</span>
+            </span>
+          </button>
+        ) : (
         <div className="flex items-center gap-2.5 pl-2 group" data-purpose="user-profile" title="Declared user: whose baseline to measure against. The Identity head decides who is really typing.">
           <div className="w-8 h-8 rounded-full bg-slate-700 dark:bg-slate-600 text-white flex items-center justify-center font-medium text-xs shadow-sm ring-2 ring-white/80 dark:ring-slate-800">
             {initials}
@@ -125,6 +150,7 @@ export const Header: React.FC = () => {
             ))}
           </select>
         </div>
+        )}
       </div>
     </header>
   );

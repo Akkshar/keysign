@@ -357,3 +357,19 @@ def test_state_head_uses_trained_model(client, tmp_path, monkeypatch):
         cap.send_json({"type": "events", "events": typed(60, t0=30_000, flight=50, hold=50)})   # 2x+ faster
         st = cap.receive_json()["heads"]["state"]
         assert st["raw"] > 0.8 and st["drivers"][0][0] == "speed_kps"
+
+
+def test_accounts_link_and_unlink(client, tmp_path, monkeypatch):
+    monkeypatch.setattr(backend, "ACCOUNTS_PATH", tmp_path / "accounts.json")
+    make_baseline(tmp_path)                                       # "Test User"
+    assert client.get("/api/accounts/Someone@Example.com").json() == {"email": "someone@example.com", "user": None, "has_baseline": False, "linked_at": None}
+    r = client.put("/api/accounts/Someone@Example.com", json={"user": "Test User"}).json()
+    assert r["user"] == "Test User" and r["has_baseline"] is True and r["linked_at"]
+    assert client.get("/api/accounts/someone@example.com").json()["user"] == "Test User"
+    r2 = client.put("/api/accounts/new@example.com", json={"user": "Brand New"}).json()
+    assert r2["user"] == "Brand New" and r2["has_baseline"] is False      # enrol later
+    assert client.put("/api/accounts/nope", json={"user": "x"}).status_code == 400
+    assert client.put("/api/accounts/a@b.c", json={}).status_code == 400
+    assert client.delete("/api/accounts/someone@example.com").json()["removed"] is True
+    assert client.get("/api/accounts/someone@example.com").json()["user"] is None
+    assert (tmp_path / "accounts.json").exists()

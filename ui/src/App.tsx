@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { BiometricsProvider, useBiometrics } from './context/BiometricsContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { SignInView } from './views/SignInView';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { TypewriterWatermark } from './components/layout/TypewriterWatermark';
@@ -19,6 +21,15 @@ import { DuressModal } from './components/telemetry/DuressModal';
 import { ShootingStars } from './components/motion/ShootingStars';
 
 import { motion, AnimatePresence } from 'framer-motion';
+
+/** Sign-in gate: with Firebase configured, nobody gets the dashboard without an account (or operator mode). */
+const Gate: React.FC = () => {
+  const { status, link } = useAuth();
+  if (status === 'loading') return <div className="min-h-screen bg-background" />;
+  if (status === 'signed-out') return <SignInView />;
+  if (status === 'signed-in' && (!link || !link.user)) return <SignInView />;
+  return <MainContent />;
+};
 
 const MainContent: React.FC = () => {
   const { activeArea, onKeyAction } = useBiometrics();
@@ -122,7 +133,9 @@ export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <BiometricsProvider>
-        <MainContent />
+        <AuthProvider>
+          <Gate />
+        </AuthProvider>
       </BiometricsProvider>
     </ThemeProvider>
   );

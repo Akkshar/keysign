@@ -44,5 +44,10 @@ data/faces/
 # Snapshots of the above (pipeline.snapshot)
 data/backups/
 
+# Sign-in: local email -> typing-profile links, and the Firebase web config
+data/accounts.json
+ui/.env
+ui/.env.local
+
 # Live session recordings (raw keystrokes, personal)
 data/sessions/

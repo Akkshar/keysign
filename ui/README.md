@@ -11,6 +11,12 @@ Design tokens: `figma-tokens.json`.
     npm install          # once
     npm run dev          # http://localhost:5173 (localhost only, on purpose)
 
+Sign-in (email/password and Google) is optional: copy `.env.example` to
+`.env`, fill in the Firebase web config, restart `npm run dev`. Signing in
+links the account to an enrolled typing profile (kept locally by the backend
+in `data/accounts.json`), which becomes the declared user. Without the
+config there is no sign-in screen and the declared user is a dropdown.
+
 Needs the backend (`uv run python -m backend`). The header pill shows the
 connection; the selector next to it is the **declared user**, i.e. whose
 baseline the typing is measured against. The Identity head decides who is

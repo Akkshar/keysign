@@ -86,6 +86,12 @@ export const PrivacyView: React.FC = () => {
             </p>
             <dl className="space-y-4">
               <div>
+                <dt className="text-sm font-medium text-on-surface">Sign-in (optional, off unless configured)</dt>
+                <dd className="text-xs text-on-surface-variant">
+                  With Firebase configured, your email and password, or the Google sign-in exchange, go to Firebase/Google.
+                  Nothing else does: the link from your email to your typing profile is a local file (data/accounts.json)
+                  and keystrokes, baselines and alerts never leave this machine. "Continue as operator" skips it.
+                </dd>
                 <dt className="text-sm font-medium text-on-surface">Webcam frame on an intruder alert (optional, off by default)</dt>
                 <dd className="text-xs text-on-surface-variant">
                   Switched on in Settings. The camera opens for one frame the moment an intruder alert fires; the backend

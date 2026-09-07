@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
 import { clearFaceSamples, fetchFaceStatus } from '../lib/webcam';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { Reveal } from '../components/motion/Reveal';
 
 /**
@@ -23,6 +24,8 @@ export const SettingsView: React.FC = () => {
           so you know where to look.
         </p>
       </div>
+
+      <AccountSection />
 
       <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -178,5 +181,72 @@ const FaceEnrolment: React.FC = () => {
         )}
       </div>
     </div>
+  );
+};
+
+
+/** Who is signed in, which typing profile the account is linked to, sign out. */
+const AccountSection: React.FC = () => {
+  const auth = useAuth();
+  const { live } = useBiometrics();
+  if (auth.status === 'unconfigured') {
+    return (
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-2">
+        <h2 className="font-serif text-xl font-medium text-on-surface">Account</h2>
+        <p className="text-xs text-on-surface-variant">
+          Sign-in is not configured, so the declared user is the dropdown below. To enable email and Google sign-in,
+          copy <code className="font-telemetry">ui/.env.example</code> to <code className="font-telemetry">ui/.env</code>, fill in the Firebase web
+          config, and restart the dev server.
+        </p>
+      </section>
+    );
+  }
+  if (auth.status !== 'signed-in' || !auth.account) {
+    return (
+      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-3">
+        <h2 className="font-serif text-xl font-medium text-on-surface">Account</h2>
+        <p className="text-xs text-on-surface-variant">Operator mode: nobody is signed in; the declared user is the dropdown below.</p>
+        <button type="button" onClick={() => { sessionStorage.removeItem('keysign.ui.operator'); window.location.reload(); }}
+          className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors">
+          Sign in
+        </button>
+      </section>
+    );
+  }
+  const a = auth.account;
+  return (
+    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-5">
+      <div className="flex items-center gap-3">
+        {a.photo ? <img src={a.photo} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover" />
+          : <div className="w-10 h-10 rounded-full bg-slate-700 text-white flex items-center justify-center text-sm font-medium">{(a.name || a.email)[0]?.toUpperCase()}</div>}
+        <div>
+          <h2 className="font-serif text-xl font-medium text-on-surface">{a.name || a.email}</h2>
+          <p className="text-xs text-on-surface-variant">{a.email} · signed in with {a.provider === 'google' ? 'Google' : 'email'}</p>
+        </div>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+        <div>
+          <span className="text-sm font-medium text-on-surface">Your typing profile</span>
+          <p className="text-xs text-on-surface-variant">
+            The baseline this account is scored against. {auth.link?.user ? `Linked to ${auth.link.user}${auth.link.has_baseline ? '' : ' (no baseline yet: record samples on the capture page and rebuild)'}.` : 'Not linked yet.'}
+          </p>
+        </div>
+        <select
+          value={auth.link?.user || ''}
+          onChange={(e) => { if (e.target.value) void auth.linkProfile(e.target.value); }}
+          className="bg-surface-container-low border border-outline-variant/60 rounded-lg px-3 py-2 text-sm text-on-surface font-body min-w-[14rem]"
+        >
+          <option value="">Choose a profile…</option>
+          {live.users.map((u) => <option key={u.user} value={u.user}>{u.user} · {u.n_samples} samples</option>)}
+          {auth.link?.user && !live.users.some((u) => u.user === auth.link?.user) && <option value={auth.link.user}>{auth.link.user} · not enrolled yet</option>}
+        </select>
+      </div>
+      {auth.error && <p className="text-xs text-error">{auth.error}</p>}
+      <div className="flex justify-end pt-2">
+        <button type="button" onClick={() => void auth.signOut()} className="px-4 py-2 rounded-lg border border-outline-variant/60 text-sm text-on-surface-variant hover:border-outline transition-colors">
+          Sign out
+        </button>
+      </div>
+    </section>
   );
 };
