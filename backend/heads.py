@@ -138,7 +138,13 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     n_keys = int(features.get("n_keys", 0))
     others = ctx.get("heads_so_far") or {}
     idn, state = others.get("identity") or {}, others.get("state") or {}
-    mismatch = bool(idn.get("unknown")) or (idn.get("user") is not None and idn.get("matches_declared") is False)
+    # Positive evidence of another person: the vote names someone else (a teammate or a Stranger
+    # class) or is not confident. "Unknown" by distance alone, with a confident vote for the
+    # declared user, is the owner typing far from their calm baseline (composing prose in another
+    # app, nervous, tired): that is the duress/state path, silent, never the lock. Measured: the
+    # owner writing a chat message through the OS hook sat at 3-4 sigma (flight and pause spread
+    # +6-8 sigma) while identity said Akkshar at 90%+, and the old rule locked the machine twice.
+    mismatch = (idn.get("user") is not None and idn.get("matches_declared") is False) or bool(idn.get("low_confidence"))
     if n_keys >= THREAT_MIN_KEYS:
         st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
         counts = mismatch and (d >= THREAT_WARN or not idn.get("low_confidence"))

@@ -128,3 +128,29 @@ def test_agent_key_mapping():
     assert key_event(K(name="shift"), "down", 6.0)["key"] == "Shift" and key_event(K(name="shift_r"), "down", 6.0)["code"] == "ShiftRight"
     assert key_event(K(name="f5"), "down", 7.0) is None and key_event(K(name="left"), "down", 7.0) is None
     assert looks_secret("Bitwarden - Vault") and looks_secret("Sign in - Google Accounts") and not looks_secret("main.py - Visual Studio Code")
+
+
+def test_face_check_vetoes_or_confirms_the_lock():
+    a = {"ts": 1.0, "kind": "intruder", "user": "owner", "identity": "Someone Else"}
+    assert actions.should_lock(a, {"match": True}) == (False, "face matched the owner")
+    assert actions.should_lock(a, {"match": False})[0] is True
+    assert actions.should_lock(a, None) == (True, "typing identified as Someone Else")
+    assert actions.should_lock({"ts": 1.0, "kind": "intruder", "user": "owner", "identity": "owner"}, {"match": None, "face": False})[0] is True
+
+
+def test_alert_actions_do_not_lock_when_the_face_is_the_owner(monkeypatch, tmp_path):
+    monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
+    monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
+    monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
+    calls = []
+    monkeypatch.setattr(actions, "grab_webcam", lambda: b"\xff\xd8jpeg")
+    monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)
+    actions.update_settings({"lock_on_intruder": True, "photo_on_intruder": True})
+    actions.on_alert({"ts": 500.0, "kind": "intruder", "user": "owner", "identity": "Someone Else"},
+                     lambda alert, jpeg, source: {"ok": True, "face": {"match": True, "distance": 30.0}})
+    time.sleep(0.5)
+    assert calls == []
+    actions.on_alert({"ts": 501.0, "kind": "intruder", "user": "owner", "identity": "Someone Else"},
+                     lambda alert, jpeg, source: {"ok": True, "face": {"match": False, "distance": 80.0}})
+    time.sleep(0.5)
+    assert calls == ["lock"]

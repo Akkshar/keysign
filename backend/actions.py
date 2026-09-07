@@ -8,8 +8,9 @@ Webcam fallback: the dashboard posts a frame when it is open; in background
 mode nothing is, so after PHOTO_GRACE_S the backend grabs one itself with
 OpenCV and runs the same face check / screen snapshot / push path as the
 POST endpoint. Lock: Windows' own lock screen (LockWorkStation), after the
-photo so the camera frame is taken first. Duress never locks: the person at
-the keyboard is the victim and the alert must stay silent.
+photo so the camera frame is taken first, and only if the face check does
+not say "this is the owner" (should_lock). Duress never locks: the person
+at the keyboard is the victim and the alert must stay silent.
 """
 from __future__ import annotations
 
@@ -98,6 +99,33 @@ def _seen(ts: float) -> bool:
         return round(float(ts), 3) in _photo_seen
 
 
+def face_verdict(alert: dict) -> dict | None:
+    """The stored face-check result for this alert, if a frame was processed."""
+    try:
+        from backend import notify
+        p = notify.PHOTO_DIR / (notify.photo_name(alert["ts"], alert.get("session"))[:-4] + ".json")
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    except Exception:
+        return None
+
+
+def should_lock(alert: dict, verdict: dict | None) -> tuple[bool, str]:
+    """
+    Lock only on positive evidence of another person. The webcam is the second
+    factor: a frame that matches the enrolled owner vetoes the lock even when the
+    typing said intruder; a frame that does not match confirms it. No frame or no
+    enrolment: go with the typing.
+    """
+    if verdict and verdict.get("match") is True:
+        return False, "face matched the owner"
+    if verdict and verdict.get("match") is False:
+        return True, "face does not match the owner"
+    named_other = bool(alert.get("identity")) and alert.get("identity") != alert.get("user")
+    if named_other:
+        return True, f"typing identified as {alert.get('identity')}"
+    return True, "typing did not match the owner"
+
+
 def on_alert(alert: dict, process_photo) -> None:
     """
     Called by the app when an alert is raised. `process_photo(alert, jpeg)` is the
@@ -109,17 +137,25 @@ def on_alert(alert: dict, process_photo) -> None:
 
     def run():
         try:
+            verdict = None
             if cfg.get("photo_on_intruder", True):
                 time.sleep(PHOTO_GRACE_S)
                 if not _seen(alert["ts"]):
                     jpeg = grab_webcam()
                     if jpeg:
                         photo_arrived(alert["ts"])
-                        process_photo(alert, jpeg, source="backend-webcam")
+                        res = process_photo(alert, jpeg, source="backend-webcam")
+                        verdict = (res or {}).get("face") if isinstance(res, dict) else None
+                if verdict is None:
+                    verdict = face_verdict(alert)
             if cfg.get("lock_on_intruder"):
                 time.sleep(LOCK_DELAY_S)
-                log.warning("intruder alert on %s's session: locking the workstation", alert.get("user"))
-                lock_workstation()
+                lock, why = should_lock(alert, verdict)
+                if lock:
+                    log.warning("intruder alert on %s's session: %s; locking the workstation", alert.get("user"), why)
+                    lock_workstation()
+                else:
+                    log.warning("intruder alert on %s's session: %s; not locking", alert.get("user"), why)
         except Exception as e:
             log.exception("alert actions failed: %s", e)
 

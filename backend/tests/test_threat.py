@@ -270,6 +270,22 @@ def test_face_threshold_is_derived_from_the_owners_own_crops():
     assert faces.own_threshold(crops[:2]) == faces.THRESHOLD          # too few to measure: fallback
 
 
+def test_owner_far_from_baseline_is_duress_not_intruder(baseline, alert_log):
+    """Identity says the declared user, confidently; the distance rule alone says unknown (prose,
+    nerves). That is the same person off their baseline: duress kind, no intruder clock."""
+    ctx = ctx_with(identity={"user": "Test User", "matches_declared": True, "unknown": True, "low_confidence": False})
+    out = None
+    for _ in range(heads.THREAT_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, ctx)
+    assert out["level"] == "alert" and out["kind"] == "duress" and out["identity_mismatch"] is False
+    assert json.loads(alert_log.read_text().splitlines()[-1])["kind"] == "duress"
+    # the vote naming a Stranger class is positive evidence: intruder
+    ctx2 = ctx_with(identity={"user": "Stranger 1", "matches_declared": False, "unknown": True, "low_confidence": False})
+    for _ in range(heads.INTRUDER_PERSIST):
+        out = heads.threat_head(odd_features(), baseline, ctx2)
+    assert out["kind"] == "intruder"
+
+
 def test_confident_mismatch_alerts_even_close_to_the_baseline(baseline, alert_log):
     """Two people who type alike: the impostor sits under 2 sigma, but identity is sure it is
     someone else on every window, so the intruder clock counts. An unsure vote does not."""

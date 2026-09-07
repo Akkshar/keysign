@@ -89,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     run_backend(a.port)
-    url = f"http://127.0.0.1:{a.port}/"
+    url = f"http://localhost:{a.port}/"       # localhost, not 127.0.0.1: Firebase authorises "localhost"
     log.info("backend up at %s", url)
 
     capture = None

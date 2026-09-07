@@ -235,8 +235,10 @@ def _maybe_alert_actions(session: Session, tick: dict) -> None:
             session.ctx["_alerts_actioned"] = total
             from backend import actions
             la = th["last_alert"]
+            idn = (tick.get("heads") or {}).get("identity") or {}
             alert = {"ts": la.get("ts"), "kind": la.get("kind") or th.get("kind"), "user": session.user, "session": session.id,
-                     "distance": th.get("distance"), "sustained_ticks": th.get("sustained_ticks")}
+                     "distance": th.get("distance"), "sustained_ticks": th.get("sustained_ticks"),
+                     "identity": idn.get("user"), "identity_confidence": idn.get("confidence")}
             actions.on_alert(alert, process_alert_photo)
     except Exception:
         log.exception("alert actions")
