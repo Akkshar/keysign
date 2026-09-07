@@ -122,7 +122,7 @@ export const ClinicalResearchSection: React.FC = () => {
           <div
             key={cond.id}
             onClick={() => setSelectedCondition(cond)}
-            className="p-5 sm:p-6 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-xs hover-subtle-glow transition-all cursor-pointer group flex flex-col justify-between"
+            className="p-5 sm:p-6 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-sm hover-subtle-glow transition-all cursor-pointer group flex flex-col justify-between"
           >
             <div className="space-y-3">
               {/* Header Badge */}

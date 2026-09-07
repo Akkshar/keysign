@@ -27,7 +27,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'Every keystroke generates two discrete hardware events: switch contact (Dwell time) and transition to the next key (Flight time). Governed by deep motor neural pathways, these microsecond temporal intervals form an inimitable physical signature.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-xs">
+        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between font-mono text-xs text-stone-500">
             <span>DWELL TIME: 84.2ms</span>
             <span className="text-amber-600 font-semibold">FLIGHT LATENCY: 112.5ms</span>
@@ -58,7 +58,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'To demonstrate that physical hardware actuation drives the telemetry, a real-time 3D mechanical typewriter strikes individual QWERTY keys, advances its carriage, and inks paper in 1:1 synchronization with the typist.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col items-center justify-center relative overflow-hidden shadow-xs">
+        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
           <div className="relative z-10 text-center space-y-2">
             <span className="font-mono text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
               1:1 Physical Kinematics
@@ -70,7 +70,7 @@ export const IntroductionView: React.FC = () => {
               Typebar Strikes • Platen Carriage • Live Paper Inking
             </p>
           </div>
-          <div className="absolute inset-0 bg-radial from-amber-500/10 via-transparent to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
         </div>
       ),
     },
@@ -83,7 +83,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'Continuous analysis of sub-second hold times and micro-interval variances screens for subtle motor shifts associated with tremor, fatigue, and cognitive pausing.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-xs font-mono">
+        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm font-mono">
           <div className="flex items-center justify-between text-xs text-stone-500">
             <span>MOTOR TREMOR SPECTRUM (4–7 Hz)</span>
             <span className="text-emerald-600 font-bold">NOMINAL BAND</span>
@@ -110,7 +110,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'Characters, credentials, and message content are stripped at the hardware driver boundary. Only raw millisecond interval deltas exist in memory, providing an unassailable privacy guarantee.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex items-center justify-around font-mono text-center shadow-xs">
+        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex items-center justify-around font-mono text-center shadow-sm">
           <div className="space-y-1">
             <span className="text-xs font-mono font-bold text-stone-500">STEP 1</span>
             <span className="block text-[11px] text-stone-400">Switch Contact</span>
@@ -205,7 +205,7 @@ export const IntroductionView: React.FC = () => {
               delay: 0.05,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="p-6 sm:p-10 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#141412] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xs hover:shadow-sm transition-all"
+            className="p-6 sm:p-10 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#141412] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-sm hover:shadow-sm transition-all"
           >
             {/* Text Narrative */}
             <div className="lg:col-span-6 space-y-3">
@@ -240,7 +240,7 @@ export const IntroductionView: React.FC = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.7 }}
-        className="p-6 sm:p-8 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-xs"
+        className="p-6 sm:p-8 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-sm"
       >
         <div className="border-b border-stone-200/80 dark:border-stone-800/80 pb-3">
           <h3 className="font-serif text-xl font-medium text-stone-900 dark:text-stone-100">

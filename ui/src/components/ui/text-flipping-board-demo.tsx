@@ -33,14 +33,16 @@ export function TextFlippingBoardDemo({ className }: { className?: string }) {
   return (
     <div className={`w-full flex flex-col items-center ${className ?? ''}`}>
       {/* Interactive Split-Flap Board (Hover or click triggers mechanical flip) */}
+      {/* Click to re-flip. It used to re-flip on hover too, which meant crossing the hero
+          with the mouse wiped the word off the board and left it blank. */}
       <div
         onClick={handleReFlip}
-        onMouseEnter={handleReFlip}
-        className="w-full cursor-pointer group transition-transform hover:scale-[1.006] active:scale-[0.996]"
-        title="Hover or click to re-flip mechanical board"
+        className="w-full cursor-pointer group transition-transform hover:scale-[1.004] active:scale-[0.996]"
+        title="Click to flip the board again"
       >
         <TextFlippingBoard
           key={flipKey}
+          duration={0.85}
           rows={WELCOME_ROWS}
           className="border border-stone-300/80 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] shadow-lg hover:border-amber-500/50 transition-colors"
         />

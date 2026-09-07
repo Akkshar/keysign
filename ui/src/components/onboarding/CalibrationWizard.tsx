@@ -122,7 +122,7 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
     const done = i < typedText.length;
     const right = done && typedText[i] === char;
     return (
-      <span key={i} className={`relative inline-block transition-colors rounded-xs px-[1px] ${
+      <span key={i} className={`relative inline-block transition-colors rounded-sm px-[1px] ${
         !done ? 'text-on-surface-variant/70'
           : right ? 'text-stone-900 bg-amber-400 font-semibold'
           : 'text-white bg-error font-semibold'}`}>
@@ -237,7 +237,7 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
 
         <div className="flex items-center gap-1.5">
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className={`h-1.5 flex-1 rounded-xs transition-all ${
+            <div key={i} className={`h-1.5 flex-1 rounded-sm transition-all ${
               i < currentStep ? (i < 5 ? 'bg-secondary' : 'bg-tertiary')
                 : i === currentStep ? (isCalm ? 'bg-secondary/70 scale-y-125' : 'bg-tertiary/70 scale-y-125')
                 : 'bg-outline-variant/40'}`} />

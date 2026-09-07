@@ -76,10 +76,12 @@ const FlapCell = React.memo(function FlapCell({
 
     if (normalized === " " && curRef.current === " ") return;
 
+    // Long enough to read as mechanical, short enough that the board says its word
+    // about a second in. At 25-40 steps the hero sat blank for three seconds.
     const scrambleCount =
       normalized === " "
-        ? 8 + Math.floor(Math.random() * 8)
-        : 25 + Math.floor(Math.random() * 15);
+        ? 5 + Math.floor(Math.random() * 5)
+        : 12 + Math.floor(Math.random() * 8);
 
     const runStep = (i: number) => {
       const isLast = i === scrambleCount;
@@ -132,9 +134,9 @@ const FlapCell = React.memo(function FlapCell({
   const bottomDelay = flipDuration * 0.5;
 
   return (
-    <div className="flex aspect-3/6 flex-col overflow-hidden rounded-[2px] border border-neutral-300 md:rounded-[3px] md:border-2 dark:border-black">
+    <div className="flex aspect-[1/2] flex-col overflow-hidden rounded-[2px] border border-neutral-300 md:rounded-[3px] md:border-2 dark:border-black">
       {/* Flap content area */}
-      <div className="relative flex-1 perspective-dramatic transform-3d">
+      <div className="relative flex-1 [perspective:300px] [transform-style:preserve-3d]">
         <div className="absolute inset-0 z-40 hidden flex-row items-center justify-center md:flex">
           <div className="h-1/2 w-px rounded-tr-sm rounded-br-sm bg-neutral-300 dark:bg-black" />
           <div className="flex h-px flex-1 bg-neutral-300 dark:bg-black" />
@@ -185,7 +187,7 @@ const FlapCell = React.memo(function FlapCell({
           <motion.div
             key={flipId}
             className={cn(
-              "absolute inset-x-0 top-0 z-10 h-[calc(50%-0.5px)] origin-bottom overflow-hidden rounded-t-[3px] backface-hidden transform-3d",
+              "absolute inset-x-0 top-0 z-10 h-[calc(50%-0.5px)] origin-bottom overflow-hidden rounded-t-[3px] [backface-visibility:hidden] [transform-style:preserve-3d]",
               flapTopBg,
             )}
             initial={{ rotateX: 0 }}
@@ -215,7 +217,7 @@ const FlapCell = React.memo(function FlapCell({
           <motion.div
             key={`b${flipId}`}
             className={cn(
-              "absolute inset-x-0 bottom-0 z-10 h-[calc(50%-0.5px)] origin-top overflow-hidden rounded-b-[3px] backface-hidden transform-3d",
+              "absolute inset-x-0 bottom-0 z-10 h-[calc(50%-0.5px)] origin-top overflow-hidden rounded-b-[3px] [backface-visibility:hidden] [transform-style:preserve-3d]",
               bottomBg,
             )}
             initial={{ rotateX: 90 }}
@@ -249,7 +251,7 @@ const FlapCell = React.memo(function FlapCell({
       </div>
 
       {/* Bottom stripes – decorative, outside the flap area */}
-      <div className="h-2 w-full bg-[repeating-linear-gradient(to_bottom,currentColor_0,currentColor_1px,transparent_1px,transparent_0.15rem)] mask-t-from-50% text-neutral-400 opacity-20 md:h-4 md:bg-[repeating-linear-gradient(to_bottom,currentColor_0,currentColor_1px,transparent_1px,transparent_0.2rem)] dark:text-black dark:opacity-100" />
+      <div className="h-2 w-full bg-[repeating-linear-gradient(to_bottom,currentColor_0,currentColor_1px,transparent_1px,transparent_0.15rem)] text-neutral-400 opacity-20 md:h-4 md:bg-[repeating-linear-gradient(to_bottom,currentColor_0,currentColor_1px,transparent_1px,transparent_0.2rem)] dark:text-black dark:opacity-100" />
     </div>
   );
 },
@@ -275,7 +277,7 @@ const COLOR_MAP: Record<string, string> = {
 const ColorCell = React.memo(function ColorCell({ color }: { color: string }) {
   return (
     <div
-      className="aspect-3/5 rounded-[3px] border-2 border-neutral-300 dark:border-black"
+      className="aspect-[3/5] rounded-[3px] border-2 border-neutral-300 dark:border-black"
       style={{ backgroundColor: color }}
     />
   );
