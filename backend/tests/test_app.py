@@ -7,6 +7,7 @@ the capture socket therefore echoes every tick back to its sender and the
 tests read ticks there. Broadcasting itself is unit-tested with fakes.
 """
 import asyncio
+import json
 
 import numpy as np
 import pytest
@@ -374,3 +375,43 @@ def test_accounts_link_and_unlink(client, tmp_path, monkeypatch):
     assert client.delete("/api/accounts/someone@example.com").json()["removed"] is True
     assert client.get("/api/accounts/someone@example.com").json()["user"] is None
     assert (tmp_path / "accounts.json").exists()
+
+
+def test_the_app_window_learns_who_signed_in_from_the_browser(client, tmp_path, monkeypatch):
+    """
+    Google's sign-in cannot run inside the desktop app window, so the browser signs in and
+    records the account with the backend; the window reads it back. See the hand-off note in
+    backend/app.py.
+    """
+    monkeypatch.setattr(backend, "ACCOUNTS_PATH", tmp_path / "accounts.json")
+    monkeypatch.setattr(backend, "ACTIVE_PATH", tmp_path / "active_account.json")
+    make_baseline(tmp_path)                                       # "Test User"
+    assert client.get("/api/active-account").json() == {"email": None, "user": None, "has_baseline": False}
+    # the browser signs in
+    r = client.post("/api/active-account", json={"email": "Someone@Example.com", "name": "Someone"}).json()
+    assert r["email"] == "someone@example.com" and r["user"] is None and r["name"] == "Someone"
+    # once that email is linked to a profile, the window gets the profile with it
+    client.put("/api/accounts/someone@example.com", json={"user": "Test User"})
+    r = client.get("/api/active-account").json()
+    assert r["user"] == "Test User" and r["has_baseline"] is True and r["at"]
+    assert json.loads((tmp_path / "active_account.json").read_text())["email"] == "someone@example.com"
+    # signing out anywhere clears it
+    assert client.delete("/api/active-account").json()["email"] is None
+    assert client.get("/api/active-account").json()["email"] is None
+    assert client.post("/api/active-account", json={"email": "nope"}).status_code == 400
+    assert client.post("/api/active-account", json={}).status_code == 400
+
+
+def test_signin_browser_opens_only_this_backend(client, monkeypatch):
+    """The window asks the backend to open the browser; only its own loopback address is opened."""
+    opened = []
+    import webbrowser
+    monkeypatch.setattr(webbrowser, "open", lambda url: opened.append(url) or True)
+    local = TestClient(backend.app, base_url="http://localhost:8000")
+    r = local.post("/api/signin/browser").json()
+    assert r["ok"] is True and r["url"] == "http://localhost:8000/?signin=1"
+    assert opened == ["http://localhost:8000/?signin=1"]
+    # anything that is not this machine is refused, so the endpoint cannot open arbitrary pages
+    opened.clear()
+    assert client.post("/api/signin/browser").status_code == 400        # base_url http://testserver
+    assert opened == []

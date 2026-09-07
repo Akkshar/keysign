@@ -1,7 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useBiometrics } from './BiometricsContext';
-import { fetchAccountLink, linkAccount, unlinkAccount, type AccountLink } from '../lib/accounts';
-import { authConfigured, authErrorText, signInEmail, signInGoogle, signOut as fbSignOut, signUpEmail, watchAuth, type Account } from '../lib/firebase';
+import {
+  clearActiveAccount, fetchAccountLink, fetchActiveAccount, linkAccount, openSignInInBrowser, setActiveAccount,
+  unlinkAccount, type AccountLink,
+} from '../lib/accounts';
+import {
+  authConfigured, authErrorText, completeRedirect, inAppWindow, signInEmail, signInGoogle,
+  signOut as fbSignOut, signUpEmail, watchAuth, type Account,
+} from '../lib/firebase';
 
 /**
  * Sign-in state. An account is a person; the account's linked typing profile
@@ -19,6 +25,12 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  /** True in the desktop app window: Google sign-in has to happen in the browser. */
+  googleNeedsBrowser: boolean;
+  /** Open the browser to sign in with Google, then adopt whoever signed in there. */
+  signInViaBrowser: () => Promise<void>;
+  waitingForBrowser: boolean;
+  cancelBrowserWait: () => void;
   signOut: () => Promise<void>;
   continueAsOperator: () => void;
   linkProfile: (user: string) => Promise<void>;
@@ -35,29 +47,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [link, setLink] = useState<AccountLink | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [waitingForBrowser, setWaitingForBrowser] = useState(false);
+  const waitRef = useRef(false);
   const setDeclared = useRef(live.setDeclaredUser);
   useEffect(() => { setDeclared.current = live.setDeclaredUser; }, [live.setDeclaredUser]);
+
+  /** Take an account (from Firebase here, or from a browser sign-in) and find its profile. */
+  const adopt = useCallback(async (a: Account, remember: boolean) => {
+    setAccount(a);
+    setStatus('signed-in');
+    if (remember) void setActiveAccount(a.email, a.name);       // so the app window can see this sign-in
+    try {
+      const l = await fetchAccountLink(a.email);
+      setLink(l);
+      if (l.user) setDeclared.current(l.user);
+    } catch {
+      setLink({ email: a.email, user: null, has_baseline: false });
+    }
+  }, []);
 
   // Firebase tells us who is signed in; the local backend tells us whose baseline that is.
   useEffect(() => {
     if (!authConfigured) return;
+    // A session left half-way through an old redirect sign-in reports why, instead of
+    // dropping the person back on the gate with nothing said.
+    completeRedirect().catch((e) => setError(authErrorText(e)));
     return watchAuth(async (a) => {
-      setAccount(a);
       if (!a) {
+        // In the app window Google sign-in happens in the browser, so there is no Firebase
+        // user here: fall back to whoever the browser last signed in as on this machine.
+        if (inAppWindow()) {
+          const active = await fetchActiveAccount();
+          if (active?.email) {
+            setAccount({ uid: '', email: active.email, name: active.name || null, photo: null, provider: 'other' });
+            setLink(active);
+            setStatus('signed-in');
+            if (active.user) setDeclared.current(active.user);
+            return;
+          }
+        }
+        setAccount(null);
         setLink(null);
         setStatus(sessionStorage.getItem(OPERATOR_KEY) === '1' ? 'operator' : 'signed-out');
         return;
       }
-      setStatus('signed-in');
-      try {
-        const l = await fetchAccountLink(a.email);
-        setLink(l);
-        if (l.user) setDeclared.current(l.user);
-      } catch {
-        setLink({ email: a.email, user: null, has_baseline: false });
-      }
+      await adopt(a, true);
     });
-  }, []);
+  }, [adopt]);
 
   // If the backend came up after sign-in, fetch the link once it is reachable.
   useEffect(() => {
@@ -75,10 +111,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = useCallback((email: string, password: string) => run(() => signInEmail(email.trim(), password)), [run]);
   const signUp = useCallback((email: string, password: string) => run(() => signUpEmail(email.trim(), password)), [run]);
   const signInWithGoogle = useCallback(() => run(() => signInGoogle()), [run]);
+
+  /**
+   * The app window's Google button: open this dashboard in the browser, where the
+   * Google pop-up works, and wait for it to tell the local backend who signed in.
+   */
+  const signInViaBrowser = useCallback(async () => {
+    setError(null);
+    const r = await openSignInInBrowser();
+    if (!r.ok) {
+      setError('Could not open your browser. Open ' + (r.url || 'the dashboard') + ' yourself and sign in there.');
+      return;
+    }
+    setWaitingForBrowser(true);
+    waitRef.current = true;
+    const deadline = Date.now() + 5 * 60 * 1000;
+    while (waitRef.current && Date.now() < deadline) {
+      await new Promise((res) => setTimeout(res, 1500));
+      const active = await fetchActiveAccount();
+      if (active?.email && waitRef.current) {
+        setWaitingForBrowser(false);
+        waitRef.current = false;
+        setAccount({ uid: '', email: active.email, name: active.name || null, photo: null, provider: 'other' });
+        setLink(active);
+        setStatus('signed-in');
+        if (active.user) setDeclared.current(active.user);
+        return;
+      }
+    }
+    if (waitRef.current) {
+      waitRef.current = false;
+      setWaitingForBrowser(false);
+      setError('No sign-in came back from the browser. Try again, or use your email and password here.');
+    }
+  }, []);
+
+  const cancelBrowserWait = useCallback(() => { waitRef.current = false; setWaitingForBrowser(false); }, []);
+
   const signOut = useCallback(async () => {
     sessionStorage.removeItem(OPERATOR_KEY);
+    waitRef.current = false;
+    setWaitingForBrowser(false);
+    await clearActiveAccount();                        // this machine has nobody signed in now
     await run(() => fbSignOut());
+    setAccount(null);
     setLink(null);
+    setStatus('signed-out');
   }, [run]);
   const continueAsOperator = useCallback(() => {
     sessionStorage.setItem(OPERATOR_KEY, '1');
@@ -98,8 +176,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [account, run]);
 
   const value = useMemo<AuthContextType>(() => ({
-    status, account, link, error, busy, signIn, signUp, signInWithGoogle, signOut, continueAsOperator, linkProfile, unlinkProfile,
-  }), [status, account, link, error, busy, signIn, signUp, signInWithGoogle, signOut, continueAsOperator, linkProfile, unlinkProfile]);
+    status, account, link, error, busy, signIn, signUp, signInWithGoogle,
+    googleNeedsBrowser: inAppWindow(), signInViaBrowser, waitingForBrowser, cancelBrowserWait,
+    signOut, continueAsOperator, linkProfile, unlinkProfile,
+  }), [status, account, link, error, busy, signIn, signUp, signInWithGoogle, signInViaBrowser, waitingForBrowser,
+       cancelBrowserWait, signOut, continueAsOperator, linkProfile, unlinkProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

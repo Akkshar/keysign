@@ -59,3 +59,6 @@ ui/tests/out/
 # Face models (39 MB, fetch with: uv run python -m backend.faces fetch)
 backend/assets/*.onnx
 backend/assets/*.part
+
+# Which account a browser on this machine last signed in as (the app window reads it)
+data/active_account.json

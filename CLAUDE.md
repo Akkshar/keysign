@@ -191,6 +191,11 @@ person on it, done first.
 Run everything with `uv run ...` (Python) and `node ...` (JS). Tests:
 `uv run python -m pytest -q`.
 
+Sign-in: Firebase (email/password, Google) in a browser. The app window cannot
+run Google's sign-in (pop-ups go to the system browser; the redirect flow dies on
+Chromium's storage partitioning), so it opens the browser, which records the
+account with the backend (`/api/active-account`) for the window to adopt.
+
 As an app: `npm --prefix ui run build` then `uv run python -m agent` (see `agent/`):
 backend + pynput keyboard hook for every application + tray + WebView2 window.
 Agent sessions are recorded redacted (key classes only); Ctrl/Alt/Win chords

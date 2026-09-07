@@ -99,6 +99,30 @@ camera with `POST /api/faces/{user}/grab`; include looking down at the keys.
 `uv run python -m backend.faces check "<user>" <frames...>` scores frames by
 hand. `GET/POST/DELETE /api/faces/{user}` manage the enrolment.
 
+## Signing in from the app window
+
+Google's sign-in cannot run inside the desktop app window. pywebview hands
+every pop-up to the system browser, so Firebase's pop-up flow has nothing to
+talk back to, and its redirect flow no longer completes when the page
+(`localhost`) and the Firebase auth domain are different sites, because
+Chromium partitions third-party storage. Measured here on 2026-09-07: after
+choosing an account the window came back to the gate with no user stored at
+all.
+
+So the window hands the job to the browser, the way most desktop apps do:
+
+| step | who |
+|------|-----|
+| `POST /api/signin/browser` opens this dashboard at `?signin=1` in the default browser (only this backend's own loopback address can be opened) | app window |
+| Google's pop-up runs there and Firebase signs the person in | browser |
+| `POST /api/active-account` records who that is in `data/active_account.json` (gitignored) | browser |
+| `GET /api/active-account` returns that account and its linked typing profile; the window polls it and adopts it, and again at every start | app window |
+| `DELETE /api/active-account` on sign-out | either |
+
+Same trust model as the account links: a browser on this machine says who
+signed in, nothing is verified against Firebase, and nothing leaves the
+machine. Email and password sign-in works in the window itself.
+
 ## Testing it end to end
 
 `uv run python -m pytest -q` is the unit suite (96 tests). The whole app,

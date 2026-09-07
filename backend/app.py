@@ -412,6 +412,7 @@ def agent_status():
 # this machine says who signed in; nothing here is verified against Firebase.
 # ---------------------------------------------------------------------------
 ACCOUNTS_PATH = ROOT / "data" / "accounts.json"
+ACTIVE_PATH = ROOT / "data" / "active_account.json"     # who signed in last on this machine (see below)
 
 
 def _accounts() -> dict:
@@ -462,6 +463,79 @@ def account_unlink(email: str):
     if removed:
         _save_accounts(d)
     return {"email": email, "removed": removed}
+
+
+# ---------------------------------------------------------------------------
+# The sign-in hand-off, for the desktop app window.
+#
+# Google's sign-in cannot complete inside that window: pywebview hands every
+# pop-up to the system browser, so Firebase's popup flow has nothing to talk
+# to, and its redirect flow no longer works when the page (localhost) and the
+# Firebase auth domain are different sites, because Chromium partitions
+# third-party storage. Measured on this machine: after choosing an account the
+# window came back with no user stored at all.
+#
+# So the window asks the browser to do it: POST /api/signin/browser opens this
+# dashboard's sign-in page in the default browser, the browser signs in with
+# Google as usual and posts who that is here, and the window picks it up from
+# GET /api/active-account. Same trust model as the account links above: a
+# browser on this machine says who signed in; nothing is verified against
+# Firebase, and nothing here leaves the machine.
+# ---------------------------------------------------------------------------
+
+def _active() -> dict:
+    try:
+        return json.loads(ACTIVE_PATH.read_text(encoding="utf-8")) if ACTIVE_PATH.exists() else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+@app.get("/api/active-account")
+def active_account_get():
+    """The account a browser on this machine last signed in as, with its linked typing profile."""
+    d = _active()
+    email = str(d.get("email") or "").strip().lower()
+    if not email:
+        return {"email": None, "user": None, "has_baseline": False}
+    return {**_account_view(email, _accounts().get(email)), "name": d.get("name"), "at": d.get("at")}
+
+
+@app.post("/api/active-account")
+async def active_account_set(request: Request):
+    """Body: {"email": ..., "name": ...}. The dashboard calls this when Firebase signs someone in."""
+    body = await request.json()
+    email = str((body or {}).get("email") or "").strip().lower()
+    if not email or "@" not in email or len(email) > 254:
+        return JSONResponse({"error": "not an email"}, status_code=400)
+    ACTIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    ACTIVE_PATH.write_text(json.dumps({"email": email, "name": (body or {}).get("name"),
+                                       "at": time.strftime("%Y-%m-%dT%H:%M:%S")}, indent=1), encoding="utf-8")
+    return active_account_get()
+
+
+@app.delete("/api/active-account")
+def active_account_clear():
+    """Signing out anywhere on this machine clears it."""
+    ACTIVE_PATH.unlink(missing_ok=True)
+    return {"email": None, "user": None, "has_baseline": False}
+
+
+@app.post("/api/signin/browser")
+def signin_in_browser(request: Request):
+    """
+    Open this dashboard in the default browser so Google's sign-in can run there.
+    The URL is this backend's own address plus ?signin=1; nothing else can be opened.
+    """
+    import webbrowser
+    base = str(request.base_url).rstrip("/")
+    if not any(base.startswith(p) for p in ("http://localhost", "http://127.0.0.1", "http://[::1]")):
+        return JSONResponse({"ok": False, "error": "not a loopback address"}, status_code=400)
+    url = f"{base}/?signin=1"
+    try:
+        opened = webbrowser.open(url)
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e), "url": url}, status_code=500)
+    return {"ok": bool(opened), "url": url}
 
 
 @app.get("/api/faces/{user}")

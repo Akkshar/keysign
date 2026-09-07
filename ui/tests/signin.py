@@ -61,7 +61,10 @@ with sync_playwright() as p:
     popup = popup_info.value
     try:
         popup.wait_for_load_state("domcontentloaded", timeout=20000)
-        popup.wait_for_timeout(4000)                      # Firebase handler -> accounts.google.com redirect
+        for _ in range(20):                               # Firebase handler -> accounts.google.com redirect
+            if "accounts.google.com" in popup.url:
+                break
+            popup.wait_for_timeout(1000)
     except Exception:
         pass
     url, title, body = popup.url, popup.title(), popup.inner_text("body")[:600]

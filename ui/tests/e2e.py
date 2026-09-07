@@ -576,6 +576,71 @@ def main() -> int:
                     check("no lock" in (face.get("reason") or "") or "under pressure" in (face.get("reason") or ""),
                           "and says why the machine was not locked", str(face.get("reason"))[:160])
 
+            step("Google sign-in hand-off from the app window")
+            with guard("the sign-in hand-off step"):
+                # The desktop app window is a WebView2: pywebview gives every pop-up to the system
+                # browser and Firebase's redirect flow does not survive Chromium's storage
+                # partitioning, so the window asks the browser to sign in and reads the account
+                # back from the backend. Here the window is simulated by injecting window.pywebview,
+                # and the browser's part is done by posting to the backend, so no Google account and
+                # no real browser window are needed.
+                urllib.request.urlopen(urllib.request.Request(BASE + "/api/active-account", method="DELETE"),
+                                       timeout=5).read()
+                win = ctx.new_page()
+                opened: list = []
+                win.add_init_script("window.pywebview = { api: {} };")   # what pywebview injects
+                win.route("**/api/signin/browser", lambda route: (
+                    opened.append(route.request.url),
+                    route.fulfill(status=200, content_type="application/json",
+                                  body=json.dumps({"ok": True, "url": PAGE + "/?signin=1"})),
+                ))
+                win.goto(PAGE)
+                btn = win.get_by_role("button", name="Continue with Google in your browser")
+                try:
+                    btn.wait_for(timeout=15000)
+                except Exception:
+                    pass
+                check(btn.count() == 1, "the app window offers Google sign-in through the browser",
+                      win.inner_text("body")[:200])
+                if btn.count():
+                    btn.click()
+                    win.wait_for_timeout(800)
+                    check(bool(opened), "clicking it asks the backend to open the browser")
+                    check("Finish signing in there" in win.inner_text("body"),
+                          "the window says it is waiting for the browser", win.inner_text("body")[:200])
+                    # the browser signs in: that is all it reports to this machine
+                    body = json.dumps({"email": "e2e-handoff@example.com", "name": "E2E"}).encode()
+                    req = urllib.request.Request(BASE + "/api/active-account", data=body, method="POST",
+                                                 headers={"Content-Type": "application/json"})
+                    urllib.request.urlopen(req, timeout=5).read()
+                    got = False
+                    for _ in range(20):
+                        win.wait_for_timeout(1000)
+                        if "e2e-handoff@example.com" in win.inner_text("body"):
+                            got = True
+                            break
+                    check(got, "the window picks the sign-in up on its own", win.inner_text("body")[:220])
+                    check("which typing profile is yours" in win.inner_text("body"),
+                          "and asks which typing profile that account is, rather than showing the gate again",
+                          win.inner_text("body")[:220])
+                    win.screenshot(path=str(OUT / "e2e-8-handoff.png"))
+                    # linking it reaches the dashboard, and the choice is pre-filled
+                    sel = win.locator("select").first
+                    if sel.count() and sel.input_value():
+                        win.get_by_role("button", name="Link and continue").click()
+                        win.wait_for_timeout(2500)
+                        check(win.get_by_text("The live lab").count() >= 1 or "Live" in win.inner_text("body"),
+                              "and one click reaches the dashboard", win.inner_text("body")[:200])
+                    else:
+                        check(False, "the profile choice is pre-filled with the declared user",
+                              f"select value {sel.input_value() if sel.count() else 'missing'}")
+                win.close()
+                urllib.request.urlopen(urllib.request.Request(BASE + "/api/active-account", method="DELETE"),
+                                       timeout=5).read()
+                # the link this test made must not stay behind
+                urllib.request.urlopen(urllib.request.Request(
+                    BASE + "/api/accounts/e2e-handoff@example.com", method="DELETE"), timeout=5).read()
+
             step("Recordings and console")
             with guard("the recordings and console step"):
                 recs = list((DATA / "sessions").glob(f"*_{SESSION_PREFIX}*.jsonl"))

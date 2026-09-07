@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useBiometrics } from '../context/BiometricsContext';
@@ -12,6 +12,7 @@ import { useBiometrics } from '../context/BiometricsContext';
 export const SignInView: React.FC = () => {
   const { status, account, link } = useAuth();
   const needsLink = status === 'signed-in' && account && (!link || !link.user);
+  const forTheAppWindow = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('signin');
   return (
     <div className="min-h-screen bg-background text-on-surface flex items-center justify-center px-6 py-12">
       <motion.div
@@ -28,8 +29,18 @@ export const SignInView: React.FC = () => {
             <span className="font-serif text-2xl font-medium tracking-tight">KeySign</span>
           </div>
           <p className="text-sm text-on-surface-variant">
-            {needsLink ? 'One more step: which typing profile is yours?' : 'Your typing is a signature. Sign in to score it against your own baseline.'}
+            {needsLink
+              ? `Signed in as ${account?.email}. One more step: which typing profile is yours?`
+              : 'Your typing is a signature. Sign in to score it against your own baseline.'}
           </p>
+          {forTheAppWindow && !needsLink && (
+            <p className="text-sm text-primary">
+              Sign in here, then go back to the KeySign window: it picks this up on its own.
+            </p>
+          )}
+          {forTheAppWindow && needsLink && (
+            <p className="text-sm text-primary">Choose your profile, then go back to the KeySign window.</p>
+          )}
         </div>
         <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 shadow-sm">
           {needsLink ? <LinkProfile /> : <SignInForm />}
@@ -48,7 +59,10 @@ const primaryCls = 'w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-whi
 const secondaryCls = 'w-full rounded-lg border border-outline-variant/60 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface text-sm font-medium py-2.5 transition-colors disabled:opacity-50 flex items-center justify-center gap-2';
 
 const SignInForm: React.FC = () => {
-  const { signIn, signUp, signInWithGoogle, continueAsOperator, error, busy } = useAuth();
+  const {
+    signIn, signUp, signInWithGoogle, continueAsOperator, error, busy,
+    googleNeedsBrowser, signInViaBrowser, waitingForBrowser, cancelBrowserWait,
+  } = useAuth();
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,10 +72,28 @@ const SignInForm: React.FC = () => {
   };
   return (
     <div className="space-y-4">
-      <button type="button" onClick={() => void signInWithGoogle()} disabled={busy} className={secondaryCls}>
+      {/* In the app window Google's sign-in cannot run: pop-ups go to the system browser and
+          Firebase's redirect flow does not survive Chromium's storage partitioning. So the
+          browser signs in and this window picks the account up from the local backend. */}
+      <button
+        type="button"
+        onClick={() => void (googleNeedsBrowser ? signInViaBrowser() : signInWithGoogle())}
+        disabled={busy || waitingForBrowser}
+        className={secondaryCls}
+      >
         <GoogleMark />
-        Continue with Google
+        {googleNeedsBrowser ? 'Continue with Google in your browser' : 'Continue with Google'}
       </button>
+      {waitingForBrowser && (
+        <div className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 space-y-1" role="status">
+          <p className="text-xs text-on-surface">
+            Your browser is open. Finish signing in there and this window will follow, on its own.
+          </p>
+          <button type="button" onClick={cancelBrowserWait} className="text-[11px] text-on-surface-variant hover:underline">
+            Stop waiting
+          </button>
+        </div>
+      )}
       <div className="flex items-center gap-3 text-[11px] text-on-surface-variant">
         <span className="h-px flex-1 bg-outline-variant/50" />or with email<span className="h-px flex-1 bg-outline-variant/50" />
       </div>
@@ -94,7 +126,12 @@ const SignInForm: React.FC = () => {
 const LinkProfile: React.FC = () => {
   const { account, linkProfile, signOut, error, busy } = useAuth();
   const { live } = useBiometrics();
-  const [choice, setChoice] = useState<string>('');
+  // The machine already measures against someone; offer that first so this is one click.
+  const suggested = live.declaredUser && live.users.some((u) => u.user === live.declaredUser)
+    ? live.declaredUser
+    : live.users.length === 1 ? live.users[0].user : '';
+  const [choice, setChoice] = useState<string>(suggested);
+  useEffect(() => { setChoice((c) => c || suggested); }, [suggested]);
   const [newName, setNewName] = useState<string>(account?.name || '');
   const isNew = choice === '__new__';
   const name = isNew ? newName.trim() : choice;

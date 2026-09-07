@@ -15,11 +15,11 @@ import {
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   getAuth,
+  getRedirectResult,
   onAuthStateChanged,
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
-  signInWithRedirect,
   signOut as fbSignOut,
   type Auth,
   type User,
@@ -75,18 +75,36 @@ export async function signUpEmail(email: string, password: string): Promise<Acco
   return toAccount((await createUserWithEmailAndPassword(auth, email, password)).user);
 }
 
-/** True inside the desktop app window (pywebview injects window.pywebview). */
+/**
+ * True inside the desktop app window (pywebview injects window.pywebview).
+ *
+ * Google's sign-in cannot run there. pywebview hands every pop-up to the system
+ * browser, so `signInWithPopup` has nothing to talk back to; and
+ * `signInWithRedirect` no longer completes when the page (localhost) and the
+ * Firebase auth domain are different sites, because Chromium partitions
+ * third-party storage. Measured on this machine 2026-09-07: after choosing an
+ * account the window came back to the gate with no user in IndexedDB at all.
+ * The window therefore hands Google sign-in to the browser instead; see
+ * `signInViaBrowser` in AuthContext and /api/active-account in the backend.
+ */
 export const inAppWindow = () => typeof window !== 'undefined' && Boolean((window as any).pywebview);
 
 export async function signInGoogle(): Promise<Account | null> {
   if (!auth) throw new Error('Sign-in is not configured');
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  if (inAppWindow()) {
-    await signInWithRedirect(auth, provider);      // comes back through onAuthStateChanged after the redirect
-    return null;
-  }
   return toAccount((await signInWithPopup(auth, provider)).user);
+}
+
+/**
+ * Finish a sign-in that came back through a redirect. Nothing uses the redirect
+ * flow now, but a session left half-way through one by an older build would
+ * otherwise land on the gate with no explanation; this reports the reason.
+ */
+export async function completeRedirect(): Promise<Account | null> {
+  if (!auth) return null;
+  const res = await getRedirectResult(auth);
+  return res ? toAccount(res.user) : null;
 }
 
 export async function signOut(): Promise<void> {
