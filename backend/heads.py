@@ -36,6 +36,17 @@ UNKNOWN_CONF = 0.85      # classifier confidence below this on most of the last 
                          # training: Utkarsh is shown unknown ~48% of the time, Akkshar ~28%, Akshaj and
                          # Shourya ~0%. At 0.70 it would be 19% / 9% / 0 / 0 but a stranger called
                          # Shourya at 77% would pass. Fix for Utkarsh: more calm samples on the demo laptop.
+DECLARED_CLEAR = 0.45    # ... and back above this to be called them again. Hysteresis, because a
+                         # single borderline window in the middle of a run should not reset the
+                         # intruder clock: measured on a replayed swap, P(owner) sat at 0.02-0.10 for
+                         # eight windows and touched 0.26 once, which was enough to start over.
+DECLARED_MIN = 0.25      # P(the declared user) below this -> this is not them. A different question
+                         # from "which teammate is this", and a far easier one: measured over 6010
+                         # labelled windows the declared user's own probability is 0.99 median on
+                         # their windows (p10 0.83-0.89) and 0.00 on everybody else's (p90 0.02-0.04),
+                         # so this bar catches 98.2% of not-them windows for 0.4% false alarms. The
+                         # five-way vote needs 0.85 to be safe against a non-teammate and is unsure
+                         # far more often; that is what UNKNOWN_CONF is for, and it is unchanged.
 UNKNOWN_DIST = 3.0       # distance to the predicted user's baseline above this -> unknown
                          # (measured on 10 s windows with >= 25 keys: own-baseline p90 2.0-2.6,
                          # other people's median 2.9-3.6)
@@ -80,6 +91,7 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         st["low_conf"] = (st.get("low_conf", []) + [pred["confidence"] < UNKNOWN_CONF])[-VOTES:]
     if not st["history"]:                                   # first ticks of a session: too thin to call
         return {"user": None, "confidence": round(pred["confidence"], 3),
+                "closest": None, "closest_confidence": None, "declared_confidence": None,
                 "distance": round(d, 2) if d is not None else None,
                 "unknown": False, "matches_declared": None, "probs": pred["probs"], "votes": {},
                 "warming_up": True, "reason": f"need {IDENTITY_MIN_KEYS} keys in the window to identify"}
@@ -87,6 +99,18 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     voted = max(votes, key=votes.get)
     enrolled = {u: p for u, p in pred["probs"].items() if not is_non_user(u)}
     closest = max(enrolled, key=enrolled.get) if enrolled else None
+    closest_p = float(enrolled.get(closest, 0.0)) if closest else None
+    declared = ctx.get("user")
+    declared_p = float(pred["probs"].get(declared, 0.0)) if declared else None
+    # "not the declared user" is answered by their own probability, not by the five-way winner,
+    # with hysteresis so one borderline window does not undo a run of them
+    if declared_p is None:
+        matches_declared = None
+    elif st.get("declared_out"):
+        matches_declared = declared_p >= DECLARED_CLEAR
+    else:
+        matches_declared = declared_p >= DECLARED_MIN
+    st["declared_out"] = matches_declared is False
     lc = st.get("low_conf", [])
     low_conf = len(lc) >= 1 and sum(lc) * 2 > len(lc)            # most of the recent windows under UNKNOWN_CONF
                                                                   # (the first voting window already counts:
@@ -96,11 +120,15 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     return {
         "user": voted,
         "closest": closest,                      # nearest enrolled teammate (differs from user for a known non-user)
+        "closest_confidence": round(closest_p, 3) if closest_p is not None else None,
         "confidence": round(pred["confidence"], 3),
+        "declared_confidence": round(declared_p, 3) if declared_p is not None else None,
         "distance": round(d, 2) if d is not None else None,
         "unknown": bool(unknown),
         "low_confidence": bool(low_conf),
-        "matches_declared": voted == ctx.get("user"),
+        # Whether this is the declared user, from their own probability. The vote can be unsure
+        # which teammate is at the keyboard and still be certain it is not this one.
+        "matches_declared": matches_declared,
         "probs": pred["probs"],
         "votes": votes,
         "warming_up": False,
@@ -155,7 +183,12 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     # app, nervous, tired): that is the duress/state path, silent, never the lock. Measured: the
     # owner writing a chat message through the OS hook sat at 3-4 sigma (flight and pause spread
     # +6-8 sigma) while identity said Akkshar at 90%+, and the old rule locked the machine twice.
-    mismatch = (idn.get("user") is not None and idn.get("matches_declared") is False) or bool(idn.get("low_confidence"))
+    # The declared test answers "is this them" on its own (backend/heads.DECLARED_MIN). An unsure
+    # five-way vote is only evidence of another person when that test is not saying it IS them:
+    # sparse prose windows are unsure most of the time, and treating that as an impostor is what
+    # locked the machine on the owner's own typing.
+    says_other = idn.get("matches_declared") is False
+    mismatch = says_other or (bool(idn.get("low_confidence")) and idn.get("matches_declared") is not True)
     if n_keys >= THREAT_MIN_KEYS:
         st["hist"] = (st["hist"] + [(d, stressed)])[-THREAT_PERSIST:]
         counts = mismatch and (d >= THREAT_WARN or not idn.get("low_confidence"))
@@ -188,7 +221,12 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     if entering and now - st["last_alert_at"] >= THREAT_COOLDOWN_S:
         alert = {"ts": now, "session": ctx.get("session"), "user": ctx.get("user") or baseline.user, "kind": kind,
                  "distance": round(d, 2), "sustained_ticks": sustained, "identity": idn.get("user"),
-                 "identity_confidence": idn.get("confidence"), "load": load, "drivers": out["drivers"],
+                 "identity_confidence": idn.get("confidence"),
+                 # the nearest enrolled teammate and how strongly, so an alert names somebody even
+                 # when the five-way vote is not sure enough to call it
+                 "closest": idn.get("closest"), "closest_confidence": idn.get("closest_confidence"),
+                 "declared_confidence": idn.get("declared_confidence"),
+                 "load": load, "drivers": out["drivers"],
                  # the duress conditions held too: if the camera then says the owner is in the chair, this
                  # intruder alert is really the owner under pressure (backend/actions.decide)
                  "duress_ready": bool(duress_ready)}

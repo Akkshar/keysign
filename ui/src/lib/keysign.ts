@@ -16,7 +16,9 @@ export const CAPTURE_WS = (import.meta as any).env?.VITE_KEYSIGN_CAPTURE_WS || '
 export interface IdentityOut {
   user: string | null;
   closest?: string | null;         // nearest enrolled teammate (user may be a known non-user class)
+  closest_confidence?: number;     // and how strongly, so a window the vote calls unknown can still say who
   confidence?: number;
+  declared_confidence?: number;    // P(the declared user): what "is this them" is decided on
   distance?: number | null;
   unknown?: boolean | null;
   warming_up?: boolean;            // too few keys in the window to vote yet

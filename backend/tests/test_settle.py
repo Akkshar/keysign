@@ -154,3 +154,44 @@ def test_the_settle_stops_when_the_typing_stops(monkeypatch):
     out = actions.settle_identity(dict(ALERT))
     assert out is not None and out["confident"] is False
     assert time.time() - t0 < 1.5
+
+
+def test_the_settle_names_the_nearest_teammate_when_the_vote_is_unsure(monkeypatch):
+    """The complaint that started this: the head puts the right person on top at 0.7-0.9 but the
+    five-way bar is 0.85, so it reports unknown and the alert names nobody. When the declared test
+    says this is not the owner and the nearest teammate is well ahead, the settle says who."""
+    monkeypatch.setattr(actions, "IDENTITY_HOOK", feed([
+        {"user": "Owner", "unknown": True, "confidence": 0.62,
+         "closest": "Akshaj", "closest_confidence": 0.78, "matches_declared": False},
+        {"user": "Owner", "unknown": True, "confidence": 0.66,
+         "closest": "Akshaj", "closest_confidence": 0.83, "matches_declared": False},
+        {"user": "Owner", "unknown": True, "confidence": 0.70,
+         "closest": "Akshaj", "closest_confidence": 0.91, "matches_declared": False},
+    ]))
+    out = actions.settle_identity(dict(ALERT))
+    assert out["confident"] is True and out["user"] == "Akshaj"
+    assert out["sure"] is False          # named, but not by the five-way vote's own bar
+    d = actions.decide({**ALERT, "identity_settled": out}, None)
+    assert d["lock"] is True and "Akshaj" in d["why"]
+
+
+def test_a_weak_closest_is_not_enough_to_name_anybody(monkeypatch):
+    """Below the bar the nearest teammate is a coin toss, and naming one would be worse than
+    saying nothing."""
+    monkeypatch.setattr(actions, "IDENTITY_HOOK", feed([
+        {"user": "Owner", "unknown": True, "confidence": 0.4,
+         "closest": "Akshaj", "closest_confidence": 0.33, "matches_declared": False},
+    ]))
+    out = actions.settle_identity(dict(ALERT))
+    assert out is not None and out["confident"] is False
+
+
+def test_the_owner_is_never_named_as_the_intruder_by_the_closest_rule(monkeypatch):
+    """`closest` is the nearest enrolled teammate, which on the owner's own odd window is the
+    owner. That must not be read as somebody else being at the keyboard."""
+    monkeypatch.setattr(actions, "IDENTITY_HOOK", feed([
+        {"user": "Owner", "unknown": True, "confidence": 0.6,
+         "closest": "Owner", "closest_confidence": 0.9, "matches_declared": False},
+    ]))
+    out = actions.settle_identity(dict(ALERT))
+    assert out is not None and out["confident"] is False

@@ -86,6 +86,10 @@ IDENTITY_SETTLE_S = float(os.environ.get("KEYSIGN_IDENTITY_SETTLE_S", "6.0"))
 IDENTITY_POLL_S = 0.4
 IDENTITY_GRACE_S = 1.0       # a live alert's own tick is already on the session, so nothing at all
                              # within this long means there is no session to wait for: give up
+CLOSEST_MIN = 0.60           # how far ahead the nearest enrolled teammate has to be before the settle
+                             # will name them on a window the five-way vote calls unknown. The vote's
+                             # own bar stays at 0.85 (backend/heads.UNKNOWN_CONF) because that is what
+                             # keeps somebody with no class of their own from being shown as a teammate.
 IDENTITY_QUIET_S = 1.5       # ticks arrive every 500 ms while somebody types. This long without a new
                              # one means they stopped, so no better read is coming: decide on what we have
                              # rather than holding the lock for the full settle
@@ -266,11 +270,28 @@ def decide(alert: dict, verdict: dict | None) -> dict:
                     "why": f"typing settled on {settled.get('user')} at "
                            f"{float(settled.get('confidence') or 0):.2f} over {settled.get('reads')} windows; "
                            f"{why}, so no lock"}
+
         named = settled.get("user") if settled.get("confident") else alert.get("identity")
         named_other = bool(named) and named != alert.get("user")
         why = (f"typing identified as {named}" if named_other else "typing did not match the owner") + f"; {why}"
         return {"kind": "intruder", "push": True, "lock": True, "images": True, "why": why}
     return {"kind": "duress", "push": True, "lock": False, "images": False, "why": f"typing far off under load; {why}"}
+
+
+def _reading(idn: dict, declared: str | None) -> tuple[str | None, float, bool]:
+    """
+    (name, confidence, sure) for one identity read, or (None, 0, False) if it says nothing.
+    `sure` is the five-way vote's own verdict; a name without it is the nearest enrolled
+    teammate on a window that says it is not the declared user.
+    """
+    if not idn or idn.get("warming_up"):
+        return None, 0.0, False
+    if not idn.get("unknown") and idn.get("user"):
+        return idn["user"], float(idn.get("confidence") or 0.0), True
+    closest, cp = idn.get("closest"), float(idn.get("closest_confidence") or 0.0)
+    if idn.get("matches_declared") is False and closest and closest != declared and cp >= CLOSEST_MIN:
+        return closest, cp, False
+    return None, 0.0, False
 
 
 def settle_identity(alert: dict, seconds: float | None = None) -> dict | None:
@@ -283,6 +304,7 @@ def settle_identity(alert: dict, seconds: float | None = None) -> dict | None:
     bad window. Returns None if there is no hook (plain backend, tests) or no session.
     """
     sid = alert.get("session")
+    declared = alert.get("user")
     if IDENTITY_HOOK is None or not sid:
         return None
     started = time.time()
@@ -303,23 +325,27 @@ def settle_identity(alert: dict, seconds: float | None = None) -> dict | None:
             last_ts = idn.get("ts")
             last_new = time.time()
             reads.append(idn)
-            confident = [r for r in reads if not r.get("unknown") and r.get("user")]
-            # three agreeing confident reads is enough; stop early and let the lock proceed
-            if len(confident) >= 3 and len({r["user"] for r in confident[-3:]}) == 1:
+            named = [_reading(r, declared) for r in reads]
+            named = [x for x in named if x[0]]
+            # three agreeing reads is enough; stop early and let the decision proceed
+            if len(named) >= 3 and len({n for n, _, _ in named[-3:]}) == 1:
                 break
         time.sleep(IDENTITY_POLL_S)
     if not reads:
         return None
-    confident = [r for r in reads if not r.get("unknown") and r.get("user")]
-    if confident:
-        names = [r["user"] for r in confident]
+    named = [x for x in (_reading(r, declared) for r in reads) if x[0]]
+    if named:
+        names = [n for n, _, _ in named]
         winner = max(set(names), key=names.count)
-        best = max((r for r in confident if r["user"] == winner), key=lambda r: r.get("confidence") or 0)
-        return {"user": winner, "confidence": best.get("confidence"), "confident": True,
-                "reads": len(reads), "agreed": names.count(winner)}
+        mine = [x for x in named if x[0] == winner]
+        best = max(mine, key=lambda x: x[1])
+        return {"user": winner, "confidence": round(best[1], 3), "confident": True,
+                "sure": any(sure for _, _, sure in mine),      # did the five-way vote itself call it
+                "reads": len(reads), "agreed": len(mine)}
     last = reads[-1]
-    return {"user": last.get("user"), "confidence": last.get("confidence"), "confident": False,
-            "reads": len(reads), "agreed": 0}
+    return {"user": last.get("closest") or last.get("user"),
+            "confidence": last.get("closest_confidence") or last.get("confidence"),
+            "confident": False, "sure": False, "reads": len(reads), "agreed": 0}
 
 
 def should_lock(alert: dict, verdict: dict | None) -> tuple[bool, str]:

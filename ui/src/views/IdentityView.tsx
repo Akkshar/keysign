@@ -27,9 +27,16 @@ export const IdentityView: React.FC = () => {
   const distance = tick?.distance ?? null;
   const baselineUser = tick?.baseline?.user || declared;
 
+  const closest = idn?.closest || null;
+  const closestP = typeof idn?.closest_confidence === 'number' ? idn.closest_confidence : null;
+  // The five-way vote needs 0.85 to be safe against somebody with no class of their own, so on a
+  // live window it often says "unknown" while the right person sits on top at 0.7-0.9. The
+  // declared test answers "is this the owner" on its own, and it is the one the swap turns on,
+  // so a confident no beats an unsure who.
   const mode: Mode = !live.connected ? 'offline'
     : !tick?.features ? 'idle'
     : idn?.warming_up ? 'warming'
+    : idn && idn.matches_declared === false && closest && closest !== declared ? 'mismatch'
     : idn?.unknown ? 'unknown'
     : idn && idn.matches_declared === false ? 'mismatch'
     : 'match';
@@ -39,6 +46,7 @@ export const IdentityView: React.FC = () => {
     : mode === 'idle' ? 'No one typing'
     : mode === 'warming' ? 'Identifying'
     : mode === 'unknown' ? 'Unknown'
+    : mode === 'mismatch' ? `Not ${titleCase(declared)}`
     : titleCase(detected || declared || 'Unknown');
 
   const headlineClass =
@@ -52,7 +60,10 @@ export const IdentityView: React.FC = () => {
     : mode === 'idle' ? 'Type anywhere in this window. Timings go to the backend on this machine, characters do not.'
     : mode === 'warming' ? `Keep typing. ${tick?.n_keys ?? 0} keys in the window so far.`
     : mode === 'unknown' ? `Does not match anyone enrolled${idn?.closest ? ` · closest is ${titleCase(idn.closest)}` : ''}.`
-    : mode === 'mismatch' ? `Typing under ${titleCase(declared)}'s name, but the rhythm is ${titleCase(detected || '')}'s.`
+    : mode === 'mismatch'
+      ? `Typing under ${titleCase(declared)}'s name. The rhythm reads as ${titleCase(closest || detected || '')}`
+        + (closestP != null ? ` (${Math.round(closestP * 100)}%)` : '')
+        + (idn?.unknown ? ', though not firmly enough to swear to it.' : '.')
     : `Matches the declared user, ${titleCase(declared)}.`;
 
   const probs = Object.entries(idn?.probs || {})
