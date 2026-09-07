@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { useBiometrics } from '../../context/BiometricsContext';
-import { HeaderControls } from './Header';
+import { HeaderControls } from './HeaderControls';
 import { DetectionArea } from '../../types/biometrics';
 
 /**
@@ -10,7 +10,7 @@ import { DetectionArea } from '../../types/biometrics';
  * Theirs scrolls one long page to section anchors; ours switches views, so the tabs set the
  * active area instead. The seven sections a demo actually walks through sit in the bar and
  * the rest live under "More", so nothing became unreachable. The live controls to the right
- * are the same component the sidebar header used, not a copy: the backend pill, Reset, the
+ * live in HeaderControls, not a copy of the old header: the backend pill, Reset, the
  * theme toggle and whoever the machine is measuring against all have to keep working.
  */
 

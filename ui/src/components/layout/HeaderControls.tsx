@@ -1,59 +1,9 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useBiometrics } from '../../context/BiometricsContext';
 import { useTheme } from '../../context/ThemeContext';
 import { RhythmStrip } from '../common/RhythmStrip';
 import { useAuth } from '../../context/AuthContext';
-
-export const Header: React.FC = () => {
-  const { activeArea, isTyping, live, setActiveArea } = useBiometrics();
-  const { theme, toggleTheme } = useTheme();
-  const auth = useAuth();
-
-  const getAreaLabel = () => {
-    switch (activeArea) {
-      case 'introduction': return 'How it works';
-      case 'overview': return 'Overview';
-      case 'health-signals': return 'Health Signals';
-      case 'monitoring': return 'Live Monitoring';
-      case 'identity': return 'Identity';
-      case 'state': return 'State';
-      case 'threats': return 'Threats';
-      case 'drift': return 'Drift';
-      case 'history': return 'History & Trends';
-      case 'privacy': return 'Privacy & Architecture';
-      case 'settings': return 'Settings';
-      default: return 'Overview';
-    }
-  };
-
-  const initials = (live.declaredUser || '?').split(/\s+/).map((s) => s[0]).join('').slice(0, 2).toUpperCase();
-
-  return (
-    <header className="fixed top-0 left-64 right-0 h-16 bg-white/40 dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/60 z-40 flex items-center justify-between px-8 lg:px-12 theme-transition select-none">
-      {/* Left: Breadcrumbs */}
-      <div className="flex items-center gap-2">
-        <span className="font-serif font-medium text-slate-900 dark:text-slate-100 text-sm">KeySign</span>
-        <span className="material-symbols-outlined text-[14px] text-slate-400">chevron_right</span>
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={activeArea}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 6 }}
-            transition={{ duration: 0.18 }}
-            className="text-slate-600 dark:text-slate-400 text-xs font-medium"
-          >
-            {getAreaLabel()}
-          </motion.span>
-        </AnimatePresence>
-      </div>
-
-      <HeaderControls />
-    </header>
-  );
-};
-
 
 /**
  * The live controls: the rhythm strip, the backend pill, Reset, the theme toggle and whoever
