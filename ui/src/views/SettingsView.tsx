@@ -18,7 +18,7 @@ export const SettingsView: React.FC = () => {
       <div className="space-y-2">
         <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">Settings</h1>
         <p className="font-body text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
-          Three things this dashboard can change. Everything else is a constant in the backend and is listed below
+          Four things this dashboard can change. Everything else is a constant in the backend and is listed below
           so you know where to look.
         </p>
       </div>
