@@ -149,6 +149,15 @@ two seconds:
 - Threats view: Caution at once, then **Alert · intruder** after about six
   windows (~3 s) of identity naming B while the declared user is still A
   (the first seconds of any session never count, so B must keep typing).
+- **B must keep typing steadily, and this is why.** Identity is only as good as
+  the window is full: measured across every recording on this laptop, a window
+  with 20-29 keys gives the classifier a median confidence of 0.79 and the head
+  calls it "unknown" 58% of the time, while one with 50-69 keys gives 0.98 and
+  16%. Hunt-and-peck through the swap and the alert still fires on distance, but
+  it names nobody. A steady sentence is what makes it say "Shourya" out loud.
+  The alert now waits a moment for that name (median 2 s, backend/actions.
+  settle_identity), so a couple of seconds of continuous typing after the swap
+  is what puts a name on the phone.
   Then, if "Photo on intruder alert" is on: the camera opens for one frame,
   the backend checks it against A's enrolled face, and B's face plus a
   screen snapshot go to the phone because it is not A. The Threats log
