@@ -264,7 +264,7 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [baselineDoc, setBaselineDoc] = useState<BaselineDoc | null>(null);
   const captureRef = useRef<CaptureStream | null>(null);
   const declaredRef = useRef(declaredUser);
-  const lastAlerts = useRef(0);
+  const lastAlertTs = useRef<number | null>(null);   // the backend's per-session counter resets on Reset; the timestamp doesn't
   // ---- webcam frame on intruder alerts (opt-in, Settings) ----
   const camRef = useRef<WebcamSnap | null>(null);
   const [photoOnIntruder, setPhotoOnIntruderState] = useState<boolean>(() => {
@@ -320,12 +320,13 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setLiveJitter(dv.jitter);
       setEventsPerSec(dv.eventsPerSec);
       setTerminalLogs((prev) => [...prev.slice(-15), dv.logLine]);
-      if (dv.alertsTotal > lastAlerts.current) {
-        lastAlerts.current = dv.alertsTotal;
+      const th = m.heads?.threat;
+      const alertTs = th?.last_alert?.ts ?? null;
+      if (alertTs != null && alertTs !== lastAlertTs.current) {
+        lastAlertTs.current = alertTs;
         setDuressModalOpen(true);
-        const th = m.heads?.threat;
-        if (photoRef.current && th?.kind === 'intruder' && th.last_alert?.ts) {
-          const ts = th.last_alert.ts;
+        if (photoRef.current && th?.kind === 'intruder') {
+          const ts = alertTs;
           const cam = camRef.current ?? (camRef.current = new WebcamSnap());
           cam.snap().then((blob) => blob && postAlertPhoto(ts, m.session, blob))
             .then((r) => { if (r && r.ok && r.photo) setLastPhoto(r.photo); })
