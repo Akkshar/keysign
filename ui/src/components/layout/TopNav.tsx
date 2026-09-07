@@ -51,15 +51,15 @@ export const TopNav: React.FC = () => {
       onClick={() => go(item.id)}
       className={`relative px-2.5 py-1.5 rounded-md text-[12.5px] whitespace-nowrap transition-colors ${
         activeArea === item.id
-          ? 'text-slate-900 dark:text-slate-100 font-medium'
-          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+          ? 'text-on-surface font-medium'
+          : 'text-on-surface-variant hover:text-on-surface'
       }`}
     >
       {activeArea === item.id && (
         <motion.span
           layoutId="topnav-active"
           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-          className="absolute inset-0 rounded-md bg-slate-900/[0.06] dark:bg-white/[0.08]"
+          className="absolute inset-0 rounded-md bg-on-surface/[0.07]"
         />
       )}
       <span className="relative">{item.label}</span>
@@ -67,12 +67,12 @@ export const TopNav: React.FC = () => {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-slate-200/70 dark:border-slate-800/70 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md select-none theme-transition">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-outline-variant/70 bg-surface/85 backdrop-blur-md select-none theme-transition">
       <div className="max-w-[1600px] mx-auto pl-5 pr-4 lg:pl-8 h-16 flex items-center gap-4">
         {/* Brand */}
         <button type="button" onClick={() => go('introduction')} className="flex items-baseline gap-2 shrink-0 text-left">
-          <span className="font-serif text-xl font-medium tracking-tight text-slate-900 dark:text-slate-100">KeySign</span>
-          <span className="hidden 2xl:inline font-serif italic text-[11px] text-slate-400">your typing tells a bigger story</span>
+          <span className="font-serif text-xl font-medium tracking-tight text-on-surface">KeySign</span>
+          <span className="hidden 2xl:inline font-serif italic text-[11px] text-outline">your typing tells a bigger story</span>
         </button>
 
         {/* Sections */}
@@ -83,8 +83,8 @@ export const TopNav: React.FC = () => {
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
               className={`px-3 py-1.5 rounded-md text-[13px] whitespace-nowrap transition-colors flex items-center gap-1 ${
-                inMore ? 'text-slate-900 dark:text-slate-100 font-medium bg-slate-900/[0.06] dark:bg-white/[0.08]'
-                       : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                inMore ? 'text-on-surface font-medium bg-on-surface/[0.07]'
+                       : 'text-on-surface-variant hover:text-on-surface'
               }`}
               aria-expanded={moreOpen}
             >
@@ -100,7 +100,7 @@ export const TopNav: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200/80 dark:border-slate-700/70 bg-white dark:bg-slate-900 shadow-lg p-1.5 z-10"
+                    className="absolute right-0 mt-2 w-56 rounded-xl border border-outline-variant/80 bg-surface-container-lowest shadow-lg p-1.5 z-10"
                   >
                     {MORE.map((m) => (
                       <button
@@ -109,8 +109,8 @@ export const TopNav: React.FC = () => {
                         onClick={() => go(m.id)}
                         className={`w-full text-left px-3 py-2 rounded-lg text-[13px] transition-colors ${
                           activeArea === m.id
-                            ? 'bg-slate-900/[0.06] dark:bg-white/[0.08] text-slate-900 dark:text-slate-100 font-medium'
-                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-on-surface/[0.07] text-on-surface font-medium'
+                            : 'text-on-surface-variant hover:bg-surface-container'
                         }`}
                       >
                         {m.label}

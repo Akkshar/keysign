@@ -118,7 +118,7 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-body theme-transition flex relative overflow-x-hidden">
+    <div className="min-h-screen bg-background text-on-background font-body theme-transition flex relative overflow-x-hidden">
       {/* Ambient layer, pointer-events off so nothing under it changes. The Galaxy shader runs
           only where no other WebGL does: Live Monitoring already draws the 3D typewriter, and two
           contexts on one page cost frames on the demo laptop. Falling keys are canvas 2D and cheap
