@@ -870,7 +870,8 @@ def main() -> int:
             restore = {"lock_on_intruder": settings_before.get("lock_on_intruder", True),
                        "toast_on_alert": settings_before.get("toast_on_alert", True),
                        "photo_on_intruder": settings_before.get("photo_on_intruder", True),
-                       "declared_user": settings_before.get("declared_user", "")}
+                       "declared_user": settings_before.get("declared_user", ""),
+                       "signin_browser": settings_before.get("signin_browser", "default")}
             put("/api/settings", restore)
             print("   settings back to " + json.dumps(restore))
         except Exception as e:
