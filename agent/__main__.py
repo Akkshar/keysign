@@ -172,7 +172,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     icon = pystray.Icon("KeySign", make_icon(), "KeySign · on-device typing signature", menu)
     icon_ref.append(icon)
-    icon.run_detached()
+    try:
+        icon.run_detached()
+        log.info("tray icon up. On Windows 11 new icons sit behind the ^ chevron by the clock until you drag them out; "
+                 "the menu has Open KeySign / Pause capture / Quit. Stop from a terminal with: uv run python -m agent --quit")
+    except Exception as e:
+        log.warning("tray icon failed (%s); the app still runs. Stop it with: uv run python -m agent --quit", e)
 
     # ---- window (main thread) ----
     if a.no_window or a.browser:
