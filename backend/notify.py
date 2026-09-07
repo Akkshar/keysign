@@ -100,6 +100,15 @@ def recent(n: int = 20, path: Path | str | None = None, photo_dir: Path | str | 
             a["face"] = json.loads(verdict.read_text(encoding="utf-8")) if verdict.exists() else None
         except (OSError, json.JSONDecodeError):
             a["face"] = None
+        # The row was written the moment the alert fired, which on a thin window is often
+        # before the classifier is sure. If it settled afterwards, show that read instead and
+        # keep the first guess beside it (backend/actions.settle_identity).
+        st = (a.get("face") or {}).get("identity_settled") or {}
+        if st.get("confident") and st.get("user"):
+            a["identity_at_alert"] = a.get("identity")
+            a["identity"] = st["user"]
+            a["identity_confidence"] = st.get("confidence")
+            a["identity_settled"] = st
         out.append(a)
     return out
 
@@ -156,7 +165,8 @@ def push_alert(alert: dict, why: str = "") -> dict:
 
 
 def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str | None = None,
-                  kind: str | None = None, channel: str | None = None, sent: bool | None = None) -> None:
+                  kind: str | None = None, channel: str | None = None, sent: bool | None = None,
+                  settled: dict | None = None) -> None:
     """
     Write the final decision next to the alert's photo verdict so the log can show it:
     `pushed` is what the decision said to do, `sent` whether a phone channel actually took it
@@ -171,6 +181,8 @@ def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str 
         cur = {}
     cur.update({"pushed": bool(pushed), "reason": reason, "final_kind": kind, "decided_at": time.time(),
                 "channel": channel or channel_name(), "sent": bool(sent)})
+    if settled:
+        cur["identity_settled"] = settled
     p.write_text(json.dumps(cur), encoding="utf-8")
 
 
@@ -187,7 +199,9 @@ def _post(alert: dict) -> None:
     kind = alert.get("kind", "alert")
     title = "KeySign: possible intruder" if kind == "intruder" else "KeySign: possible duress"
     load = alert.get("load")
-    body = (f"{alert.get('user', '?')} · {kind} · {float(alert.get('distance') or 0):.1f}σ from baseline for "
+    who = alert.get("identity")
+    named = f" · typing reads as {who}" if who and who != alert.get("user") else ""
+    body = (f"{alert.get('user', '?')} · {kind}{named} · {float(alert.get('distance') or 0):.1f}σ from baseline for "
             f"{alert.get('sustained_ticks', 0)} ticks"
             + (f" · load {round(float(load) * 100)}/100" if isinstance(load, (int, float)) else "")
             + f" · {time.strftime('%H:%M:%S', time.localtime(alert.get('ts', time.time())))}"

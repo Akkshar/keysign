@@ -64,6 +64,9 @@ def test_alert_actions_webcam_fallback_then_lock(monkeypatch, tmp_path):
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
     monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
+    # these alerts have no live session behind them, and the identity settle is covered in
+    # test_settle.py; with no hook it returns at once and the timings below stay honest
+    monkeypatch.setattr(actions, "IDENTITY_HOOK", None)
     calls = []
     monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
     monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)
@@ -278,6 +281,9 @@ def test_duress_with_a_stranger_in_frame_becomes_an_intruder_without_the_lock(mo
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
     monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
+    # these alerts have no live session behind them, and the identity settle is covered in
+    # test_settle.py; with no hook it returns at once and the timings below stay honest
+    monkeypatch.setattr(actions, "IDENTITY_HOOK", None)
     calls, pushed, toasts = [], [], []
     monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
     monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)
@@ -331,6 +337,9 @@ def test_alert_actions_do_not_lock_when_the_face_is_the_owner(monkeypatch, tmp_p
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
     monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
+    # these alerts have no live session behind them, and the identity settle is covered in
+    # test_settle.py; with no hook it returns at once and the timings below stay honest
+    monkeypatch.setattr(actions, "IDENTITY_HOOK", None)
     calls = []
     monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
     monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)
@@ -360,6 +369,9 @@ def test_a_frame_from_the_dashboard_stops_the_machine_opening_its_own_camera(mon
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 1.0)
     monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.2)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
+    # these alerts have no live session behind them, and the identity settle is covered in
+    # test_settle.py; with no hook it returns at once and the timings below stay honest
+    monkeypatch.setattr(actions, "IDENTITY_HOOK", None)
     grabs, pushed, calls = [], [], []
     monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: grabs.append("grab") or [b"\xff\xd8jpeg"])
     monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)

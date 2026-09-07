@@ -264,6 +264,31 @@ app = FastAPI(title="KeySign backend", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 sessions: dict[str, Session] = {}
+
+
+def latest_identity(session_id: str) -> dict | None:
+    """
+    The identity head's most recent output for a session, for backend/actions.settle_identity.
+    An alert fires the moment the threat clock fills, which on sparse prose windows is often
+    before the classifier is confident; actions polls this for a few seconds before deciding
+    whether to lock, so the decision is made on the best read rather than the first one.
+    """
+    s = sessions.get(session_id)
+    msg = getattr(s, "last_tick_msg", None) if s else None
+    if not msg:
+        return None
+    idn = (msg.get("heads") or {}).get("identity")
+    return {**idn, "ts": msg.get("ts")} if idn else None
+
+
+# `actions` is imported lazily elsewhere in this module (it pulls in OpenCV), so the hook is
+# registered through a small function rather than at import time.
+def _register_identity_hook() -> None:
+    from backend import actions
+    actions.IDENTITY_HOOK = latest_identity
+
+
+_register_identity_hook()
 dashboards: set[WebSocket] = set()
 _lock = asyncio.Lock()
 

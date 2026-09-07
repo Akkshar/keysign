@@ -283,6 +283,28 @@ def type_recorded(page, events: list[dict], max_keys: int = 34) -> int:
 
 
 # ---------------------------------------------------------------- cleanup
+def await_decision(prefix: str, timeout: float = 20.0) -> dict:
+    """
+    The newest alert row for our sessions, once backend/actions has finished deciding.
+    The decision waits for the identity head to settle (up to actions.IDENTITY_SETTLE_S)
+    as well as for the camera, so `decided_at` is what says the verdict file is complete.
+    """
+    deadline = time.time() + timeout
+    row: dict = {}
+    while time.time() < deadline:
+        try:
+            alerts = get("/api/alerts?n=5")["alerts"]
+        except Exception:
+            alerts = []
+        mine = [x for x in alerts if str(x.get("session", "")).startswith(prefix)]
+        if mine:
+            row = mine[-1]
+            if (row.get("face") or {}).get("decided_at"):
+                return row
+        time.sleep(0.5)
+    return row
+
+
 def cleanup(sessions: list[str], before: set | None = None) -> None:
     """
     Remove what this run created: its alerts, their photos, and every session recording that
@@ -549,11 +571,10 @@ def main() -> int:
                         card_text = card.inner_text() if card.count() else "(no card on screen)"
                         check("Intruder" in card_text, "the card says Intruder", card_text)
                         check("Not the owner" in card_text, "the card says the camera did not see the owner", card_text)
-                    alerts = get("/api/alerts?n=5")["alerts"]
-                    mine = [x for x in alerts if str(x.get("session", "")).startswith(SESSION_PREFIX)]
-                    check(bool(mine) and mine[-1]["kind"] == "intruder", "the alert log has the intruder row")
+                    row = await_decision(SESSION_PREFIX)
+                    check(bool(row) and row.get("kind") == "intruder", "the alert log has the intruder row")
                     if camera_ready:
-                        face = mine[-1].get("face") or {}
+                        face = row.get("face") or {}
                         check(face.get("final_kind") == "intruder" and face.get("pushed") is True,
                               "the log records the final call and that it was pushed", json.dumps(face)[:200])
                         check(face.get("sent") is False,
@@ -576,14 +597,14 @@ def main() -> int:
                           "with the owner's face in the frame the machine calls it duress, not an intruder",
                           json.dumps(posted)[:220])
                     check(posted.get("sent") is not True, "no image was pushed for a duress alert", json.dumps(posted)[:160])
-                    page.wait_for_timeout(1500)
+                    # the card reads the decision from /api/alerts, so wait for the decision first
+                    row = await_decision(SESSION_PREFIX)
+                    page.wait_for_timeout(2500)
                     card = page.locator('[aria-labelledby="alert-card-title"]')
                     card_text = card.inner_text() if card.count() else "(no card on screen)"
                     check("Duress" in card_text, "the card says Duress", card_text)
                     check("owner is at the keyboard" in card_text, "the card says the camera saw the owner", card_text)
-                    alerts = get("/api/alerts?n=5")["alerts"]
-                    mine = [x for x in alerts if str(x.get("session", "")).startswith(SESSION_PREFIX)]
-                    face = (mine[-1].get("face") or {}) if mine else {}
+                    face = row.get("face") or {}
                     check(face.get("final_kind") == "duress", "the log records duress as the final call", json.dumps(face)[:200])
                     check("no lock" in (face.get("reason") or "") or "under pressure" in (face.get("reason") or ""),
                           "and says why the machine was not locked", str(face.get("reason"))[:160])

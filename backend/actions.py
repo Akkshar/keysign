@@ -76,6 +76,19 @@ BURST_REUSE_S = 6.0                      # a burst this fresh is handed to the n
 
 QUIT_HOOK = None                                        # the desktop agent registers its shutdown here
 TOAST_HOOK: Callable[[str, str], None] | None = None    # the desktop agent registers icon.notify here
+IDENTITY_HOOK: Callable[[str], dict | None] | None = None   # backend/app.py: latest identity for a session id
+
+# How long an alert waits for the identity head to settle before the lock is decided. The
+# camera burst takes about this long anyway, so the two run together and it costs no delay
+# in the normal case. Measured: 11 of 25 recorded alerts gained a confident name inside ten
+# seconds, and most of those names were the owner.
+IDENTITY_SETTLE_S = float(os.environ.get("KEYSIGN_IDENTITY_SETTLE_S", "6.0"))
+IDENTITY_POLL_S = 0.4
+IDENTITY_GRACE_S = 1.0       # a live alert's own tick is already on the session, so nothing at all
+                             # within this long means there is no session to wait for: give up
+IDENTITY_QUIET_S = 1.5       # ticks arrive every 500 ms while somebody types. This long without a new
+                             # one means they stopped, so no better read is coming: decide on what we have
+                             # rather than holding the lock for the full settle
 
 
 # ---- settings ----
@@ -213,6 +226,10 @@ def decide(alert: dict, verdict: dict | None) -> dict:
     table in the module docstring. Returns {"kind", "push", "lock", "images", "why"}.
     """
     typed = alert.get("kind") or "duress"
+    settled = alert.get("identity_settled") or {}
+    # The typing named the owner, confidently, once it had enough keys. Whatever the thin
+    # window at the moment of the alert said, there is no second person in the evidence.
+    owner_by_typing = bool(settled.get("confident")) and settled.get("user") == alert.get("user")
     m = (verdict or {}).get("match")
     sim = (verdict or {}).get("similarity")
     seen = f" ({sim:.2f})" if isinstance(sim, (int, float)) else ""
@@ -241,10 +258,68 @@ def decide(alert: dict, verdict: dict | None) -> dict:
     else:
         why = verdict.get("reason") or "camera unsure"
     if typed == "intruder":
-        named_other = bool(alert.get("identity")) and alert.get("identity") != alert.get("user")
-        why = (f"typing identified as {alert.get('identity')}" if named_other else "typing did not match the owner") + f"; {why}"
+        if owner_by_typing:
+            # No camera opinion and the settled typing says the owner: this is the owner having
+            # an odd window, which is exactly the case that was locking the machine on prose.
+            # It still goes to the phone, because the distance was real; it does not lock.
+            return {"kind": "duress", "push": True, "lock": False, "images": True,
+                    "why": f"typing settled on {settled.get('user')} at "
+                           f"{float(settled.get('confidence') or 0):.2f} over {settled.get('reads')} windows; "
+                           f"{why}, so no lock"}
+        named = settled.get("user") if settled.get("confident") else alert.get("identity")
+        named_other = bool(named) and named != alert.get("user")
+        why = (f"typing identified as {named}" if named_other else "typing did not match the owner") + f"; {why}"
         return {"kind": "intruder", "push": True, "lock": True, "images": True, "why": why}
     return {"kind": "duress", "push": True, "lock": False, "images": False, "why": f"typing far off under load; {why}"}
+
+
+def settle_identity(alert: dict, seconds: float | None = None) -> dict | None:
+    """
+    Watch the session's own ticks for a few seconds and return the identity head's settled
+    read: {"user", "confidence", "confident", "reads"}. An alert is raised the moment the
+    threat clock fills, which on prose is often while the classifier is still under its
+    confidence bar and naming nobody. A few more seconds of the same typing usually
+    resolves it, and the answer decides whether this is an impostor or the owner having a
+    bad window. Returns None if there is no hook (plain backend, tests) or no session.
+    """
+    sid = alert.get("session")
+    if IDENTITY_HOOK is None or not sid:
+        return None
+    started = time.time()
+    deadline = started + (IDENTITY_SETTLE_S if seconds is None else seconds)
+    reads: list[dict] = []
+    last_ts = None
+    last_new = started
+    while time.time() < deadline:
+        if not reads and time.time() - started >= IDENTITY_GRACE_S:
+            return None                                     # no session behind this alert
+        if reads and time.time() - last_new >= IDENTITY_QUIET_S:
+            break                                           # the typing stopped; nothing more is coming
+        try:
+            idn = IDENTITY_HOOK(sid)
+        except Exception:                                   # a dead session must never break an alert
+            idn = None
+        if idn and idn.get("ts") != last_ts and not idn.get("warming_up"):
+            last_ts = idn.get("ts")
+            last_new = time.time()
+            reads.append(idn)
+            confident = [r for r in reads if not r.get("unknown") and r.get("user")]
+            # three agreeing confident reads is enough; stop early and let the lock proceed
+            if len(confident) >= 3 and len({r["user"] for r in confident[-3:]}) == 1:
+                break
+        time.sleep(IDENTITY_POLL_S)
+    if not reads:
+        return None
+    confident = [r for r in reads if not r.get("unknown") and r.get("user")]
+    if confident:
+        names = [r["user"] for r in confident]
+        winner = max(set(names), key=names.count)
+        best = max((r for r in confident if r["user"] == winner), key=lambda r: r.get("confidence") or 0)
+        return {"user": winner, "confidence": best.get("confidence"), "confident": True,
+                "reads": len(reads), "agreed": names.count(winner)}
+    last = reads[-1]
+    return {"user": last.get("user"), "confidence": last.get("confidence"), "confident": False,
+            "reads": len(reads), "agreed": 0}
 
 
 def should_lock(alert: dict, verdict: dict | None) -> tuple[bool, str]:
@@ -287,6 +362,13 @@ def on_alert(alert: dict, process_photo) -> None:
     def run():
         from backend import notify
         try:
+            # The identity poll and the camera burst are both waiting on the world, so they
+            # run together: settling costs no extra delay unless the camera is faster.
+            settled_box: dict = {}
+            settle_thread = threading.Thread(
+                target=lambda: settled_box.update(settle_identity(alert) or {}),
+                daemon=True, name="keysign-identity-settle")
+            settle_thread.start()
             verdict = None
             if cfg.get("photo_on_intruder", True):
                 verdict = await_dashboard_frame(alert)
@@ -304,6 +386,14 @@ def on_alert(alert: dict, process_photo) -> None:
                         process_photo(alert, None, source="backend-no-frame", verdict=None)
                 if verdict is None:
                     verdict = face_verdict(alert)
+            settle_thread.join(timeout=IDENTITY_SETTLE_S + 1.0)
+            if settled_box:
+                alert["identity_settled"] = dict(settled_box)
+                if settled_box.get("confident"):
+                    # the alert carries the thin window's guess; the phone should get the settled one
+                    alert["identity_at_alert"] = alert.get("identity")
+                    alert["identity"] = settled_box.get("user")
+                    alert["identity_confidence"] = settled_box.get("confidence")
             d = decide(alert, verdict)
             final = {**alert, "kind": d["kind"] or alert.get("kind"), "typed_kind": alert.get("kind")}
             res = {}
@@ -314,7 +404,8 @@ def on_alert(alert: dict, process_photo) -> None:
             else:
                 log.warning("alert on %s's session: %s; kept local", alert.get("user"), d["why"])
             notify.mark_delivery(alert, pushed=bool(d["push"]), reason=d["why"], kind=d["kind"],
-                                 channel=res.get("channel") or notify.channel(), sent=bool(res.get("sent")))
+                                 channel=res.get("channel") or notify.channel(), sent=bool(res.get("sent")),
+                                 settled=alert.get("identity_settled"))
             if d["push"]:
                 toast(*_toast_text(final, d))
             if cfg.get("lock_on_intruder") and d["lock"]:
