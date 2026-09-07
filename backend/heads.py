@@ -115,6 +115,10 @@ def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
 THREAT_WARN = 2.0            # single-tick distance for "warn"
 THREAT_ALERT = 3.0           # distance that must be sustained for "alert"
 THREAT_PERSIST = 6           # consecutive ticks (>= 3 s of typing) above THREAT_ALERT
+INTRUDER_PERSIST = 6         # or: identity disagrees with the declared user for this many consecutive
+                             # ticks while the typing is at least THREAT_WARN off. A teammate's typing
+                             # often sits at 2.3-3.4 sigma from someone else's baseline and never holds
+                             # 3.0 for six windows, while identity names them on every window.
 THREAT_MIN_KEYS = 25         # windows thinner than this can't count towards an alert: the first seconds
                              # of any session sit at distance 2-2.5 for everyone (features are noise on
                              # 8-15 keys). Replaying the team's calm samples: the old 8-key / 3-tick rule
@@ -129,17 +133,18 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         return {"level": "none", "kind": None, "reason": "no baseline for this user yet"}
     d = float(baseline.distance(features))
     n_keys = int(features.get("n_keys", 0))
-    if n_keys >= THREAT_MIN_KEYS:
-        st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
-    else:                                     # warm-up: thin windows neither count nor carry over
-        st["hist"] = []
-    sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
     others = ctx.get("heads_so_far") or {}
     idn, state = others.get("identity") or {}, others.get("state") or {}
     mismatch = bool(idn.get("unknown")) or (idn.get("user") is not None and idn.get("matches_declared") is False)
+    if n_keys >= THREAT_MIN_KEYS:
+        st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
+        st["mismatch_run"] = st.get("mismatch_run", 0) + 1 if (mismatch and d >= THREAT_WARN) else 0
+    else:                                     # warm-up: thin windows neither count nor carry over
+        st["hist"], st["mismatch_run"] = [], 0
+    sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
     kind = "intruder" if mismatch else "duress"
 
-    if sustained >= THREAT_PERSIST:
+    if sustained >= THREAT_PERSIST or st.get("mismatch_run", 0) >= INTRUDER_PERSIST:
         level = "alert"
     elif (d >= THREAT_WARN and n_keys >= THREAT_MIN_KEYS) or sustained > 0 or mismatch:
         level = "warn"                        # a thin window's distance is noise: no warn on it alone
@@ -147,7 +152,8 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         level = "ok"
 
     out = {"level": level, "kind": kind if level != "ok" else None, "distance": round(d, 2),
-           "sustained_ticks": sustained, "identity_mismatch": mismatch, "load": state.get("load"),
+           "sustained_ticks": sustained, "mismatch_ticks": st.get("mismatch_run", 0),
+           "identity_mismatch": mismatch, "load": state.get("load"),
            "warming_up": n_keys < THREAT_MIN_KEYS,
            "drivers": [[f, round(z, 2)] for f, z in baseline.explain(features, top=2)],
            "alerts_total": st["alerts"], "last_alert": st["last_alert"], "channel": notify.channel()}

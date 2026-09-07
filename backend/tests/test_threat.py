@@ -94,6 +94,24 @@ def test_kind_is_intruder_on_identity_mismatch(baseline, alert_log):
     for _ in range(heads.THREAT_PERSIST):
         out = heads.threat_head(odd_features(), baseline, ctx)
     assert out["level"] == "alert" and out["kind"] == "intruder" and out["identity_mismatch"] is True
+    assert out["mismatch_ticks"] == heads.INTRUDER_PERSIST
+
+
+def test_intruder_alerts_on_sustained_mismatch_without_3_sigma(baseline, alert_log):
+    """Someone else typing at ~2.5 sigma from the declared baseline: never over THREAT_ALERT, but
+    identity names them on every window, so the intruder clock fires on its own."""
+    mild = backend.extract_features(typed(40, flight=140, hold=75))
+    d = float(baseline.distance(mild))
+    assert heads.THREAT_WARN <= d < heads.THREAT_ALERT, d
+    ctx = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "unknown": False})
+    levels = [heads.threat_head(mild, baseline, ctx)["level"] for _ in range(heads.INTRUDER_PERSIST)]
+    assert levels[:-1] == ["warn"] * (heads.INTRUDER_PERSIST - 1) and levels[-1] == "alert"
+    assert ctx["threat"]["alerts"] == 1 and json.loads(alert_log.read_text().splitlines()[-1])["kind"] == "intruder"
+    # the same typing by the declared user is only ever a warn
+    ctx2 = ctx_with(identity={"user": "Test User", "matches_declared": True, "unknown": False})
+    for _ in range(heads.INTRUDER_PERSIST * 2):
+        out = heads.threat_head(mild, baseline, ctx2)
+    assert out["level"] == "warn" and ctx2["threat"]["alerts"] == 0
     assert json.loads(alert_log.read_text().splitlines()[-1])["kind"] == "intruder"
     # a mismatch alone (no deviation) is a warn, not an alert
     ctx2 = ctx_with(identity={"user": "Someone Else", "matches_declared": False})
