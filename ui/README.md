@@ -65,7 +65,18 @@ The app lands on Live Monitoring. The Overview's condition cards are a
 roadmap; keep the disclaimer with them.
 
 The mapping from live features to the gauge scales is in `deriveFromTick`.
-Icons are bundled locally (`material-symbols`) so the demo survives no wifi;
-the Google text fonts fall back to system fonts offline.
+
+**Type and colour.** Chillax is the interface face, Zodiak sets headings, and
+Boska is `font-display`, for the few lines set large enough to carry a
+high-contrast serif. All three are Fontshare families in `public/fonts` (the
+licence sits beside them); the mono is `@fontsource-variable/jetbrains-mono` and
+the icons are `material-symbols`. **Nothing is fetched from a CDN**, so the
+dashboard renders with the network off, which the runbook asks for and the
+privacy claim deserves. The accent is amber, caution is terracotta, good is
+emerald and bad is red. Cards are `rounded-xl` on `--surface-container-lowest`,
+which is the same paper the ported components name directly as `#fdfcf9`. If you
+add a card, use the tokens: they and the stone scale now resolve to the same
+values, and mixing a pure white card into the page is what made the Live tab
+look like two products.
 
 `dashboard/` (port 5175) is the minimal fallback dashboard with the same feed.
