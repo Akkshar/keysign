@@ -242,6 +242,18 @@ def find_face_frames(owner: str) -> tuple[Path | None, Path | None]:
 
 
 # ---------------------------------------------------------------- browser typing
+def type_sentence(page, text: str, hold_ms: int = 45, gap_ms: int = 25) -> None:
+    """Type an exact string with holds and gaps, so a calibration gets real dwell times."""
+    for ch in text:
+        try:
+            page.keyboard.down(ch)
+            time.sleep(hold_ms / 1000.0)
+            page.keyboard.up(ch)
+        except Exception:
+            pass
+        time.sleep(gap_ms / 1000.0)
+
+
 def type_recorded(page, events: list[dict], max_keys: int = 34) -> int:
     """
     Replay a recorded stream as real key events in the browser, holds and gaps included,
@@ -653,6 +665,91 @@ def main() -> int:
                 urllib.request.urlopen(urllib.request.Request(
                     BASE + "/api/accounts/e2e-handoff@example.com", method="DELETE"), timeout=5).read()
 
+            step("Calibration: a reviewer signs in and builds their own profile")
+            with guard("the calibration step"):
+                new_user = "E2E Calibration"
+                new_email = "e2e-calibration@example.com"
+                slug = "".join(c.lower() if c.isalnum() else "_" for c in new_user).strip("_")
+                base_file = DATA / "baselines" / (slug + ".json")
+                samples_file = DATA / "samples" / ("enrolled_" + slug + ".json")
+                for f in (base_file, samples_file):
+                    f.unlink(missing_ok=True)
+                # a run that stopped half-way leaves the account linked, which would send this
+                # straight past the gate
+                for path in ("/api/accounts/" + new_email, "/api/active-account"):
+                    urllib.request.urlopen(urllib.request.Request(BASE + path, method="DELETE"), timeout=5).read()
+                cal = ctx.new_page()
+                # keep the test away from the real identity model: the wizard asks for a
+                # retrain, which rewrites data/models and data/features_windows.csv
+                cal.route("**/api/enrol", lambda route: route.continue_(
+                    post_data=json.dumps({**json.loads(route.request.post_data or "{}"), "train": False})))
+                cal.add_init_script("window.pywebview = { api: {} };")
+                urllib.request.urlopen(urllib.request.Request(
+                    BASE + "/api/active-account", method="POST",
+                    data=json.dumps({"email": new_email, "name": new_user}).encode(),
+                    headers={"Content-Type": "application/json"}), timeout=5).read()
+                cal.goto(PAGE)
+                cal.wait_for_timeout(3500)
+                check("Set up my typing profile" in cal.inner_text("body"),
+                      "a new account is offered a profile of its own, not a list of strangers",
+                      cal.inner_text("body")[:200])
+                cal.get_by_role("button", name="Set up my typing profile").click()
+                cal.wait_for_timeout(700)
+                cal.get_by_role("button", name="Start calibration").click()
+                cal.wait_for_timeout(700)
+                mode = get("/api/enrol/status", timeout=5)
+                check(mode.get("calibrating") is True,
+                      "the machine holds its alerts while someone calibrates", json.dumps(mode))
+                sentences = [
+                    "The morning dew settles quietly across the forest moss.",
+                    "Breathe steadily and allow each finger to find its natural rhythm.",
+                    "Gentle ocean waves lap against the sandy shore under a warm sun.",
+                    "Quiet footsteps wander slowly along the shaded mountain path.",
+                    "Soft ambient sunlight filters through the tall library windows.",
+                    "Immediately dispatch emergency response units to all primary sectors!",
+                    "Critical system failure detected in auxiliary cooling line seven!",
+                    "Execute the emergency manual override sequence before timeout expires!",
+                    "High priority intruder alarm triggered across the server facility perimeter!",
+                    "Accelerate data recovery immediately to prevent catastrophic packet loss!",
+                ]
+                t_cal = time.time()
+                for line in sentences:
+                    type_sentence(cal, line, hold_ms=40, gap_ms=18)
+                    cal.wait_for_timeout(350)
+                print("   typed ten sentences in %.0fs" % (time.time() - t_cal))
+                cal.wait_for_timeout(4000)
+                body_cal = cal.inner_text("body")
+                check("baseline is built" in body_cal, "the wizard reports a built baseline", body_cal[:300])
+                check(base_file.exists(), "the baseline file is on disk", str(base_file))
+                if base_file.exists():
+                    doc = json.loads(base_file.read_text(encoding="utf-8"))
+                    check(doc["n_samples"] >= 3 and doc["user"] == new_user,
+                          "it was built from the calm sentences",
+                          json.dumps({k: doc.get(k) for k in ("user", "n_samples")}))
+                    check(bool(doc.get("state")), "and carries this person's own load cut-offs",
+                          json.dumps(doc.get("state")))
+                check(samples_file.exists(), "the samples are kept for a later rebuild")
+                listed = [u["user"] for u in get("/api/users")["baselines"]]
+                check(new_user in listed, "the backend lists the new profile", str(listed))
+                declared = get("/api/settings")["declared_user"]
+                check(declared == new_user, "and measures against them from now on", declared)
+                cal.get_by_role("button", name="Open the dashboard").click()
+                cal.wait_for_timeout(2500)
+                check("The live lab" in cal.inner_text("body") or "Live" in cal.inner_text("body"),
+                      "the dashboard opens for the new person", cal.inner_text("body")[:200])
+                after = get("/api/enrol/status", timeout=5)
+                check(after.get("calibrating") is False, "alerts are watched again once it is done",
+                      json.dumps(after))
+                cal.screenshot(path=str(OUT / "e2e-10-calibration.png"))
+                cal.close()
+
+            with guard("cleaning up after the calibration"):
+                for f in (DATA / "baselines" / "e2e_calibration.json",
+                          DATA / "samples" / "enrolled_e2e_calibration.json"):
+                    f.unlink(missing_ok=True)
+                for path in ("/api/accounts/e2e-calibration@example.com", "/api/active-account"):
+                    urllib.request.urlopen(urllib.request.Request(BASE + path, method="DELETE"), timeout=5).read()
+
             step("Recordings and console")
             with guard("the recordings and console step"):
                 recs = list((DATA / "sessions").glob(f"*_{SESSION_PREFIX}*.jsonl"))
@@ -763,7 +860,8 @@ def main() -> int:
                     time.sleep(0.25)
             restore = {"lock_on_intruder": settings_before.get("lock_on_intruder", True),
                        "toast_on_alert": settings_before.get("toast_on_alert", True),
-                       "photo_on_intruder": settings_before.get("photo_on_intruder", True)}
+                       "photo_on_intruder": settings_before.get("photo_on_intruder", True),
+                       "declared_user": settings_before.get("declared_user", "")}
             put("/api/settings", restore)
             print("   settings back to " + json.dumps(restore))
         except Exception as e:

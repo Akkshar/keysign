@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { CalibrationWizard } from '../components/onboarding/CalibrationWizard';
 import { useBiometrics } from '../context/BiometricsContext';
 
 /**
@@ -149,6 +150,7 @@ const SignInForm: React.FC = () => {
 const LinkProfile: React.FC = () => {
   const { account, linkProfile, signOut, error, busy } = useAuth();
   const { live } = useBiometrics();
+  const [calibrating, setCalibrating] = useState(false);
   // The machine already measures against someone; offer that first so this is one click.
   const suggested = live.declaredUser && live.users.some((u) => u.user === live.declaredUser)
     ? live.declaredUser
@@ -158,11 +160,24 @@ const LinkProfile: React.FC = () => {
   const [newName, setNewName] = useState<string>(account?.name || '');
   const isNew = choice === '__new__';
   const name = isNew ? newName.trim() : choice;
+  // Nobody signing in for the first time has a profile here: offer to build one rather than
+  // asking them to pick from a list of strangers. (After the hooks above: an early return
+  // before them changes the hook count and React unmounts the tree.)
+  if (calibrating) return <CalibrationWizard onCancel={() => setCalibrating(false)} />;
   return (
     <div className="space-y-4">
       <p className="text-sm text-on-surface">
         Signed in as <span className="font-medium">{account?.email}</span>.
       </p>
+      <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
+        <p className="text-sm text-on-surface">New here? Type ten sentences and KeySign learns your rhythm.</p>
+        <button type="button" onClick={() => setCalibrating(true)}
+          className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium">
+          Set up my typing profile
+        </button>
+        <p className="text-[11px] text-on-surface-variant">About two minutes. Timings only; the letters are never stored.</p>
+      </div>
+      <p className="text-xs text-on-surface-variant">Or pick a profile that is already on this machine:</p>
       {!live.connected && (
         <p className="text-xs text-tertiary">The local backend is not running, so the enrolled profiles cannot be listed yet. Start it with <code className="font-telemetry">uv run python -m backend</code>.</p>
       )}

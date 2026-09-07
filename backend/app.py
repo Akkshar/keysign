@@ -238,6 +238,9 @@ def _maybe_alert_actions(session: Session, tick: dict) -> None:
     the machine never locked.
     """
     try:
+        from backend import enrol as enrol_mod
+        if enrol_mod.is_calibrating():
+            return                       # someone is typing the calibration sentences on purpose
         th = (tick.get("heads") or {}).get("threat") or {}
         la = th.get("last_alert") or {}
         ts = float(la.get("ts") or 0)
@@ -585,6 +588,75 @@ def signin_in_browser(request: Request, browser: str = "default"):
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e), **out}, status_code=500)
     return {"ok": bool(opened), **out}
+
+
+# ---------------------------------------------------------------------------
+# Enrolling someone from the dashboard: the calibration wizard posts ten typed
+# sentences and gets back a working profile. See backend/enrol.py.
+# ---------------------------------------------------------------------------
+MAX_ENROL_BYTES = 4_000_000
+
+
+@app.post("/api/enrol")
+async def enrol_api(request: Request):
+    """
+    Body: {"user": "Their Name", "email": "optional@example.com",
+           "samples": [{"condition": "calm"|"stress", "prompt": "...",
+                        "events": [{"type": "down"|"up", "key": "a", "code": "KeyA", "t": 12.3}, ...]}, ...]}
+
+    Builds their baseline and State cut-offs now, retrains the identity model in the
+    background, links the account if an email is given, and measures against them from
+    the next keystroke on. Returns the numbers the wizard shows.
+    """
+    from backend import actions, enrol as enrol_mod
+    raw = await request.body()
+    if len(raw) > MAX_ENROL_BYTES:
+        return JSONResponse({"error": "that is more typing than a calibration needs"}, status_code=413)
+    try:
+        body = json.loads(raw)
+    except json.JSONDecodeError:
+        return JSONResponse({"error": "expected JSON"}, status_code=400)
+    user = str((body or {}).get("user") or "").strip()
+    email = str((body or {}).get("email") or "").strip().lower()
+    samples = (body or {}).get("samples") or []
+    if not isinstance(samples, list) or not samples:
+        return JSONResponse({"error": "no calibration samples"}, status_code=400)
+    try:
+        summary = await run_in_threadpool(enrol_mod.enrol, user, samples,
+                                          bool((body or {}).get("train", True)))
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as e:
+        log.exception("enrolment failed")
+        return JSONResponse({"error": f"could not build the profile: {e}"}, status_code=500)
+    _baseline_cache.pop(user, None)                      # score against it from the next tick
+    if email and "@" in email:
+        d = _accounts()
+        d[email] = {"user": user, "linked_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
+        _save_accounts(d)
+        summary["account"] = _account_view(email, d[email])
+    actions.update_settings({"declared_user": user})     # the agent measures against them now
+    return {"ok": True, **summary, "identity": enrol_mod.status()}
+
+
+@app.post("/api/enrol/mode")
+async def enrol_mode(request: Request):
+    """
+    Body: {"on": true|false}. While calibration is on, alerts are still raised and shown but
+    the machine does not act on them: no camera, no push, no lock. Someone typing the
+    calibration sentences under the last person's name is not an intruder.
+    """
+    from backend import enrol as enrol_mod
+    body = await request.json()
+    until = enrol_mod.set_calibrating(bool((body or {}).get("on")))
+    return {"calibrating": enrol_mod.is_calibrating(), "until": until}
+
+
+@app.get("/api/enrol/status")
+def enrol_status():
+    """How the background identity retraining is going (see backend/enrol.py)."""
+    from backend import enrol as enrol_mod
+    return {**enrol_mod.status(), "calibrating": enrol_mod.is_calibrating()}
 
 
 @app.get("/api/faces/{user}")

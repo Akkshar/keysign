@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
 import { clearFaceSamples, enrolFaceFromMachineCamera, fetchFaceStatus } from '../lib/webcam';
 import { fetchAgent, fetchSettings, updateSettings, type AgentStatus, type AppSettings } from '../lib/keysign';
+import { fetchEnrolStatus, type EnrolStatus } from '../lib/enrol';
+import { CalibrationWizard } from '../components/onboarding/CalibrationWizard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Reveal } from '../components/motion/Reveal';
@@ -96,6 +98,8 @@ export const SettingsView: React.FC = () => {
           </button>
         </div>
 
+        <Recalibrate />
+
         <FaceEnrolment />
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
@@ -136,6 +140,48 @@ export const SettingsView: React.FC = () => {
         </dl>
       </section>
     </Reveal>
+  );
+};
+
+
+/** Calibration, from inside the dashboard: build a profile, or tighten the one you have. */
+const Recalibrate: React.FC = () => {
+  const { live } = useBiometrics();
+  const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState<EnrolStatus | null>(null);
+  useEffect(() => {
+    if (!live.connected) return;
+    let stop = false;
+    const poll = () => { fetchEnrolStatus().then((s) => { if (!stop) setStatus(s); }).catch(() => {}); };
+    poll();
+    const id = setInterval(poll, 5000);
+    return () => { stop = true; clearInterval(id); };
+  }, [live.connected]);
+  if (open) {
+    return (
+      <div className="pt-6 border-t border-outline-variant/40">
+        <CalibrationWizard onCancel={() => setOpen(false)} onDone={() => setOpen(false)} />
+      </div>
+    );
+  }
+  const info = live.users.find((u) => u.user === live.declaredUser);
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+      <div>
+        <span className="text-sm font-medium text-on-surface">Your typing baseline</span>
+        <p className="text-xs text-on-surface-variant">
+          {info ? `${info.user}: ${info.n_samples} samples on this machine.` : 'No baseline for the declared user yet.'}
+          {' '}Ten sentences, about two minutes: five calm ones set the centre every head measures against, five
+          at speed set your high-load cut-off. Calibrating again adds to what is there and tightens it.
+          {status?.state === 'training' ? ' The identity model is retraining right now.' : ''}
+          {status?.state === 'error' ? ` Last run: ${status.message}` : ''}
+        </p>
+      </div>
+      <button type="button" onClick={() => setOpen(true)}
+        className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors shrink-0">
+        {info ? 'Calibrate again' : 'Calibrate now'}
+      </button>
+    </div>
   );
 };
 
