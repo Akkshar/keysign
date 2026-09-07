@@ -74,20 +74,42 @@ def restore(name: str, data: Path | str = DATA, backup_dir: Path | str | None = 
         raise FileNotFoundError(f"no snapshot named {name!r}; try: {', '.join(p.name for p in snaps[-5:])}")
     if keep_current:
         save("pre-restore", data, backup_dir)
+    # File-level sync, never removing a folder: on Windows a folder the backend or
+    # OneDrive holds open cannot be deleted, and a half-done rmtree leaves it empty.
     for folder in FOLDERS:
         if (src / folder).exists():
-            if (data / folder).exists():
-                shutil.rmtree(data / folder)
-            shutil.copytree(src / folder, data / folder)
+            _sync_dir(src / folder, data / folder)
     for pattern in FILES:
         for cur in data.glob(pattern):                 # drop files the snapshot doesn't have
             if not (src / cur.relative_to(data)).exists():
-                cur.unlink()
+                _unlink(cur)
         for f in src.glob(pattern):
             rel = f.relative_to(src)
             (data / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, data / rel)
     return src
+
+
+def _unlink(path: Path, tries: int = 5) -> None:
+    for i in range(tries):
+        try:
+            path.unlink(); return
+        except PermissionError:
+            if i == tries - 1:
+                raise
+            time.sleep(0.2)
+
+
+def _sync_dir(src: Path, dst: Path) -> None:
+    """Make dst's files equal src's: copy over, delete extras, keep the folder itself."""
+    dst.mkdir(parents=True, exist_ok=True)
+    wanted = {f.relative_to(src) for f in src.rglob("*") if f.is_file()}
+    for f in list(dst.rglob("*")):
+        if f.is_file() and f.relative_to(dst) not in wanted:
+            _unlink(f)
+    for rel in wanted:
+        (dst / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src / rel, dst / rel)
 
 
 def _main(argv: list[str] | None = None) -> int:
