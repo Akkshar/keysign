@@ -52,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [busy, setBusy] = useState(false);
   const [waitingForBrowser, setWaitingForBrowser] = useState(false);
   const [browserSignInUrl, setBrowserSignInUrl] = useState<string | null>(null);
+  const lastBrowser = useRef<'default' | 'chrome'>('default');
   const [chromeAvailable, setChromeAvailable] = useState(false);
   const waitRef = useRef(false);
   const setDeclared = useRef(live.setDeclaredUser);
@@ -121,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * The app window's Google button: open this dashboard in the browser, where the
    * Google pop-up works, and wait for it to tell the local backend who signed in.
    */
-  const signInViaBrowser = useCallback(async (which: 'default' | 'chrome' = 'default') => {
+  const signInViaBrowser = useCallback(async (which: 'default' | 'chrome' | 'remembered' = 'remembered') => {
     setError(null);
     const r = await openSignInInBrowser(which);
     if (r.url) setBrowserSignInUrl(r.url);
@@ -132,11 +133,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setWaitingForBrowser(true);
     waitRef.current = true;
+    lastBrowser.current = (r.browser === 'chrome' ? 'chrome' : 'default');
     const deadline = Date.now() + 5 * 60 * 1000;
     while (waitRef.current && Date.now() < deadline) {
       await new Promise((res) => setTimeout(res, 1500));
       const active = await fetchActiveAccount();
       if (active?.email && waitRef.current) {
+        void setActiveAccount(active.email, active.name, lastBrowser.current);   // this browser worked
         setWaitingForBrowser(false);
         waitRef.current = false;
         setAccount({ uid: '', email: active.email, name: active.name || null, photo: null, provider: 'other' });

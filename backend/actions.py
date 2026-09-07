@@ -55,7 +55,10 @@ SETTINGS_PATH = ROOT / "data" / "settings.json"
 DEFAULTS = {"lock_on_intruder": os.environ.get("KEYSIGN_LOCK_ON_INTRUDER", "1") != "0",
             "declared_user": "",
             "photo_on_intruder": True,        # camera burst on every alert kind (name kept for the dashboard's setting)
-            "toast_on_alert": True}           # tray notification in the corner for every final alert
+            "toast_on_alert": True,           # tray notification in the corner for every final alert
+            "signin_browser": "default"}      # which browser last completed a Google sign-in for the app
+                                              # window: the machine's default is not always the one with
+                                              # the Google session (here it is Arc, and Chrome has it)
 PHOTO_GRACE_S = float(os.environ.get("KEYSIGN_PHOTO_GRACE_S", "1.5"))
                              # how long to wait for a frame from the dashboard before opening the camera
                              # ourselves. The wait ends the moment that frame's face check lands, so an

@@ -47,10 +47,12 @@ export async function fetchActiveAccount(): Promise<ActiveAccount | null> {
   } catch { return null; }
 }
 
-export async function setActiveAccount(email: string, name?: string | null): Promise<void> {
+export async function setActiveAccount(email: string, name?: string | null,
+                                      browser?: 'default' | 'chrome'): Promise<void> {
   try {
     await fetch(`${BACKEND_HTTP}/api/active-account`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, name }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, browser }),
     });
   } catch { /* the window just will not see this sign-in */ }
 }
@@ -64,7 +66,7 @@ export async function clearActiveAccount(): Promise<void> {
  * or "chrome": the machine's default browser is not always the one the person uses Google
  * in, and signing in needs that browser's Google session.
  */
-export async function openSignInInBrowser(which: 'default' | 'chrome' = 'default'):
+export async function openSignInInBrowser(which: 'default' | 'chrome' | 'remembered' = 'remembered'):
   Promise<{ ok: boolean; url?: string; browser?: string; chrome_available?: boolean; error?: string }> {
   try {
     const r = await fetch(`${BACKEND_HTTP}/api/signin/browser?browser=${which}`, { method: 'POST' });

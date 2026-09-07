@@ -184,7 +184,10 @@ export const kpsToWpm = (kps: number) => Math.round((kps * 60) / 5);
 
 
 /** Machine-side settings kept by the backend (data/settings.json). */
-export interface AppSettings { lock_on_intruder: boolean; photo_on_intruder: boolean; toast_on_alert: boolean; declared_user: string }
+export interface AppSettings {
+  lock_on_intruder: boolean; photo_on_intruder: boolean; toast_on_alert: boolean; declared_user: string;
+  signin_browser: 'default' | 'chrome';        // which browser last completed a Google sign-in here
+}
 export async function fetchSettings(): Promise<AppSettings | null> {
   try { const r = await fetch(`${BACKEND_HTTP}/api/settings`); return r.ok ? r.json() : null; } catch { return null; }
 }

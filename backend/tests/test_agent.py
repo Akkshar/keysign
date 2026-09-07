@@ -45,7 +45,7 @@ def test_key_class():
 def test_settings_roundtrip(client, tmp_path, monkeypatch):
     monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
     d = client.get("/api/settings").json()
-    assert set(d) == {"lock_on_intruder", "photo_on_intruder", "declared_user", "toast_on_alert"}
+    assert set(d) == {"lock_on_intruder", "photo_on_intruder", "declared_user", "toast_on_alert", "signin_browser"}
     r = client.put("/api/settings", json={"lock_on_intruder": False, "declared_user": "Test User", "junk": 1}).json()
     assert r["lock_on_intruder"] is False and r["declared_user"] == "Test User" and "junk" not in r
     assert json.loads((tmp_path / "settings.json").read_text())["declared_user"] == "Test User"
@@ -113,6 +113,44 @@ def test_tick_triggers_alert_actions_once(client, tmp_path, monkeypatch):
             cap.send_json({"type": "events", "events": typed(25, t0=2_500 + i * 2_000, flight=60, hold=30)})
             tick = cap.receive_json()
     assert tick["heads"]["threat"]["alerts_total"] == 1 and handed == ["duress"]
+
+
+def test_a_second_chair_swap_after_a_pause_still_acts(client, tmp_path, monkeypatch):
+    """
+    A pause longer than IDLE_RESET_S throws away the head's per-session state, counter and
+    all, so the next alert is that session's "first" again. Keying the handover on the count
+    meant a second chair swap was detected and shown but nothing happened: no camera, no push,
+    no lock. Measured on a real swap 2026-09-07.
+    """
+    from backend import heads
+
+    make_baseline(tmp_path)
+    handed = []
+    monkeypatch.setattr(actions, "on_alert", lambda alert, fn: handed.append(alert["ts"]))
+    mismatch = {"user": "Someone Else", "matches_declared": False, "unknown": False, "low_confidence": False}
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "swap"}); cap.receive_json()
+        session = backend.sessions["swap"]
+        for round_no in range(2):
+            t0 = round_no * 100_000
+            cap.send_json({"type": "events", "events": typed(40, t0=t0, flight=60, hold=30)}); cap.receive_json()
+            for i in range(1, heads.INTRUDER_PERSIST + 2):
+                session.ctx["heads_so_far"] = {"identity": mismatch}      # the vote names someone else
+                cap.send_json({"type": "events", "events": typed(25, t0=t0 + 2_500 + i * 2_000, flight=60, hold=30)})
+                tick = cap.receive_json()
+                idn = (tick.get("heads") or {}).get("identity") or {}
+                if idn.get("user") is None:                                # no model here: feed the head directly
+                    tick["heads"]["identity"] = mismatch
+            assert tick["heads"]["threat"]["level"] == "alert", tick["heads"]["threat"]
+            # the head counts from zero again after the pause, which is exactly why counting
+            # alerts could not tell a new one from an old one
+            assert tick["heads"]["threat"]["alerts_total"] == 1
+            # the pause between the two people at the keyboard
+            session.ctx.pop("threat", None)
+            session.ctx.pop("identity", None)
+            session.ctx["threat_last_alert_reset"] = True
+    assert len(handed) == 2, f"the second swap was never handed over (handed {handed})"
+    assert handed[0] != handed[1]
 
 
 def test_dashboard_is_served_when_built(client):

@@ -14,6 +14,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
+from backend import actions
 from backend import app as backend
 from pipeline.baseline import BASELINE_FEATURES, Baseline, robust_center_scale
 from pipeline.features import FEATURE_NAMES
@@ -407,6 +408,20 @@ def test_the_app_window_learns_who_signed_in_from_the_browser(client, tmp_path, 
     r = client.get("/api/active-account").json()
     assert r["user"] == "Test User" and r["has_baseline"] is True and r["at"]
     assert json.loads((tmp_path / "active_account.json").read_text())["email"] == "someone@example.com"
+    # the browser that completed the sign-in is remembered, so the window opens that one first
+    monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
+    client.post("/api/active-account", json={"email": "someone@example.com", "browser": "chrome"})
+    assert actions.settings()["signin_browser"] == "chrome"
+    opened = []
+    import webbrowser
+    monkeypatch.setattr(webbrowser, "open", lambda url: opened.append(url) or True)
+    launched = []
+    import subprocess
+    monkeypatch.setattr(subprocess, "Popen", lambda argv, **k: launched.append(argv) or None)
+    monkeypatch.setattr(backend, "CHROME_PATHS", [pathlib.Path(__file__)])
+    local2 = TestClient(backend.app, base_url="http://localhost:8000")
+    r = local2.post("/api/signin/browser?browser=remembered").json()
+    assert r["browser"] == "chrome" and launched and not opened
     # signing out anywhere clears it
     assert client.delete("/api/active-account").json()["email"] is None
     assert client.get("/api/active-account").json()["email"] is None
@@ -472,10 +487,11 @@ def test_only_one_thread_opens_the_camera_and_a_fresh_burst_is_shared(monkeypatc
         "VideoCapture": FakeCap, "IMWRITE_JPEG_QUALITY": 1,
         "imencode": staticmethod(lambda ext, f, p: (True, bytearray(b"jpeg")))}))
     monkeypatch.setattr(actions, "_last_burst", (0.0, []))
+    real = actions.real_grab_webcam_burst          # the suite replaces the real one (conftest)
     got: dict[str, list] = {}
 
     def grab(name):
-        got[name] = actions.grab_webcam_burst(n=1, gap_s=0, warmup_frames=0)
+        got[name] = real(n=1, gap_s=0, warmup_frames=0)
 
     first = threading.Thread(target=grab, args=("first",)); first.start()
     assert inside.wait(2), "the first caller never reached the camera"

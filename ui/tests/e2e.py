@@ -634,6 +634,18 @@ def main() -> int:
                     else:
                         check(False, "the profile choice is pre-filled with the declared user",
                               f"select value {sel.input_value() if sel.count() else 'missing'}")
+                # Signing in is once per machine: a window opened later takes the account from the
+                # backend and goes straight in, with no gate.
+                again = ctx.new_page()
+                again.add_init_script("window.pywebview = { api: {} };")
+                again.goto(PAGE)
+                again.wait_for_timeout(3500)
+                body_again = again.inner_text("body")
+                check("Continue with Google" not in body_again,
+                      "a window opened later does not ask to sign in again", body_again[:200])
+                check("The live lab" in body_again or "Live" in body_again,
+                      "it goes straight to the dashboard", body_again[:200])
+                again.close()
                 win.close()
                 urllib.request.urlopen(urllib.request.Request(BASE + "/api/active-account", method="DELETE"),
                                        timeout=5).read()

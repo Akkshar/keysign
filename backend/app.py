@@ -227,15 +227,23 @@ class Session:
 
 
 def _maybe_alert_actions(session: Session, tick: dict) -> None:
-    """A new alert on this tick -> backend/actions.py (webcam fallback, lock). Never raises."""
+    """
+    A new alert on this tick -> backend/actions.py (camera, push, lock). Never raises.
+
+    Keyed on the alert's timestamp, not on the head's counter: that counter lives in
+    ctx["threat"], which is thrown away after a pause of IDLE_RESET_S so the next person's
+    votes start clean. Measured 2026-09-07: a chair swap was detected, named the intruder on
+    every window and sat at "alert" for twenty ticks, but three pauses had reset the counter
+    to 1 while this had already actioned alert 1, so no camera opened, nothing was pushed and
+    the machine never locked.
+    """
     try:
         th = (tick.get("heads") or {}).get("threat") or {}
-        total = int(th.get("alerts_total") or 0)
-        seen = session.ctx.get("_alerts_actioned", 0)
-        if total > seen and th.get("last_alert"):
-            session.ctx["_alerts_actioned"] = total
+        la = th.get("last_alert") or {}
+        ts = float(la.get("ts") or 0)
+        if ts and ts > float(session.ctx.get("_alert_actioned_at") or 0):
+            session.ctx["_alert_actioned_at"] = ts
             from backend import actions
-            la = th["last_alert"]
             idn = (tick.get("heads") or {}).get("identity") or {}
             alert = {"ts": la.get("ts"), "kind": la.get("kind") or th.get("kind"), "user": session.user, "session": session.id,
                      "distance": th.get("distance"), "sustained_ticks": th.get("sustained_ticks"), "load": th.get("load"),
@@ -523,6 +531,10 @@ async def active_account_set(request: Request):
     ACTIVE_PATH.parent.mkdir(parents=True, exist_ok=True)
     ACTIVE_PATH.write_text(json.dumps({"email": email, "name": (body or {}).get("name"),
                                        "at": time.strftime("%Y-%m-%dT%H:%M:%S")}, indent=1), encoding="utf-8")
+    browser = str((body or {}).get("browser") or "").strip()
+    if browser in ("default", "chrome"):          # this one worked: open it first next time
+        from backend import actions
+        actions.update_settings({"signin_browser": browser})
     return active_account_get()
 
 
@@ -548,12 +560,16 @@ def signin_in_browser(request: Request, browser: str = "default"):
     Open this dashboard in a browser so Google's sign-in can run there. The URL is this
     backend's own address plus ?signin=1; nothing else can be opened.
 
-    `browser=chrome` opens Chrome by name instead of the machine's default. Whoever signs in
-    has to be signed into Google in that browser, and the default is not always the one they
-    use: on this machine it is Arc, where the Google account asked for a password.
+    `browser=chrome` opens Chrome by name instead of the machine's default; `remembered` uses
+    whichever last completed a sign-in (data/settings.json). Whoever signs in has to be signed
+    into Google in that browser, and the default is not always the one they use: on this
+    machine it is Arc, where the Google account asked for a password.
     """
     import subprocess
     import webbrowser
+    from backend import actions
+    if browser == "remembered":
+        browser = str(actions.settings().get("signin_browser") or "default")
     base = str(request.base_url).rstrip("/")
     if not any(base.startswith(p) for p in ("http://localhost", "http://127.0.0.1", "http://[::1]")):
         return JSONResponse({"ok": False, "error": "not a loopback address"}, status_code=400)
