@@ -52,8 +52,10 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
   const [testTypedText, setTestTypedText] = useState('');
   const [testStartTime, setTestStartTime] = useState<number | null>(null);
   const [testWpm, setTestWpm] = useState(0);
-  const [testAccuracy, setTestAccuracy] = useState(100);
-  const [testConsistency, setTestConsistency] = useState(96);
+  // null until there is typing to measure: a 96% consistency on an untouched box is
+  // a number nobody computed.
+  const [testAccuracy, setTestAccuracy] = useState<number | null>(null);
+  const [testConsistency, setTestConsistency] = useState<number | null>(null);
   const [testCompleted, setTestCompleted] = useState(false);
   const testDwellHistory = useRef<number[]>([]);
 
@@ -100,7 +102,8 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
       setTestTypedText('');
       setTestStartTime(null);
       setTestWpm(0);
-      setTestAccuracy(100);
+      setTestAccuracy(null);
+      setTestConsistency(null);
       setTestCompleted(false);
       testDwellHistory.current = [];
     } else {
@@ -124,7 +127,8 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
 
     if (!testStartTime || testTypedText.length === 0) {
       setTestWpm(0);
-      setTestAccuracy(100);
+      setTestAccuracy(null);
+      setTestConsistency(null);
       return;
     }
 
@@ -241,7 +245,8 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
     setTestTypedText('');
     setTestStartTime(null);
     setTestWpm(0);
-    setTestAccuracy(100);
+    setTestAccuracy(null);
+    setTestConsistency(null);
     setTestCompleted(false);
     testDwellHistory.current = [];
     setTimeout(() => inputRef.current?.focus(), 50);
@@ -322,13 +327,13 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
     <div className={`w-full flex flex-col gap-3 ${className}`}>
       {/* Structured Architectural Typing Arena Container */}
       <div
-        className="w-full p-4 sm:p-5 rounded-xl border border-stone-300/90 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] flex flex-col gap-3 cursor-text relative shadow-sm"
+        className="w-full p-4 sm:p-5 rounded-xl border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] flex flex-col gap-3 cursor-text relative shadow-sm"
       >
         <div onClick={handleContainerClick} className="w-full flex flex-col gap-3">
           {/* Top Telemetry & Mode Selector Strip */}
-          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-stone-200/80 dark:border-stone-800/80 pb-2.5 font-mono text-xs select-none">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-stone-200 dark:border-stone-700 pb-2.5 font-mono text-xs select-none">
             {/* Mode Switch Rectangular Controls (Clean Typography, Zero Emojis) */}
-            <div className="flex items-center gap-1.5 p-1 rounded-md bg-stone-100 dark:bg-stone-800/80 border border-stone-200/80 dark:border-stone-700/80">
+            <div className="flex items-center gap-1.5 p-1 rounded-md bg-stone-100 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -363,21 +368,21 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
                 <div className="flex items-baseline gap-1" title="Words Per Minute">
                   <span className="text-stone-400 text-[10px]">WPM</span>
                   <strong className="text-stone-900 dark:text-stone-100 font-bold text-xs sm:text-sm">
-                    {testWpm || 0}
+                    {testWpm || '–'}
                   </strong>
                 </div>
 
                 <div className="flex items-baseline gap-1" title="Accuracy %">
                   <span className="text-stone-400 text-[10px]">ACC</span>
                   <strong className="text-emerald-700 dark:text-emerald-400 font-bold text-xs sm:text-sm">
-                    {testAccuracy}%
+                    {testAccuracy == null ? '–' : `${testAccuracy}%`}
                   </strong>
                 </div>
 
                 <div className="flex items-baseline gap-1" title="Cadence Consistency">
                   <span className="text-stone-400 text-[10px]">CST</span>
                   <strong className="text-stone-900 dark:text-stone-100 font-bold text-xs sm:text-sm">
-                    {testConsistency}%
+                    {testConsistency == null ? '–' : `${testConsistency}%`}
                   </strong>
                 </div>
 
@@ -450,7 +455,7 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
 
           {/* Synthesizing Indicator (During Calibration Finish) */}
           {arenaMode === 'calibration' && calibSynthesizing && (
-            <div className="p-8 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-900/80 text-center space-y-3 animate-fade-in font-mono">
+            <div className="p-8 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50/80 dark:bg-stone-900/80 text-center space-y-3 animate-fade-in font-mono">
               <div className="w-7 h-7 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto" />
               <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
                 Synthesizing Neuromuscular Baseline...
@@ -487,7 +492,7 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
               </div>
 
               {/* Calibration Telemetry Metrics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-md bg-white dark:bg-stone-900 font-mono text-xs border border-stone-200 dark:border-stone-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-md bg-white dark:bg-stone-900 font-mono text-xs border border-stone-200 dark:border-stone-700">
                 <div className="space-y-0.5">
                   <span className="text-stone-400 text-[10px] block">CALM MEAN DWELL</span>
                   <strong className="text-stone-900 dark:text-stone-100 text-sm">84.2 ms</strong>
@@ -544,7 +549,7 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
               <div className="flex items-center gap-2">
                 <span>✓</span>
                 <span>
-                  Sample text finished: <strong>{testWpm} WPM</strong> • <strong>{testAccuracy}% Accuracy</strong>
+                  Sample text finished: <strong>{testWpm} WPM</strong> • <strong>{testAccuracy ?? 0}% Accuracy</strong>
                 </span>
               </div>
               <button
@@ -560,7 +565,7 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
           )}
 
           {/* Bottom Prompt Helper */}
-          <div className="flex items-center justify-between text-[10.5px] font-mono text-stone-400 dark:text-stone-500 pt-0.5 select-none">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-1 text-[10.5px] font-mono text-stone-400 dark:text-stone-500 pt-0.5 select-none">
             <span>
               {arenaMode === 'testing'
                 ? 'Click inside box or type anywhere to test rhythm & ink mechanical keys'
@@ -568,7 +573,7 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
                 ? 'Type comfortably and relaxed to establish your calm neuromotor baseline'
                 : 'Type with high urgency and speed to calibrate stress flight compression'}
             </span>
-            <span>Yellow = Inked • Red = Jitter • Grey = Target</span>
+            <span className="shrink-0">Yellow = inked · Red = jitter · Grey = target</span>
           </div>
         </div>
       </div>

@@ -144,7 +144,7 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="As it should read on the dashboard"
-              className="w-full rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
             {account?.email && <span className="block text-[11px] text-on-surface-variant">Linked to {account.email}.</span>}
           </label>
@@ -252,7 +252,7 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
             onClick={() => inputRef.current?.focus()}
-            className="relative rounded-xl border border-outline-variant/60 bg-surface-container-lowest p-5 cursor-text"
+            className="relative rounded-xl border border-outline-variant bg-surface-container-lowest p-5 cursor-text"
           >
             <div className="font-telemetry text-lg leading-relaxed tracking-wide break-words">{rendered}</div>
             <input
@@ -287,6 +287,6 @@ const Shell: React.FC<{ title: string; sub: string; children: React.ReactNode }>
       <h1 className="font-serif text-3xl font-medium tracking-tight text-on-surface">{title}</h1>
       <p className="text-sm text-on-surface-variant">{sub}</p>
     </div>
-    <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 shadow-sm">{children}</div>
+    <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">{children}</div>
   </div>
 );

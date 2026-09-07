@@ -86,7 +86,7 @@ export const StateView: React.FC = () => {
       {/* Hero: load meter + verdict */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-xl items-stretch">
         <CardSpotlight className="xl:col-span-8">
-          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container flex flex-col justify-between gap-space-xl">
+          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant flex flex-col justify-between gap-space-xl">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-lg">
               <div>
                 <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">State · {live.connected ? 'live' : 'offline'}</span>
@@ -107,7 +107,7 @@ export const StateView: React.FC = () => {
               <div className={`h-full rounded-full transition-all duration-500 ${style.bar}`} style={{ width: `${load}%` }} />
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md border-t border-surface-container pt-space-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md border-t border-outline-variant pt-space-lg">
               <p className="font-body text-sm text-on-surface-variant max-w-xl">{explanation}</p>
               {advice && advice !== 'unknown' && (
                 <div className={`flex items-center gap-space-xs flex-shrink-0 font-body text-sm font-medium ${advice === 'defer' ? 'text-tertiary' : 'text-secondary'}`}>
@@ -120,7 +120,7 @@ export const StateView: React.FC = () => {
         </CardSpotlight>
 
         <CardSpotlight className="xl:col-span-4">
-          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container">
+          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant">
             <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">Live</span>
             <h3 className="font-body text-sm font-medium text-on-surface mt-0.5">What drives it</h3>
             <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-space-lg">Features pushing the score, in standard deviations from the baseline.</p>
@@ -130,7 +130,7 @@ export const StateView: React.FC = () => {
       </div>
 
       {/* Load over this session (real) */}
-      <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container">
+      <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-space-sm mb-space-md">
           <div>
             <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">Live</span>
@@ -162,7 +162,7 @@ export const StateView: React.FC = () => {
       </div>
 
       {/* Timeline of label changes */}
-      <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container">
+      <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant">
         <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">{timelineLive ? 'Live' : 'Illustrative'}</span>
         <h3 className="font-body text-sm font-medium text-on-surface mt-0.5">Changes of state</h3>
         <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-space-lg">

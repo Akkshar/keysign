@@ -45,9 +45,9 @@ export const HealthSignalsView: React.FC = () => {
         </div>
 
         <div className="lg:col-span-7">
-          <CardSpotlight className="bg-surface-container-lowest border border-outline-variant/60">
+          <CardSpotlight className="bg-surface-container-lowest border border-outline-variant">
             <div key={selected.id} className="p-6 sm:p-8 space-y-6">
-              <div className="flex items-start justify-between gap-4 pb-4 border-b border-outline-variant/40">
+              <div className="flex items-start justify-between gap-4 pb-4 border-b border-outline-variant">
                 <div className="flex items-center gap-3.5">
                   <div className="w-11 h-11 rounded-xl bg-surface-container-low text-on-surface-variant flex items-center justify-center">
                     {selected.iconSvg}

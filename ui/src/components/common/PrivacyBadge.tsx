@@ -8,7 +8,7 @@ interface PrivacyBadgeProps {
 export const PrivacyBadge: React.FC<PrivacyBadgeProps> = ({ variant = 'pill', className = '' }) => {
   if (variant === 'card') {
     return (
-      <div className={`bg-surface-container-lowest rounded-xl p-space-sm shadow-[0_1px_8px_rgba(0,0,0,0.04)] border border-surface-container flex flex-col gap-space-xs ${className}`}>
+      <div className={`bg-surface-container-lowest rounded-xl p-space-sm shadow-[0_1px_8px_rgba(0,0,0,0.04)] border border-outline-variant flex flex-col gap-space-xs ${className}`}>
         <div className="flex items-center gap-space-xs">
           <span className="material-symbols-outlined text-secondary text-[16px]">lock</span>
           <span className="font-headline text-xs text-on-surface font-semibold">Privacy Guarantee</span>
@@ -33,7 +33,7 @@ export const PrivacyBadge: React.FC<PrivacyBadgeProps> = ({ variant = 'pill', cl
   }
 
   return (
-    <div className={`inline-flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-full border border-surface-container ${className}`}>
+    <div className={`inline-flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded-full border border-outline-variant ${className}`}>
       <span className="w-2 h-2 rounded-full bg-secondary animate-pulse flex-shrink-0"></span>
       <span className="font-telemetry text-xs text-on-surface font-medium">
         Processing locally • Keystroke content never recorded

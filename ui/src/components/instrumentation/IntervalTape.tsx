@@ -55,7 +55,7 @@ export const IntervalTape: React.FC<IntervalTapeProps> = ({
       </div>
 
       {/* The Physical Paper Ticker Ribbon */}
-      <div className="relative w-full h-20 rounded-md bg-[#fdfcf9] dark:bg-[#181816] border border-stone-300/80 dark:border-stone-800 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden flex items-center px-4">
+      <div className="relative w-full h-20 rounded-md bg-[#fdfcf9] dark:bg-[#181816] border border-stone-200 dark:border-stone-700 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden flex items-center px-4">
         {/* Subtle Horizontal Reference Grid Lines */}
         <div className="absolute inset-0 pointer-events-none flex flex-col justify-between py-2 px-3 opacity-30">
           <div className="w-full border-b border-dashed border-stone-400 dark:border-stone-600 text-[8px] font-mono text-stone-400 dark:text-stone-500 leading-none">

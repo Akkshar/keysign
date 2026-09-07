@@ -31,8 +31,8 @@ export const HistoryView: React.FC = () => {
         </p>
       </div>
 
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 sm:p-8">
-        <ol className="relative border-l border-outline-variant/60 ml-2 space-y-6">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 sm:p-8">
+        <ol className="relative border-l border-outline-variant ml-2 space-y-6">
           {illustrativeSessions.map((s) => (
             <li key={s.id} className="pl-6 relative">
               <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-surface-container-highest border border-outline-variant" />

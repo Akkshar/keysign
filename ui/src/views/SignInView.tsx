@@ -43,7 +43,7 @@ export const SignInView: React.FC = () => {
             <p className="text-sm text-primary">Choose your profile, then go back to the KeySign window.</p>
           )}
         </div>
-        <div className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 shadow-sm">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
           {needsLink ? <LinkProfile /> : <SignInForm />}
         </div>
         <p className="mt-6 text-[11px] text-on-surface-variant leading-relaxed">
@@ -55,9 +55,9 @@ export const SignInView: React.FC = () => {
   );
 };
 
-const inputCls = 'w-full rounded-lg border border-outline-variant/60 bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-amber-500/40';
+const inputCls = 'w-full rounded-lg border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-amber-500/40';
 const primaryCls = 'w-full rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-const secondaryCls = 'w-full rounded-lg border border-outline-variant/60 bg-surface-container-lowest hover:bg-surface-container-low text-on-surface text-sm font-medium py-2.5 transition-colors disabled:opacity-50 flex items-center justify-center gap-2';
+const secondaryCls = 'w-full rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-on-surface text-sm font-medium py-2.5 transition-colors disabled:opacity-50 flex items-center justify-center gap-2';
 
 const SignInForm: React.FC = () => {
   const {

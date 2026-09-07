@@ -72,7 +72,7 @@ export const IdentityView: React.FC = () => {
       {/* Hero: the answer */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-xl items-stretch">
         <CardSpotlight className="xl:col-span-8">
-          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container flex flex-col justify-between gap-space-xl">
+          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant flex flex-col justify-between gap-space-xl">
             <div>
               <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">
                 Identity · {mode === 'offline' ? 'offline' : 'live'}
@@ -83,7 +83,7 @@ export const IdentityView: React.FC = () => {
               <p className="font-body text-sm text-on-surface-variant mt-space-md max-w-2xl">{subline}</p>
             </div>
 
-            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-space-md border-t border-surface-container pt-space-lg">
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-space-md border-t border-outline-variant pt-space-lg">
               <div>
                 <dt className="font-body text-xs text-on-surface-variant">Declared</dt>
                 <dd className="font-body text-sm text-on-surface mt-0.5">{declared ? titleCase(declared) : '—'}</dd>
@@ -111,7 +111,7 @@ export const IdentityView: React.FC = () => {
         </CardSpotlight>
 
         <CardSpotlight className="xl:col-span-4">
-          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container flex flex-col items-center justify-between text-center gap-space-md">
+          <div className="h-full bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant flex flex-col items-center justify-between text-center gap-space-md">
             <span className="w-full text-left font-telemetry text-[11px] uppercase tracking-wider text-outline">Confidence</span>
             <RadialGauge
               score={liveConfidence}
@@ -131,7 +131,7 @@ export const IdentityView: React.FC = () => {
 
       {/* Who it could be + what moved */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-xl items-start">
-        <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container">
+        <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant">
           <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">Live</span>
           <h3 className="font-body text-sm font-medium text-on-surface mt-0.5">Who it could be</h3>
           <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-space-lg">Probability per enrolled person from the identity classifier.</p>
@@ -160,7 +160,7 @@ export const IdentityView: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container">
+        <div className="bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant">
           <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">Live</span>
           <h3 className="font-body text-sm font-medium text-on-surface mt-0.5">What moved</h3>
           <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-space-lg">
@@ -172,7 +172,7 @@ export const IdentityView: React.FC = () => {
 
       {/* Baseline vs now + digraph example */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-start">
-        <div className="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container">
+        <div className="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant">
           <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">Baseline</span>
           <h3 className="font-body text-sm font-medium text-on-surface mt-0.5">{declared ? `${titleCase(declared)}'s` : 'The'} calm baseline vs now</h3>
           <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-space-lg">
@@ -206,7 +206,7 @@ export const IdentityView: React.FC = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-5 bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-surface-container">
+        <div className="lg:col-span-5 bg-surface-container-lowest rounded-xl p-space-xl shadow-sm border border-outline-variant">
           <span className="font-telemetry text-[11px] uppercase tracking-wider text-outline">Illustrative</span>
           <h3 className="font-body text-sm font-medium text-on-surface mt-0.5">What a digraph is</h3>
           <p className="font-body text-xs text-on-surface-variant mt-0.5 mb-space-lg">

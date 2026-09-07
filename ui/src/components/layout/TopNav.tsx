@@ -68,7 +68,7 @@ export const TopNav: React.FC = () => {
   );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-outline-variant/70 bg-surface/85 backdrop-blur-md select-none theme-transition">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-outline-variant bg-surface/85 backdrop-blur-md select-none theme-transition">
       <div className="max-w-[1600px] mx-auto pl-5 pr-4 lg:pl-8 h-16 flex items-center gap-4">
         {/* Brand */}
         <button type="button" onClick={() => go('introduction')} className="flex items-baseline gap-2 shrink-0 text-left">
@@ -101,7 +101,7 @@ export const TopNav: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 rounded-xl border border-outline-variant/80 bg-surface-container-lowest shadow-lg p-1.5 z-10"
+                    className="absolute right-0 mt-2 w-56 rounded-xl border border-outline-variant bg-surface-container-lowest shadow-lg p-1.5 z-10"
                   >
                     {MORE.map((m) => (
                       <button

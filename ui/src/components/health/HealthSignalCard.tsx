@@ -34,7 +34,7 @@ export const HealthSignalCard: React.FC<HealthSignalCardProps> = ({ condition, o
       className={`group w-full text-left rounded-xl p-4 border transition-colors duration-200 flex flex-col justify-between min-h-[140px] bg-surface-container-lowest ${
         selected
           ? 'border-primary/50'
-          : 'border-outline-variant/60 hover:border-outline'
+          : 'border-outline-variant hover:border-outline'
       }`}
     >
       <div className="space-y-3">

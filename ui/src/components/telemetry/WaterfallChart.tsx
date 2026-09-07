@@ -24,7 +24,7 @@ export const WaterfallChart: React.FC = () => {
   const seen = new Set(pulses.map((p) => p.status));
 
   return (
-    <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] shadow-sm p-space-xl">
+    <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] shadow-sm p-space-xl">
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-space-sm mb-space-lg">
         <div>
           <h3 className="font-serif text-lg font-medium text-stone-900 dark:text-stone-100">Hold and gap, key by key</h3>
@@ -47,7 +47,7 @@ export const WaterfallChart: React.FC = () => {
       </div>
 
       {pulses.length === 0 && (
-        <div className="h-40 flex flex-col items-center justify-center gap-1 text-center border-b border-stone-200 dark:border-stone-800">
+        <div className="h-40 flex flex-col items-center justify-center gap-1 text-center border-b border-stone-200 dark:border-stone-700">
           <span className="font-body text-sm text-stone-500 dark:text-stone-400">Nothing recorded yet</span>
           <span className="font-body text-xs text-stone-400 dark:text-stone-500 max-w-sm">
             Type anywhere on this page. With the desktop agent capturing, the keys go to whichever
@@ -57,7 +57,7 @@ export const WaterfallChart: React.FC = () => {
       )}
 
       <div className={`overflow-x-auto ${pulses.length ? '' : 'hidden'}`}>
-        <div className="flex items-end justify-between gap-2 min-w-[560px] h-40 pt-space-md border-b border-stone-200 dark:border-stone-800 px-1">
+        <div className="flex items-end justify-between gap-2 min-w-[560px] h-40 pt-space-md border-b border-stone-200 dark:border-stone-700 px-1">
           {pulses.map((pulse, idx) => {
             const dwellH = Math.max(6, (pulse.dwellMs / maxDwell) * 100);
             const flightH = Math.max(4, (pulse.flightMs / maxFlight) * 70);

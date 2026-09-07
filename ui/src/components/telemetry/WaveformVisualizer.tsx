@@ -43,7 +43,7 @@ export const WaveformVisualizer: React.FC = () => {
   const meanFlight = f?.flight_mean;
 
   const stat = (label: string, value: React.ReactNode, note: string) => (
-    <div className="bg-surface-container-lowest p-space-sm rounded-lg border border-surface-container flex flex-col">
+    <div className="bg-surface-container-lowest p-space-sm rounded-lg border border-outline-variant flex flex-col">
       <span className="font-headline text-[11px] text-on-surface-variant uppercase font-medium">{label}</span>
       <span className="font-telemetry text-sm font-semibold text-on-surface mt-0.5">{value}</span>
       <span className="font-body text-[10.5px] text-on-surface-variant mt-0.5">{note}</span>
@@ -51,7 +51,7 @@ export const WaveformVisualizer: React.FC = () => {
   );
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-container p-space-xl flex flex-col gap-space-lg">
+    <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant p-space-xl flex flex-col gap-space-lg">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
         <div className="flex flex-col">
           <div className="flex items-center gap-space-xs">
@@ -72,13 +72,13 @@ export const WaveformVisualizer: React.FC = () => {
             <span className="w-3 h-1.5 rounded-full bg-secondary" />
             <span className="font-headline text-xs text-on-surface-variant">Flight</span>
           </div>
-          <div className="bg-surface-container-low px-space-sm py-space-2xs rounded text-on-surface-variant font-telemetry text-xs border border-surface-container">
+          <div className="bg-surface-container-low px-space-sm py-space-2xs rounded text-on-surface-variant font-telemetry text-xs border border-outline-variant">
             one point per key
           </div>
         </div>
       </div>
 
-      <div className="bg-surface-container-low rounded-lg p-space-lg flex flex-col gap-space-md relative overflow-hidden border border-surface-container">
+      <div className="bg-surface-container-low rounded-lg p-space-lg flex flex-col gap-space-md relative overflow-hidden border border-outline-variant">
         <div className="relative w-full h-56 flex flex-col justify-end">
           {hasTrace ? (
             <svg className="w-full h-full" fill="none" preserveAspectRatio="none" viewBox={`0 0 ${PLOT_W} ${PLOT_H}`}>
@@ -141,7 +141,7 @@ export const WaveformVisualizer: React.FC = () => {
         </p>
       </div>
 
-      <div className="bg-surface-container-low px-space-md py-space-sm rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm border border-surface-container">
+      <div className="bg-surface-container-low px-space-md py-space-sm rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm border border-outline-variant">
         <div className="flex items-center gap-space-sm">
           <span className="material-symbols-outlined text-primary text-[20px]">visibility_off</span>
           <span className="font-body text-xs text-on-surface">

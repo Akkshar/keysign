@@ -93,7 +93,7 @@ export const RadialGauge: React.FC<RadialGaugeProps> = ({
         </div>
       </div>
       {verdict && (
-        <div className="mt-space-sm flex items-center gap-space-xs px-space-md py-space-xs bg-surface-container-low rounded-full border border-surface-container text-xs font-headline font-semibold text-on-surface">
+        <div className="mt-space-sm flex items-center gap-space-xs px-space-md py-space-xs bg-surface-container-low rounded-full border border-outline-variant text-xs font-headline font-semibold text-on-surface">
           <span className={`material-symbols-outlined text-[16px] ${getColorClass()}`}>
             {score >= 85 ? 'verified' : score >= 60 ? 'warning' : 'dangerous'}
           </span>

@@ -55,14 +55,14 @@ export const PrivacyView: React.FC = () => {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-0">
         {stages.map((s, i) => (
           <div key={s.title} className="relative flex">
-            <div className="flex-1 bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-5 space-y-3">
+            <div className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-5 space-y-3">
               <div>
                 <h2 className="font-serif text-xl font-medium text-on-surface">{s.title}</h2>
                 <p className="text-xs text-on-surface-variant font-telemetry">{s.sub}</p>
               </div>
               <ul className="space-y-2">
                 {s.lines.map((l) => (
-                  <li key={l} className="font-body text-sm text-on-surface leading-relaxed pl-3 border-l border-outline-variant/60">
+                  <li key={l} className="font-body text-sm text-on-surface leading-relaxed pl-3 border-l border-outline-variant">
                     {l}
                   </li>
                 ))}
@@ -78,7 +78,7 @@ export const PrivacyView: React.FC = () => {
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <CardSpotlight className="bg-surface-container-lowest border border-outline-variant/60">
+        <CardSpotlight className="bg-surface-container-lowest border border-outline-variant">
           <div className="p-6 space-y-4">
             <h2 className="font-serif text-xl font-medium text-on-surface">What can leave the machine</h2>
             <p className="text-sm text-on-surface-variant leading-relaxed">
@@ -125,7 +125,7 @@ export const PrivacyView: React.FC = () => {
           </div>
         </CardSpotlight>
 
-        <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-4">
+        <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-4">
           <h2 className="font-serif text-xl font-medium text-on-surface">What we don't do</h2>
           <ul className="space-y-2.5">
             {[
@@ -136,7 +136,7 @@ export const PrivacyView: React.FC = () => {
               'No reading of what you type in other apps. Capture is the page you have open and the capture page only.',
               'No diagnosis. Health signals are a research roadmap and are not computed.',
             ].map((l) => (
-              <li key={l} className="font-body text-sm text-on-surface leading-relaxed pl-3 border-l border-outline-variant/60">
+              <li key={l} className="font-body text-sm text-on-surface leading-relaxed pl-3 border-l border-outline-variant">
                 {l}
               </li>
             ))}

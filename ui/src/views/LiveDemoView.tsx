@@ -53,7 +53,7 @@ export const LiveDemoView: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <section className="lg:col-span-7 bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-5">
+        <section className="lg:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-5">
           <div className="bg-surface-container-low rounded-xl p-4 space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-xs text-on-surface-variant">Prompt, if you want one</span>
@@ -87,7 +87,7 @@ export const LiveDemoView: React.FC = () => {
             ))}
           </div>
 
-          <div className="pt-5 border-t border-outline-variant/40 space-y-3">
+          <div className="pt-5 border-t border-outline-variant space-y-3">
             <span className="text-xs text-on-surface-variant">Scenario</span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {presets.map((p) => {
@@ -99,7 +99,7 @@ export const LiveDemoView: React.FC = () => {
                     onClick={() => setPreset(p.id)}
                     aria-pressed={active}
                     className={`flex flex-col items-start p-3 rounded-xl text-left border transition-colors ${
-                      active ? `bg-surface-container-low ${p.tone}` : 'bg-surface-container-low border-outline-variant/60 text-on-surface hover:border-outline'
+                      active ? `bg-surface-container-low ${p.tone}` : 'bg-surface-container-low border-outline-variant text-on-surface hover:border-outline'
                     }`}
                   >
                     <span className="text-sm font-medium">{p.label}</span>
@@ -111,7 +111,7 @@ export const LiveDemoView: React.FC = () => {
           </div>
         </section>
 
-        <section className="lg:col-span-5 bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 flex flex-col items-center justify-center gap-4">
+        <section className="lg:col-span-5 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col items-center justify-center gap-4">
           <RadialGauge score={liveConfidence} size={190} label="Match" verdict={verdictFor(activePreset)} />
           <p className="text-xs text-on-surface-variant text-center max-w-xs">
             <Swap value={activePreset}>{verdictFor(activePreset)}</Swap>
@@ -122,7 +122,7 @@ export const LiveDemoView: React.FC = () => {
 
       <WaterfallChart />
 
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-3">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-serif text-xl font-medium text-on-surface">Event feed</h2>
           <button type="button" onClick={clearTerminal} className="text-xs text-primary hover:underline">

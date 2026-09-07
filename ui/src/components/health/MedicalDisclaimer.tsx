@@ -8,7 +8,7 @@ interface MedicalDisclaimerProps {
 export const MedicalDisclaimer: React.FC<MedicalDisclaimerProps> = ({ onLearnMore, className = '' }) => {
   return (
     <div
-      className={`flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/50 text-xs text-on-surface-variant ${className}`}
+      className={`flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant text-xs text-on-surface-variant ${className}`}
       data-purpose="medical-disclaimer"
     >
       <p className="leading-normal">

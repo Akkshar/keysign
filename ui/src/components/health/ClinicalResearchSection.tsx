@@ -122,7 +122,7 @@ export const ClinicalResearchSection: React.FC = () => {
           <div
             key={cond.id}
             onClick={() => setSelectedCondition(cond)}
-            className="p-5 sm:p-6 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-sm hover-subtle-glow transition-all cursor-pointer group flex flex-col justify-between"
+            className="p-5 sm:p-6 rounded-xl border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-sm hover-subtle-glow transition-all cursor-pointer group flex flex-col justify-between"
           >
             <div className="space-y-3">
               {/* Header Badge */}
@@ -151,7 +151,7 @@ export const ClinicalResearchSection: React.FC = () => {
             </div>
 
             {/* Metric & Research Badge */}
-            <div className="space-y-3 pt-2 border-t border-stone-100 dark:border-stone-800/80">
+            <div className="space-y-3 pt-2 border-t border-stone-100 dark:border-stone-700">
               <div className="flex items-baseline justify-between font-mono text-xs">
                 <span className="text-stone-400 text-[11px]">Features:</span>
                 <strong className="text-stone-900 dark:text-stone-100 font-bold">
@@ -160,7 +160,7 @@ export const ClinicalResearchSection: React.FC = () => {
               </div>
 
               {/* Scientific Paper Tag */}
-              <div className="p-2.5 rounded-md bg-stone-100/80 dark:bg-stone-800/60 border border-stone-200/60 dark:border-stone-700/60 space-y-1">
+              <div className="p-2.5 rounded-md bg-stone-100/80 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] font-mono text-stone-500 dark:text-stone-400 font-semibold uppercase tracking-wider">
                   <span className="material-symbols-outlined text-[13px]">description</span>
                   <span>{cond.journal} ({cond.year})</span>
@@ -188,10 +188,10 @@ export const ClinicalResearchSection: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] p-6 sm:p-8 space-y-6 shadow-2xl text-stone-900 dark:text-stone-100 font-sans"
+              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] p-6 sm:p-8 space-y-6 shadow-2xl text-stone-900 dark:text-stone-100 font-sans"
             >
               {/* Modal Header */}
-              <div className="flex items-start justify-between gap-4 border-b border-stone-200 dark:border-stone-800 pb-4">
+              <div className="flex items-start justify-between gap-4 border-b border-stone-200 dark:border-stone-700 pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className={`px-2.5 py-0.5 rounded-md text-[10.5px] font-mono font-semibold border ${selectedCondition.badgeColor}`}>
@@ -223,7 +223,7 @@ export const ClinicalResearchSection: React.FC = () => {
                 <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed font-sans">
                   {selectedCondition.ethicalNotice}
                 </p>
-                <div className="pt-1 text-xs text-stone-700 dark:text-stone-300 font-sans font-medium border-t border-stone-200 dark:border-stone-800">
+                <div className="pt-1 text-xs text-stone-700 dark:text-stone-300 font-sans font-medium border-t border-stone-200 dark:border-stone-700">
                   <span className="font-bold text-stone-900 dark:text-stone-100">Clinical Protocol: </span>
                   {selectedCondition.clinicalRecommendation}
                 </div>
@@ -234,7 +234,7 @@ export const ClinicalResearchSection: React.FC = () => {
                 <h4 className="text-xs uppercase tracking-wider text-stone-400 font-semibold">
                   What this signal is, in KeySign
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-lg bg-stone-100 dark:bg-stone-900/80 border border-stone-200 dark:border-stone-800 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-lg bg-stone-100 dark:bg-stone-900/80 border border-stone-200 dark:border-stone-700 text-xs">
                   <div className="space-y-1">
                     <span className="text-[10.5px] text-stone-400 block">WHAT KEYSIGN MEASURES</span>
                     <strong className="text-stone-900 dark:text-stone-100 text-base">
@@ -266,7 +266,7 @@ export const ClinicalResearchSection: React.FC = () => {
               </div>
 
               {/* Peer-Reviewed Scientific Research Paper Proof */}
-              <div className="p-4 sm:p-5 rounded-lg border border-stone-200 dark:border-stone-800 bg-[#f8f7f4] dark:bg-[#1a1a18] space-y-3 font-mono text-xs">
+              <div className="p-4 sm:p-5 rounded-lg border border-stone-200 dark:border-stone-700 bg-[#f8f7f4] dark:bg-[#1a1a18] space-y-3 font-mono text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5 font-mono tracking-wider uppercase">
                     <span className="material-symbols-outlined text-sm text-stone-500 dark:text-stone-400">science</span>
@@ -286,7 +286,7 @@ export const ClinicalResearchSection: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="space-y-1.5 pt-2 border-t border-stone-200/80 dark:border-stone-800/80 font-sans text-xs">
+                <div className="space-y-1.5 pt-2 border-t border-stone-200 dark:border-stone-700 font-sans text-xs">
                   <div className="text-stone-700 dark:text-stone-300 leading-relaxed">
                     <strong className="font-mono text-[11px] text-stone-900 dark:text-stone-100">Where to read it: </strong>
                     {selectedCondition.sampleSize}
@@ -303,7 +303,7 @@ export const ClinicalResearchSection: React.FC = () => {
               </div>
 
               {/* Modal Footer Actions (Structured Compact Rectangular Buttons) */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-stone-200 dark:border-stone-800">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-stone-200 dark:border-stone-700">
                 <a
                   href={`https://doi.org/${selectedCondition.doi}`}
                   target="_blank"

@@ -27,7 +27,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'Every key press gives a press time and a release time, in milliseconds. Hold is release minus press. Flight is the gap from one release to the next press. Those two numbers, gathered over a ten-second window, are most of what the four heads work from.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm">
+        <div className="w-full h-44 rounded-lg border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between font-mono text-xs text-stone-500">
             <span>HOLD</span>
             <span className="text-amber-600 font-semibold">FLIGHT</span>
@@ -58,7 +58,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'Timing is invisible, so the dashboard gives you something to hit. A 3D typewriter answers every key you press. It is a stage prop rather than an instrument: what it shows is your keystroke arriving, and the numbers beside it are what the backend made of it.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
+        <div className="w-full h-44 rounded-lg border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
           <div className="relative z-10 text-center space-y-2">
             <span className="font-mono text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
               A prop, not a sensor
@@ -83,7 +83,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'Published work finds that typing rhythm shifts with fatigue, and that it shifts with some motor conditions over months. We have days of our own data, so the drift head is a chart of public longitudinal typing records and the research behind them. It scores nobody and diagnoses nothing.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm font-mono">
+        <div className="w-full h-44 rounded-lg border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm font-mono">
           <div className="flex items-center justify-between text-xs text-stone-500">
             <span>WEEKLY MEDIANS, ILLUSTRATED</span>
             <span className="text-stone-400">not your data</span>
@@ -112,7 +112,7 @@ export const IntroductionView: React.FC = () => {
       description:
         'The hook sees which key was pressed. It keeps the timing and a coarse class, letter, digit or punctuation, and drops the character before anything is written down. Scoring happens in a process on this laptop. The only thing that ever leaves is an alert you configured, to a phone you chose.',
       illustration: (
-        <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex items-center justify-around font-mono text-center shadow-sm">
+        <div className="w-full h-44 rounded-lg border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex items-center justify-around font-mono text-center shadow-sm">
           <div className="space-y-1">
             <span className="text-xs font-mono font-bold text-stone-500">STEP 1</span>
             <span className="block text-[11px] text-stone-400">Key event</span>
@@ -209,7 +209,7 @@ export const IntroductionView: React.FC = () => {
               delay: 0.05,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="p-6 sm:p-10 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#141412] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-sm hover:shadow-sm transition-all"
+            className="p-6 sm:p-10 rounded-xl border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#141412] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-sm hover:shadow-sm transition-all"
           >
             {/* Text Narrative */}
             <div className="lg:col-span-6 space-y-3">
@@ -244,9 +244,9 @@ export const IntroductionView: React.FC = () => {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-60px' }}
         transition={{ duration: 0.7 }}
-        className="p-6 sm:p-8 rounded-xl border border-stone-200 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-sm"
+        className="p-6 sm:p-8 rounded-xl border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] space-y-4 shadow-sm"
       >
-        <div className="border-b border-stone-200/80 dark:border-stone-800/80 pb-3">
+        <div className="border-b border-stone-200 dark:border-stone-700 pb-3">
           <h3 className="font-serif text-xl font-medium text-stone-900 dark:text-stone-100">
             Project Summary
           </h3>

@@ -44,7 +44,7 @@ export function TextFlippingBoardDemo({ className }: { className?: string }) {
           key={flipKey}
           duration={0.85}
           rows={WELCOME_ROWS}
-          className="border border-stone-300/80 dark:border-stone-800 bg-[#fdfcf9] dark:bg-[#151513] shadow-lg hover:border-amber-500/50 transition-colors"
+          className="border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] shadow-lg hover:border-amber-500/50 transition-colors"
         />
       </div>
     </div>

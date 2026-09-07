@@ -33,12 +33,12 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
 
   return (
     <section
-      className={`glass-panel rounded-xl shadow-[0_4px_24px_-4px_rgba(15,23,42,0.04)] p-6 lg:p-7 border border-stone-200/80 dark:border-stone-800/80 transition-all ${className}`}
+      className={`glass-panel rounded-xl shadow-[0_4px_24px_-4px_rgba(28,25,23,0.05)] p-6 lg:p-7 border border-stone-200 dark:border-stone-700 transition-all ${className}`}
       data-purpose="primary-stability-card"
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* Left Column: Circular Stability Score Gauge */}
-        <div className="lg:col-span-5 flex items-center gap-6 pr-4 lg:border-r lg:border-stone-200/60 dark:lg:border-stone-800/60">
+        <div className="lg:col-span-5 flex items-center gap-6 pr-4 lg:border-r lg:border-stone-200 dark:lg:border-stone-800/60">
           {/* Circular Progress Ring SVG */}
           <div className="relative w-24 h-24 shrink-0 flex items-center justify-center" data-purpose="circular-score-gauge">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">

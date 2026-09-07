@@ -412,7 +412,7 @@ export function TextFlippingBoard({
   return (
     <div
       className={cn(
-        "relative mx-auto w-full max-w-3xl rounded-lg bg-neutral-100 p-2 shadow-sm md:rounded-xl md:p-3.5 border border-stone-300/80 dark:border-stone-800 dark:bg-neutral-900",
+        "relative mx-auto w-full max-w-3xl rounded-lg bg-stone-100 p-2 shadow-sm md:rounded-xl md:p-3.5 border border-stone-200 dark:border-stone-700 dark:bg-stone-900",
         className,
       )}
     >

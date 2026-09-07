@@ -177,7 +177,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
     rimLight.position.set(-6, 4, -4);
     scene.add(rimLight);
 
-    const fillLight = new THREE.DirectionalLight(0xb4906a, 0.6); // Low warm fill
+    const fillLight = new THREE.DirectionalLight(0xd8b48c, 1.0); // Warm fill; at 0.6 the umber chassis read as a flat black slab
     fillLight.position.set(0, -2, 5);
     scene.add(fillLight);
 
@@ -188,7 +188,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
 
     // High-fidelity Materials
     const chassisMaterial = new THREE.MeshStandardMaterial({
-      color: 0x2b2622, // Matte umber lacquer
+      color: 0x39322c, // Matte umber lacquer, light enough to show the key rows
       roughness: 0.32,
       metalness: 0.48,
     });
@@ -653,7 +653,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
               a purple gradient, "Milestone Unlocked!". Words per minute is the one number
               worth keeping, because it is measured and it is what a typist looks for. */}
           <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/75 dark:bg-stone-900/75 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-xs font-mono text-stone-600 dark:text-stone-400">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/75 dark:bg-stone-900/75 backdrop-blur-md border border-stone-200 dark:border-stone-700 text-xs font-mono text-stone-600 dark:text-stone-400">
               <span className="w-2 h-2 rounded-full bg-primary" />
               <span>Follows your keyboard</span>
             </div>
@@ -662,7 +662,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
               <motion.div
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="px-3 py-1.5 rounded-full bg-white/75 dark:bg-stone-900/75 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-[11px] font-mono text-stone-600 dark:text-stone-300"
+                className="px-3 py-1.5 rounded-full bg-white/75 dark:bg-stone-900/75 backdrop-blur-md border border-stone-200 dark:border-stone-700 text-[11px] font-mono text-stone-600 dark:text-stone-300"
               >
                 {typingGame.wpm} wpm
               </motion.div>
@@ -677,7 +677,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
               className={`w-8 h-8 rounded-full flex items-center justify-center border shadow-sm transition-colors ${
                 typingGame.bellTriggered
                   ? 'bg-amber-400 border-amber-300 text-stone-900 shadow-amber-400/50'
-                  : 'bg-white/75 dark:bg-stone-900/75 border-stone-200/60 dark:border-stone-800/60 text-stone-500 dark:text-stone-400'
+                  : 'bg-white/75 dark:bg-stone-900/75 border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400'
               }`}
               title="Carriage Return Bell"
             >
@@ -687,7 +687,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
             {/* Clear Paper Button */}
             <button
               onClick={handleClearPaper}
-              className="px-2.5 py-1 rounded-full bg-white/70 dark:bg-stone-800/70 hover:bg-white dark:hover:bg-stone-800 border border-stone-200/60 dark:border-stone-700/60 text-[10px] font-mono text-stone-600 dark:text-stone-300 transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-full bg-white/70 dark:bg-stone-800/70 hover:bg-white dark:hover:bg-stone-800 border border-stone-200 dark:border-stone-700 text-[10px] font-mono text-stone-600 dark:text-stone-300 transition-colors cursor-pointer"
               title="Clear paper and insert new sheet"
             >
               New Sheet
@@ -697,7 +697,7 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
           {/* Bottom guide. In the Live tab's right-hand column this sits in about 420px, where
               the old sentence wrapped to three lines and collided with the readouts beside it.
               The long form appears only when there is room for it. */}
-          <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-row items-center justify-between gap-3 px-4 py-2 rounded-xl bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-[11px] text-stone-600 dark:text-stone-400">
+          <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-row items-center justify-between gap-3 px-4 py-2 rounded-xl bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200 dark:border-stone-700 text-[11px] text-stone-600 dark:text-stone-400">
             <div className="flex items-center gap-2 min-w-0">
               <span className="material-symbols-outlined text-[16px] text-amber-600 dark:text-amber-400 shrink-0">
                 keyboard

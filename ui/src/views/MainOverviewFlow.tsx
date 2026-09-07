@@ -26,7 +26,7 @@ const SectionDivider: React.FC<{ title: string; targetId: string }> = ({ title, 
       <button
         type="button"
         onClick={() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })}
-        className="px-4 py-1.5 rounded-md border border-stone-200/90 dark:border-stone-800/90 bg-white/80 dark:bg-stone-900/80 text-stone-600 dark:text-stone-400 font-telemetry text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-stone-100 transition-all group"
+        className="px-4 py-1.5 rounded-md border border-stone-200 dark:border-stone-700 bg-white/80 dark:bg-stone-900/80 text-stone-600 dark:text-stone-400 font-telemetry text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-stone-100 transition-all group"
       >
         <span>{title}</span>
         <span className="material-symbols-outlined text-sm text-stone-400 dark:text-stone-500 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-transform group-hover:translate-y-0.5">

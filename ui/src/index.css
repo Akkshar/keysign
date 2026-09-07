@@ -233,19 +233,15 @@
   animation: wavePulseBar 2.6s ease-in-out infinite;
 }
 
-/* KeySign2 Frosted Glass & Atmospheric Canvas */
+/* Frosted paper. The colours here were the last of the old design left anywhere: white
+   over a slate border, and a navy in the dark. Anything wearing this class showed up as
+   a cool card on an otherwise warm page. It carries the blur and nothing else now; the
+   surface and the edge come from the same tokens as every other card, and the elements
+   that use it already state their own border. */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--surface-container-lowest) 78%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(226, 232, 240, 0.85);
-}
-
-.dark .glass-panel {
-  background: rgba(19, 28, 46, 0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(51, 65, 85, 0.6);
 }
 
 /* Card hover transitions */
@@ -254,7 +250,7 @@
 }
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px -2px rgba(15, 23, 42, 0.06), 0 3px 8px -1px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 8px 20px -2px rgba(28, 25, 23, 0.07), 0 3px 8px -1px rgba(28, 25, 23, 0.04);
 }
 
 /* The design's card hover: the border warms, the card lifts a hair. Used by the

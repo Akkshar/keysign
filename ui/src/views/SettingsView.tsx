@@ -34,7 +34,7 @@ export const SettingsView: React.FC = () => {
 
       <AgentSection />
 
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-6">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <label htmlFor="settings-user" className="text-sm font-medium text-on-surface">Measure against</label>
@@ -47,7 +47,7 @@ export const SettingsView: React.FC = () => {
             id="settings-user"
             value={live.declaredUser}
             onChange={(e) => live.setDeclaredUser(e.target.value)}
-            className="bg-surface-container-low border border-outline-variant/60 rounded-lg px-3 py-2 text-sm text-on-surface font-body min-w-[14rem]"
+            className="bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface font-body min-w-[14rem]"
           >
             <option value="">No one selected</option>
             {live.users.map((u) => (
@@ -58,7 +58,7 @@ export const SettingsView: React.FC = () => {
           </select>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant">
           <div>
             <span className="text-sm font-medium text-on-surface">Start a fresh window</span>
             <p className="text-xs text-on-surface-variant">
@@ -69,13 +69,13 @@ export const SettingsView: React.FC = () => {
             type="button"
             onClick={live.reset}
             disabled={!live.connected}
-            className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Reset window
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant">
           <div>
             <span className="text-sm font-medium text-on-surface">Camera check on every alert</span>
             <p className="text-xs text-on-surface-variant">
@@ -93,7 +93,7 @@ export const SettingsView: React.FC = () => {
             className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
               live.photoOnIntruder
                 ? 'border-primary bg-primary text-white hover:bg-primary/90'
-                : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'
+                : 'border-outline-variant bg-surface-container-low text-on-surface hover:border-outline'
             }`}
           >
             {live.photoOnIntruder ? 'On · camera open' : 'Off'}
@@ -104,7 +104,7 @@ export const SettingsView: React.FC = () => {
 
         <FaceEnrolment />
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant">
           <div>
             <span className="text-sm font-medium text-on-surface">Theme</span>
             <p className="text-xs text-on-surface-variant">Currently {theme}.</p>
@@ -112,14 +112,14 @@ export const SettingsView: React.FC = () => {
           <button
             type="button"
             onClick={toggleTheme}
-            className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors"
+            className="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors"
           >
             Switch to {theme === 'dark' ? 'light' : 'dark'}
           </button>
         </div>
       </section>
 
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-4">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-4">
         <div>
           <h2 className="font-serif text-xl font-medium text-on-surface">Set on the backend</h2>
           <p className="text-xs text-on-surface-variant">
@@ -161,14 +161,14 @@ const Recalibrate: React.FC = () => {
   }, [live.connected]);
   if (open) {
     return (
-      <div className="pt-6 border-t border-outline-variant/40">
+      <div className="pt-6 border-t border-outline-variant">
         <CalibrationWizard onCancel={() => setOpen(false)} onDone={() => setOpen(false)} />
       </div>
     );
   }
   const info = live.users.find((u) => u.user === live.declaredUser);
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant">
       <div>
         <span className="text-sm font-medium text-on-surface">Your typing baseline</span>
         <p className="text-xs text-on-surface-variant">
@@ -180,7 +180,7 @@ const Recalibrate: React.FC = () => {
         </p>
       </div>
       <button type="button" onClick={() => setOpen(true)}
-        className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors shrink-0">
+        className="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors shrink-0">
         {info ? 'Calibrate again' : 'Calibrate now'}
       </button>
     </div>
@@ -220,7 +220,7 @@ const FaceEnrolment: React.FC = () => {
     else setMsg(`No frames stored${r.error ? `: ${r.error}` : ''}.`);
   };
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant">
       <div>
         <span className="text-sm font-medium text-on-surface">Your face, for the camera check</span>
         <p className="text-xs text-on-surface-variant">
@@ -234,17 +234,17 @@ const FaceEnrolment: React.FC = () => {
       </div>
       <div className="flex gap-2 shrink-0">
         <button type="button" onClick={enrol} disabled={busy || !user || !live.connected}
-          className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          className="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
           {busy ? 'Capturing…' : n ? 'Add 5 frames (this window)' : 'Enrol my face'}
         </button>
         <button type="button" onClick={enrolMachine} disabled={busy || !user || !live.connected}
           title="The backend takes 8 frames with the machine's camera over about 4 seconds"
-          className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          className="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
           Add 8 frames (app camera)
         </button>
         {!!n && (
           <button type="button" onClick={clear} disabled={busy}
-            className="px-3 py-2 rounded-lg border border-outline-variant/60 text-sm text-on-surface-variant hover:border-outline transition-colors">
+            className="px-3 py-2 rounded-lg border border-outline-variant text-sm text-on-surface-variant hover:border-outline transition-colors">
             Clear
           </button>
         )}
@@ -260,7 +260,7 @@ const AccountSection: React.FC = () => {
   const { live } = useBiometrics();
   if (auth.status === 'unconfigured') {
     return (
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-2">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-2">
         <h2 className="font-serif text-xl font-medium text-on-surface">Account</h2>
         <p className="text-xs text-on-surface-variant">
           Sign-in is not configured, so the declared user is the dropdown below. To enable email and Google sign-in,
@@ -272,11 +272,11 @@ const AccountSection: React.FC = () => {
   }
   if (auth.status !== 'signed-in' || !auth.account) {
     return (
-      <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-3">
+      <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-3">
         <h2 className="font-serif text-xl font-medium text-on-surface">Account</h2>
         <p className="text-xs text-on-surface-variant">Operator mode: nobody is signed in; the declared user is the dropdown below.</p>
         <button type="button" onClick={() => { sessionStorage.removeItem('keysign.ui.operator'); window.location.reload(); }}
-          className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors">
+          className="px-4 py-2 rounded-lg border border-outline-variant bg-surface-container-low text-sm text-on-surface hover:border-outline transition-colors">
           Sign in
         </button>
       </section>
@@ -284,7 +284,7 @@ const AccountSection: React.FC = () => {
   }
   const a = auth.account;
   return (
-    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-5">
+    <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-5">
       <div className="flex items-center gap-3">
         {a.photo ? <img src={a.photo} alt="" referrerPolicy="no-referrer" className="w-10 h-10 rounded-full object-cover" />
           : <div className="w-10 h-10 rounded-full bg-stone-700 text-white flex items-center justify-center text-sm font-medium">{(a.name || a.email)[0]?.toUpperCase()}</div>}
@@ -293,7 +293,7 @@ const AccountSection: React.FC = () => {
           <p className="text-xs text-on-surface-variant">{a.email} · signed in with {a.provider === 'google' ? 'Google' : 'email'}</p>
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant">
         <div>
           <span className="text-sm font-medium text-on-surface">Your typing profile</span>
           <p className="text-xs text-on-surface-variant">
@@ -303,7 +303,7 @@ const AccountSection: React.FC = () => {
         <select
           value={auth.link?.user || ''}
           onChange={(e) => { if (e.target.value) void auth.linkProfile(e.target.value); }}
-          className="bg-surface-container-low border border-outline-variant/60 rounded-lg px-3 py-2 text-sm text-on-surface font-body min-w-[14rem]"
+          className="bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface font-body min-w-[14rem]"
         >
           <option value="">Choose a profile…</option>
           {live.users.map((u) => <option key={u.user} value={u.user}>{u.user} · {u.n_samples} samples</option>)}
@@ -312,7 +312,7 @@ const AccountSection: React.FC = () => {
       </div>
       {auth.error && <p className="text-xs text-error">{auth.error}</p>}
       <div className="flex justify-end pt-2">
-        <button type="button" onClick={() => void auth.signOut()} className="px-4 py-2 rounded-lg border border-outline-variant/60 text-sm text-on-surface-variant hover:border-outline transition-colors">
+        <button type="button" onClick={() => void auth.signOut()} className="px-4 py-2 rounded-lg border border-outline-variant text-sm text-on-surface-variant hover:border-outline transition-colors">
           Sign out
         </button>
       </div>
@@ -338,7 +338,7 @@ const AgentSection: React.FC = () => {
   const set = async (changes: Partial<AppSettings>) => { const c = await updateSettings(changes); if (c) setCfg(c); };
   const ago = agent.last_key_at ? Math.max(0, Math.round(Date.now() / 1000 - agent.last_key_at)) : null;
   return (
-    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-xl p-6 space-y-5">
+    <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 space-y-5">
       <div>
         <h2 className="font-serif text-xl font-medium text-on-surface">On this machine</h2>
         <p className="text-xs text-on-surface-variant">
@@ -347,7 +347,7 @@ const AgentSection: React.FC = () => {
             : 'Background capture is off: only typing in this window is scored. Start the app with `uv run python -m agent` to score every application.'}
         </p>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant">
         <div>
           <span className="text-sm font-medium text-on-surface">Lock the screen on a confirmed intruder</span>
           <p className="text-xs text-on-surface-variant">
@@ -357,11 +357,11 @@ const AgentSection: React.FC = () => {
           </p>
         </div>
         <button type="button" disabled={!cfg} onClick={() => cfg && set({ lock_on_intruder: !cfg.lock_on_intruder })}
-          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.lock_on_intruder ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'}`}>
+          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.lock_on_intruder ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant bg-surface-container-low text-on-surface hover:border-outline'}`}>
           {cfg == null ? '…' : cfg.lock_on_intruder ? 'On' : 'Off'}
         </button>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant">
         <div>
           <span className="text-sm font-medium text-on-surface">Webcam burst when no dashboard is open</span>
           <p className="text-xs text-on-surface-variant">
@@ -370,11 +370,11 @@ const AgentSection: React.FC = () => {
           </p>
         </div>
         <button type="button" disabled={!cfg} onClick={() => cfg && set({ photo_on_intruder: !cfg.photo_on_intruder })}
-          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.photo_on_intruder ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'}`}>
+          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.photo_on_intruder ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant bg-surface-container-low text-on-surface hover:border-outline'}`}>
           {cfg == null ? '…' : cfg.photo_on_intruder ? 'On' : 'Off'}
         </button>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant">
         <div>
           <span className="text-sm font-medium text-on-surface">Tray notification on an alert</span>
           <p className="text-xs text-on-surface-variant">
@@ -384,7 +384,7 @@ const AgentSection: React.FC = () => {
           </p>
         </div>
         <button type="button" disabled={!cfg} onClick={() => cfg && set({ toast_on_alert: !cfg.toast_on_alert })}
-          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.toast_on_alert ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'}`}>
+          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.toast_on_alert ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant bg-surface-container-low text-on-surface hover:border-outline'}`}>
           {cfg == null ? '…' : cfg.toast_on_alert ? 'On' : 'Off'}
         </button>
       </div>

@@ -33,7 +33,7 @@ export const LiveTypingWell: React.FC<LiveTypingWellProps> = ({
 
   if (variant === 'compact') {
     return (
-      <div className={`bg-surface-container-lowest p-space-md rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md border border-outline-variant/40 ${className}`}>
+      <div className={`bg-surface-container-lowest p-space-md rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md border border-outline-variant ${className}`}>
         <div className="flex items-center gap-space-sm">
           <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-secondary' : 'bg-outline-variant'}`} />
           <div>
@@ -48,7 +48,7 @@ export const LiveTypingWell: React.FC<LiveTypingWellProps> = ({
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={touch}
             placeholder={placeholder}
-            className="bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/60 font-body text-xs px-space-md py-space-xs rounded-lg border border-outline-variant/40 focus:outline-none focus:ring-2 focus:ring-primary/40 w-full md:w-72 transition-all"
+            className="bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/60 font-body text-xs px-space-md py-space-xs rounded-lg border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/40 w-full md:w-72 transition-all"
           />
           <span className="font-telemetry text-xs text-on-surface-variant whitespace-nowrap">
             <AnimatedCounter value={liveDwell} className="text-on-surface" /> ms hold ·{' '}
@@ -67,7 +67,7 @@ export const LiveTypingWell: React.FC<LiveTypingWellProps> = ({
         onChange={(e) => setInputText(e.target.value)}
         onKeyDown={touch}
         placeholder={placeholder}
-        className="w-full bg-surface-container-low p-space-lg pb-10 font-body text-sm text-on-surface rounded-xl border border-outline-variant/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-on-surface-variant/60 resize-none"
+        className="w-full bg-surface-container-low p-space-lg pb-10 font-body text-sm text-on-surface rounded-xl border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-on-surface-variant/60 resize-none"
       />
       <div className="absolute bottom-3 right-3 flex items-center gap-space-sm font-telemetry text-[11px] text-on-surface-variant">
         <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-secondary' : 'bg-outline-variant'}`} />

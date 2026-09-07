@@ -182,12 +182,12 @@ export const BikeCadenceGraph: React.FC<BikeCadenceGraphProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`w-full flex flex-col gap-3 select-none rounded-xl border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 sm:p-6 shadow-sm relative overflow-hidden ${className}`}
+      className={`w-full flex flex-col gap-3 select-none rounded-xl border border-stone-200 dark:border-stone-700 bg-[#fdfcf9] dark:bg-[#151513] p-4 sm:p-6 shadow-sm relative overflow-hidden ${className}`}
       tabIndex={0}
       title="Use Arrow Keys (← / →) or on-screen pedals to move the bike smoothly along the cadence graph"
     >
       {/* Top Header & Instrumentation Readout */}
-      <div className="flex flex-col gap-2 border-b border-stone-200/70 dark:border-stone-800/70 pb-3">
+      <div className="flex flex-col gap-2 border-b border-stone-200 dark:border-stone-700 pb-3">
         <div className="flex items-center gap-2.5">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-600 animate-pulse" />
           <h3 className="font-serif text-lg font-medium text-stone-900 dark:text-stone-100">
@@ -324,7 +324,7 @@ export const BikeCadenceGraph: React.FC<BikeCadenceGraphProps> = ({
       </div>
 
       {/* Bottom Controls Bar: Keyboard Guide + On-Screen Touch Pedals */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-stone-200/60 dark:border-stone-800/60 font-mono text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-stone-200 dark:border-stone-700 font-mono text-xs">
         <div className="flex items-center gap-2 text-stone-600 dark:text-stone-400">
           <span className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-bold text-[11px]">←</span>
           <span className="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-bold text-[11px]">→</span>

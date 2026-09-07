@@ -101,7 +101,7 @@ export const AlertCard: React.FC = () => {
   const close = () => setAlertCardOpen(false);
   const goToThreats = () => { setActiveArea('threats'); setAlertCardOpen(false); };
   const tone = preview ? 'text-on-surface' : kind === 'intruder' ? 'text-error' : kind === 'duress' ? 'text-tertiary' : 'text-secondary';
-  const edge = preview ? 'border-outline-variant/60' : kind === 'intruder' ? 'border-error/60' : kind === 'duress' ? 'border-tertiary/60' : 'border-secondary/60';
+  const edge = preview ? 'border-outline-variant' : kind === 'intruder' ? 'border-error/60' : kind === 'duress' ? 'border-tertiary/60' : 'border-secondary/60';
 
   return (
     <AnimatePresence>
@@ -116,7 +116,7 @@ export const AlertCard: React.FC = () => {
           transition={{ duration: reduce ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
           onMouseEnter={() => { hover.current = true; }}
           onMouseLeave={() => { hover.current = false; }}
-          className={`fixed top-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-3rem)] bg-surface-container-lowest rounded-xl p-space-xl shadow-2xl border-l-4 ${edge} border border-surface-container flex flex-col gap-space-md pointer-events-auto`}
+          className={`fixed top-24 right-6 z-50 w-[22rem] max-w-[calc(100vw-3rem)] bg-surface-container-lowest rounded-xl p-space-xl shadow-2xl border-l-4 ${edge} border border-outline-variant flex flex-col gap-space-md pointer-events-auto`}
         >
           <div className="flex items-start justify-between gap-space-md">
             <div className="flex flex-col gap-space-2xs">
