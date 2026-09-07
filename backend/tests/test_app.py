@@ -542,7 +542,7 @@ def test_enrolling_someone_cannot_make_identity_worse(tmp_path, monkeypatch):
     assert "retrained" in E.status()["message"]
 
 
-def test_signin_browser_opens_only_this_backend(client, monkeypatch):
+def test_signin_browser_opens_only_this_backend(client, tmp_path, monkeypatch):
     """The window asks the backend to open the browser; only its own loopback address is opened."""
     opened = []
     import webbrowser
