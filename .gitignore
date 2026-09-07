@@ -41,5 +41,8 @@ data/alerts*.jsonl
 data/alert_photos/
 data/faces/
 
+# Snapshots of the above (pipeline.snapshot)
+data/backups/
+
 # Live session recordings (raw keystrokes, personal)
 data/sessions/

@@ -87,7 +87,10 @@ R2 and R3 times TBC (assumed ~h30 and the final at ~h48).
 - **h0-h1 — data sprint, everyone.** DONE: 91 samples on the new page
   (20/10 for Akkshar, 10/10 Shourya, 10/10 Utkarsh, 7/14 Akshaj) plus the 40
   older ones. `data/samples/all_new_page.json` is the merged, de-duplicated,
-  name-normalised file. Re-run when more samples land:
+  name-normalised file. When more samples land, the one-shot way is
+  `uv run python -m pipeline.rebuild --label <why>` (snapshots baselines, models,
+  samples and feature tables first, runs every step below, prints the numbers;
+  undo with `uv run python -m pipeline.snapshot restore latest`). Step by step:
   `uv run python -m pipeline.features "keystrokes (1).json" data/samples/all_new_page.json -o data/features.csv`
   then `uv run python -m pipeline.baseline build data/features.csv -o data/baselines`,
   then retrain identity on live-shaped windows (NOT on features.csv), including
