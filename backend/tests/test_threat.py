@@ -268,3 +268,19 @@ def test_face_threshold_is_derived_from_the_owners_own_crops():
     thr = faces.own_threshold(crops)
     assert faces.THRESHOLD_RANGE[0] <= thr <= faces.THRESHOLD_RANGE[1]
     assert faces.own_threshold(crops[:2]) == faces.THRESHOLD          # too few to measure: fallback
+
+
+def test_confident_mismatch_alerts_even_close_to_the_baseline(baseline, alert_log):
+    """Two people who type alike: the impostor sits under 2 sigma, but identity is sure it is
+    someone else on every window, so the intruder clock counts. An unsure vote does not."""
+    close = backend.extract_features(typed(40, flight=128, hold=66))
+    assert float(baseline.distance(close)) < heads.THREAT_WARN
+    sure = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "unknown": False, "low_confidence": False})
+    out = None
+    for _ in range(heads.INTRUDER_PERSIST):
+        out = heads.threat_head(close, baseline, sure)
+    assert out["level"] == "alert" and out["kind"] == "intruder"
+    unsure = ctx_with(identity={"user": "Someone Else", "matches_declared": False, "unknown": False, "low_confidence": True})
+    for _ in range(heads.INTRUDER_PERSIST * 2):
+        out = heads.threat_head(close, baseline, unsure)
+    assert out["level"] == "warn" and unsure["threat"]["alerts"] == 0

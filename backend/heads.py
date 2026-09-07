@@ -116,9 +116,12 @@ THREAT_WARN = 2.0            # single-tick distance for "warn"
 THREAT_ALERT = 3.0           # distance that must be sustained for "alert"
 THREAT_PERSIST = 6           # consecutive ticks (>= 3 s of typing) above THREAT_ALERT
 INTRUDER_PERSIST = 6         # or: identity disagrees with the declared user for this many consecutive
-                             # ticks while the typing is at least THREAT_WARN off. A teammate's typing
-                             # often sits at 2.3-3.4 sigma from someone else's baseline and never holds
-                             # 3.0 for six windows, while identity names them on every window.
+                             # ticks while EITHER the typing is at least THREAT_WARN off OR the identity
+                             # vote is confident (not low_confidence). Akshaj under Akkshar's name sits
+                             # at 1.2-1.9 sigma (they type alike) yet identity names him on every window
+                             # at 90-100%. Measured on 37 recorded teammate turns: false intruder alerts
+                             # on the right person 1/37 with or without the confidence clause; swaps
+                             # caught 79/111 -> 96/111 with it. Mismatch alone would be 7/37 false.
 THREAT_MIN_KEYS = 25         # windows thinner than this can't count towards an alert: the first seconds
                              # of any session sit at distance 2-2.5 for everyone (features are noise on
                              # 8-15 keys). Replaying the team's calm samples: the old 8-key / 3-tick rule
@@ -138,7 +141,8 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     mismatch = bool(idn.get("unknown")) or (idn.get("user") is not None and idn.get("matches_declared") is False)
     if n_keys >= THREAT_MIN_KEYS:
         st["hist"] = (st["hist"] + [d])[-THREAT_PERSIST:]
-        st["mismatch_run"] = st.get("mismatch_run", 0) + 1 if (mismatch and d >= THREAT_WARN) else 0
+        counts = mismatch and (d >= THREAT_WARN or not idn.get("low_confidence"))
+        st["mismatch_run"] = st.get("mismatch_run", 0) + 1 if counts else 0
     else:                                     # warm-up: thin windows neither count nor carry over
         st["hist"], st["mismatch_run"] = [], 0
     sustained = sum(1 for x in st["hist"] if x >= THREAT_ALERT)
