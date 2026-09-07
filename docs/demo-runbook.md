@@ -59,6 +59,9 @@ streams to the backend, so either window can be the typing surface.
 - [ ] Laptop on power, notifications muted, screen lock off.
 - [ ] `uv run python ui/tests/e2e.py` says ALL STEPS PASSED (it needs the
       terminal's `KEYSIGN_NTFY_TOPIC` unset and no backend already running).
+- [ ] After any `npm --prefix ui run build`, restart the agent (or tray ->
+      Reload the dashboard). The app window has its own HTTP cache and used to
+      keep showing an older build.
 - [ ] Face models present: `uv run python -m backend.faces fetch` says
       `engine now: sface`. Owner enrolled in Settings (facing the screen,
       glancing sideways, looking down at the keys) from BOTH cameras.

@@ -124,6 +124,23 @@ def test_dashboard_is_served_when_built(client):
     assert client.get("/api/info").json()["service"] == "KeySign backend"
 
 
+def test_the_app_shell_is_never_cached_but_its_assets_are(client):
+    """
+    The desktop window keeps its own HTTP cache between runs. A cached index.html points at a
+    JS bundle from an older build, which is how a fix that was on disk never reached the
+    screen (2026-09-07). The hashed files under /assets carry their build in the name.
+    """
+    from backend.app import UI_DIST
+    if not UI_DIST.exists():
+        return
+    r = client.get("/")
+    assert "no-store" in r.headers.get("cache-control", ""), r.headers.get("cache-control")
+    asset = next((p for p in (UI_DIST / "assets").glob("*.js")), None)
+    if asset:
+        a = client.get(f"/assets/{asset.name}")
+        assert a.status_code == 200 and "immutable" in a.headers.get("cache-control", "")
+
+
 def test_agent_key_mapping():
     from agent.capture import key_event, looks_secret
 

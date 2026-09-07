@@ -683,10 +683,30 @@ except ImportError:
 
 
 
-# The built dashboard, when present: the desktop app window loads http://127.0.0.1:8000/ and
+class Dashboard(StaticFiles):
+    """
+    The built dashboard, with cache headers the desktop app window needs.
+
+    index.html must never be cached. The window keeps its own HTTP cache across runs, and a
+    stale index.html points at a JS bundle from an older build: measured 2026-09-07, a freshly
+    restarted agent served a dashboard three builds old, so a fix that was on disk never
+    reached the screen. The files under /assets are content-hashed, so they can be kept for
+    ever.
+    """
+
+    async def get_response(self, path, scope):
+        r = await super().get_response(path, scope)
+        if r.headers.get("content-type", "").startswith("text/html"):
+            r.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        elif "/assets/" in "/" + str(path).replace("\\", "/"):
+            r.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return r
+
+
+# The built dashboard, when present: the desktop app window loads http://localhost:8000/ and
 # nobody sees a browser. Mounted last so every /api and /ws route above wins.
 if UI_DIST.exists():
-    app.mount("/", StaticFiles(directory=str(UI_DIST), html=True), name="dashboard")
+    app.mount("/", Dashboard(directory=str(UI_DIST), html=True), name="dashboard")
 else:
     @app.get("/")
     def index_fallback():

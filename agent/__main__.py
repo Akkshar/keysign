@@ -104,7 +104,10 @@ def main(argv: list[str] | None = None) -> int:
     from backend.__main__ import warm_faces
     warm_faces()                                            # face models ready before the first alert
     run_backend(a.port)
-    url = f"http://localhost:{a.port}/"       # localhost, not 127.0.0.1: Firebase authorises "localhost"
+    # localhost, not 127.0.0.1: Firebase authorises "localhost". The ?v= is this build's
+    # timestamp: the window keeps its own HTTP cache between runs, and without a fresh
+    # address it can serve a dashboard from an older build (measured 2026-09-07).
+    url = f"http://localhost:{a.port}/?v={int(dist.stat().st_mtime)}"
     log.info("backend up at %s", url)
 
     capture = None
@@ -140,6 +143,14 @@ def main(argv: list[str] | None = None) -> int:
         if capture:
             capture.reset()
 
+    def reload_window(*_):
+        """Load the dashboard again, e.g. after `npm --prefix ui run build`."""
+        for w in list(windows):
+            try:
+                w.load_url(url)
+            except Exception as e:
+                log.warning("could not reload the window: %s", e)
+
     def quit_app(icon=None, *_):
         log.info("KeySign agent stopping")
         if capture:
@@ -170,6 +181,7 @@ def main(argv: list[str] | None = None) -> int:
         pystray.MenuItem("Open KeySign", open_dashboard, default=True),
         pystray.MenuItem(pause_label, toggle_pause, visible=lambda *_: capture is not None),
         pystray.MenuItem("Start a fresh window", reset_window, visible=lambda *_: capture is not None),
+        pystray.MenuItem("Reload the dashboard", reload_window, visible=lambda *_: bool(windows)),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Quit", quit_app),
     )
