@@ -12,6 +12,70 @@ import { HoverBorderGradient } from '../components/motion/HoverBorderGradient';
 import { AnimatedCounter } from '../components/common/AnimatedCounter';
 import { DetectionArea } from '../types/biometrics';
 
+const titleCase = (v: string) => v.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+/**
+ * The three-across telemetry band from the new design. Theirs showed a pattern-match
+ * percentage derived from the length of the pulse list and a stability line that read
+ * "±12ms" whoever was typing; these are the backend's own numbers, and they say
+ * "waiting" when there is nothing to report rather than inventing a reading.
+ */
+const Band: React.FC = () => {
+  const { live } = useBiometrics();
+  const tick = live.tick;
+  const idn = tick?.heads?.identity;
+  const st = tick?.heads?.state;
+  const distance = tick?.distance ?? null;
+  const driver = tick?.top?.[0]?.[0];
+
+  const confidence = typeof idn?.confidence === 'number' ? idn.confidence : null;
+  const who = idn?.warming_up ? 'Identifying' : idn?.unknown ? 'Unknown' : idn?.user ? titleCase(idn.user) : null;
+  const stateLabel = st?.label ? st.label.charAt(0).toUpperCase() + st.label.slice(1) : null;
+
+  const cell = 'flex flex-col items-center text-center px-4 py-2';
+  const label = 'font-telemetry text-[11px] uppercase tracking-widest text-on-surface-variant mb-1.5';
+  const value = 'font-serif text-4xl sm:text-5xl font-medium tracking-tight text-on-surface tabular-nums leading-none';
+  const note = 'font-serif italic text-xs text-on-surface-variant mt-2';
+
+  return (
+    <section className="w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-0 border-y border-outline-variant/60 py-8">
+        <div className={`${cell} sm:border-r sm:border-outline-variant/60`}>
+          <span className={label}>Confidence</span>
+          <Swap value={confidence == null ? 'none' : who ?? 'x'}>
+            <span className={value}>
+              {confidence == null ? '–' : `${Math.round(confidence * 100)}%`}
+            </span>
+          </Swap>
+          <span className={note}>
+            {who ? `that this is ${who}` : 'waiting for typing'}
+          </span>
+        </div>
+
+        <div className={`${cell} sm:border-r sm:border-outline-variant/60`}>
+          <span className={label}>Distance from baseline</span>
+          <Swap value={distance == null ? 'none' : distance.toFixed(1)}>
+            <span className={value}>{distance == null ? '–' : `${distance.toFixed(2)}σ`}</span>
+          </Swap>
+          <span className={note}>
+            {driver ? `led by ${driver.replace(/_/g, ' ')}` : 'how far this window sits from the enrolled rhythm'}
+          </span>
+        </div>
+
+        <div className={cell}>
+          <span className={label}>State</span>
+          <Swap value={stateLabel ?? 'none'}>
+            <span className={`${value} text-3xl sm:text-4xl`}>{stateLabel ?? '–'}</span>
+          </Swap>
+          <span className={note}>
+            {typeof st?.load === 'number' ? `cognitive load ${Math.round(st.load * 100)}/100` : 'no load score yet'}
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 export const OverviewView: React.FC = () => {
   const { setActiveArea, live, userProfile, cognitiveState } = useBiometrics();
   const { theme } = useTheme();
@@ -122,6 +186,8 @@ export const OverviewView: React.FC = () => {
           </div>
         </div>
       </section>
+
+      <Band />
 
       {/* The environment */}
       <section className="space-y-3">

@@ -1,3 +1,4 @@
+import { PrivacyBadge } from '../components/common/PrivacyBadge';
 import React, { useEffect, useState } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
 import { clearFaceSamples, enrolFaceFromMachineCamera, fetchFaceStatus } from '../lib/webcam';
@@ -26,6 +27,7 @@ export const SettingsView: React.FC = () => {
           Four things this dashboard can change. Everything else is a constant in the backend and is listed below
           so you know where to look.
         </p>
+        <PrivacyBadge variant="pill" className="mt-1" />
       </div>
 
       <AccountSection />

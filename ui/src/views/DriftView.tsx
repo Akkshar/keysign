@@ -1,3 +1,4 @@
+import { PrivacyBadge } from '../components/common/PrivacyBadge';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useBiometrics } from '../context/BiometricsContext';
@@ -103,6 +104,7 @@ export const DriftView: React.FC = () => {
           {data?.framing ?? 'Screening signal, never a diagnosis.'}
           {' '}We have days of our own data, not years, so this view uses {users.length || 'public'} Monkeytype typists over up to three years and the {cmu?.subjects ?? 51}-person CMU benchmark to show what drift looks like.
         </p>
+        <PrivacyBadge variant="pill" className="mt-2 self-start" />
       </div>
 
       {!data && (
