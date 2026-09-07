@@ -6,7 +6,7 @@ import { Reveal } from '../components/motion/Reveal';
 import { CardSpotlight } from '../components/motion/CardSpotlight';
 
 /**
- * Research roadmap. Six screening signals the Drift head could grow into once
+ * Research roadmap. Three screening signals the Drift head could grow into once
  * there are months of typing from the same person. Nothing on this page is
  * computed from the typist's data, so every card carries the same neutral
  * "Roadmap" status and no verdict colour.
@@ -25,7 +25,7 @@ export const HealthSignalsView: React.FC = () => {
         </h1>
         <p className="font-body text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">
           The same hold, flight and rhythm features that drive the four heads have been studied as
-          long-term health signals. These six are where that research points. Each would need months of
+          long-term health signals. These three are the ones with a published keystroke-timing result behind them; signals that would need the typed text, or rest on small mood-disorder studies, are deliberately not here. Each would need months of
           one person's typing, and none of them diagnose anything.
         </p>
       </div>

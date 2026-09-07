@@ -38,7 +38,7 @@ really typing from the rhythm alone.
 |---|---|
 | Header: connection pill, declared-user selector, Reset, rhythm strip | live (the strip is your last 40 real inter-key intervals) |
 | Overview: four-heads strip, stability ring, connection line | live |
-| Overview / Health Signals: six screening cards | illustrative; labelled "Research roadmap", never computed from data |
+| Overview / Health Signals: three screening cards | illustrative; labelled "Research roadmap", never computed from data |
 | Live Monitoring: hold, gap, wpm, sigma, per-key table, "what the backend saw", waveform, waterfall | live (`recentPulses` are this window's real timings; ticks from the backend) |
 | Live Monitoring: judge presets disclosure | illustrative, disabled while a backend is connected |
 | Identity: name, declared vs detected, confidence, probabilities per user, what moved, baseline vs now | live |
