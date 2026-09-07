@@ -216,8 +216,11 @@ export const HandoffDone: React.FC = () => {
   const [closing, setClosing] = useState(true);
   useEffect(() => {
     const t = setTimeout(() => {
-      try { window.close(); } catch { /* not ours to close */ }
-      setTimeout(() => setClosing(false), 600);        // still here: ask for the click
+      try {
+        window.close();
+        window.open('', '_self')?.close();             // some browsers only allow it this way
+      } catch { /* not ours to close */ }
+      setTimeout(() => setClosing(false), 800);        // still here: ask for the click
     }, 1200);
     return () => clearTimeout(t);
   }, []);
@@ -235,7 +238,7 @@ export const HandoffDone: React.FC = () => {
           {link?.user
             ? `The KeySign window has it and is scoring ${link.user}'s typing. `
             : 'The KeySign window has it. '}
-          {closing ? 'Closing this window…' : 'You can close this window now.'}
+          {closing ? 'Closing this window…' : 'Nothing else happens here: close this window and carry on in KeySign.'}
         </p>
         <button
           type="button"

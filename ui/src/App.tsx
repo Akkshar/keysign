@@ -3,6 +3,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { BiometricsProvider, useBiometrics } from './context/BiometricsContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HandoffDone, SignInView } from './views/SignInView';
+import { setCalibrating } from './lib/enrol';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { TypewriterWatermark } from './components/layout/TypewriterWatermark';
@@ -22,9 +23,31 @@ import { ShootingStars } from './components/motion/ShootingStars';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
-/** Sign-in gate: with Firebase configured, nobody gets the dashboard without an account (or operator mode). */
+/**
+ * Hold the machine's alerts while an onboarding screen is up. It is a heartbeat, not a
+ * switch: the backend's hold expires on its own, so a page that goes away cannot leave the
+ * machine deaf (backend/enrol.py).
+ */
+const useHoldAlerts = (on: boolean) => {
+  useEffect(() => {
+    if (!on) return;
+    void setCalibrating(true);
+    const id = setInterval(() => { void setCalibrating(true); }, 60_000);
+    return () => { clearInterval(id); void setCalibrating(false); };
+  }, [on]);
+};
+
+
+/**
+ * Sign-in gate: with Firebase configured, nobody gets the dashboard without an account (or
+ * operator mode). While this is on screen the machine holds its alerts: whoever is typing at
+ * a sign-in screen is not the person the baseline belongs to, so scoring them raises intruder
+ * alerts, opens the camera and can lock the laptop in a new person's face.
+ */
 const Gate: React.FC = () => {
   const { status, link } = useAuth();
+  const atTheGate = status === 'signed-out' || (status === 'signed-in' && (!link || !link.user));
+  useHoldAlerts(atTheGate);
   if (status === 'loading') return <div className="min-h-screen bg-background" />;
   if (status === 'signed-out') return <SignInView />;
   if (status === 'signed-in' && (!link || !link.user)) return <SignInView />;

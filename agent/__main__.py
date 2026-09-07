@@ -107,7 +107,10 @@ def main(argv: list[str] | None = None) -> int:
     # localhost, not 127.0.0.1: Firebase authorises "localhost". The ?v= is this build's
     # timestamp: the window keeps its own HTTP cache between runs, and without a fresh
     # address it can serve a dashboard from an older build (measured 2026-09-07).
-    url = f"http://localhost:{a.port}/?v={int(dist.stat().st_mtime)}"
+    # app=1 says "this is the desktop window" from the first paint. Waiting for pywebview to
+    # inject window.pywebview is a race, and losing it sends Google's sign-in down the pop-up
+    # path, which pywebview hands to the system browser where it can never come back.
+    url = f"http://localhost:{a.port}/?v={int(dist.stat().st_mtime)}&app=1"
     log.info("backend up at %s", url)
 
     capture = None

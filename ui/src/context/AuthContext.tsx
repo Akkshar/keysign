@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [link, setLink] = useState<AccountLink | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [appWindow, setAppWindow] = useState<boolean>(inAppWindow());
   const [waitingForBrowser, setWaitingForBrowser] = useState(false);
   const [browserSignInUrl, setBrowserSignInUrl] = useState<string | null>(null);
   const lastBrowser = useRef<'default' | 'chrome'>('default');
@@ -57,6 +58,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const waitRef = useRef(false);
   const setDeclared = useRef(live.setDeclaredUser);
   useEffect(() => { setDeclared.current = live.setDeclaredUser; }, [live.setDeclaredUser]);
+
+  // pywebview injects window.pywebview after the first paint, so a window that looked like a
+  // browser a moment ago may not be one. Watch for it rather than deciding once.
+  useEffect(() => {
+    if (appWindow) return;
+    const check = () => { if (inAppWindow()) setAppWindow(true); };
+    const id = setInterval(check, 250);
+    window.addEventListener('pywebviewready', check);
+    const stop = setTimeout(() => clearInterval(id), 10_000);
+    return () => { clearInterval(id); clearTimeout(stop); window.removeEventListener('pywebviewready', check); };
+  }, [appWindow]);
 
   /** Take an account (from Firebase here, or from a browser sign-in) and find its profile. */
   const adopt = useCallback(async (a: Account, remember: boolean) => {
@@ -82,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!a) {
         // In the app window Google sign-in happens in the browser, so there is no Firebase
         // user here: fall back to whoever the browser last signed in as on this machine.
-        if (inAppWindow()) {
+        if (inAppWindow()) {                                  // read live: this runs before the poll above
           const active = await fetchActiveAccount();
           if (active?.email) {
             setAccount({ uid: '', email: active.email, name: active.name || null, photo: null, provider: 'other' });
@@ -187,10 +199,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = useMemo<AuthContextType>(() => ({
     status, account, link, error, busy, signIn, signUp, signInWithGoogle,
-    googleNeedsBrowser: inAppWindow(), signInViaBrowser, waitingForBrowser, browserSignInUrl, chromeAvailable,
+    googleNeedsBrowser: appWindow, signInViaBrowser, waitingForBrowser, browserSignInUrl, chromeAvailable,
     cancelBrowserWait, signOut, continueAsOperator, linkProfile, unlinkProfile,
   }), [status, account, link, error, busy, signIn, signUp, signInWithGoogle, signInViaBrowser, waitingForBrowser,
-       browserSignInUrl, chromeAvailable, cancelBrowserWait, signOut, continueAsOperator, linkProfile, unlinkProfile]);
+       browserSignInUrl, chromeAvailable, cancelBrowserWait, appWindow, signOut, continueAsOperator, linkProfile,
+       unlinkProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

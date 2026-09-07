@@ -600,13 +600,22 @@ def main() -> int:
                                        timeout=5).read()
                 win = ctx.new_page()
                 opened: list = []
-                win.add_init_script("window.pywebview = { api: {} };")   # what pywebview injects
+                # ?app=1 is what the agent puts on the window's URL, so the page knows what it is
+                # from the first paint instead of waiting for pywebview to inject itself
                 win.route("**/api/signin/browser*", lambda route: (
                     opened.append(route.request.url),
                     route.fulfill(status=200, content_type="application/json",
                                   body=json.dumps({"ok": True, "url": PAGE + "/?signin=1", "chrome_available": True})),
                 ))
-                win.goto(PAGE)
+                win.goto(PAGE + "/?app=1")
+                held = {}
+                for _ in range(20):                    # the page has to hear from Firebase first
+                    win.wait_for_timeout(500)
+                    held = get("/api/enrol/status", timeout=5)
+                    if held.get("calibrating"):
+                        break
+                check(held.get("calibrating") is True,
+                      "the machine holds its alerts while the sign-in screen is up", json.dumps(held))
                 btn = win.get_by_role("button", name="Continue with Google in your browser")
                 try:
                     btn.wait_for(timeout=15000)

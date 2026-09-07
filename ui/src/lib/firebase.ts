@@ -87,7 +87,11 @@ export async function signUpEmail(email: string, password: string): Promise<Acco
  * The window therefore hands Google sign-in to the browser instead; see
  * `signInViaBrowser` in AuthContext and /api/active-account in the backend.
  */
-export const inAppWindow = () => typeof window !== 'undefined' && Boolean((window as any).pywebview);
+export const inAppWindow = () => {
+  if (typeof window === 'undefined') return false;
+  if (new URLSearchParams(window.location.search).has('app')) return true;   // the agent says so
+  return Boolean((window as any).pywebview);                                  // ...or pywebview has landed
+};
 
 export async function signInGoogle(): Promise<Account | null> {
   if (!auth) throw new Error('Sign-in is not configured');
