@@ -694,26 +694,26 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
             </button>
           </div>
 
-          {/* Bottom Live Interaction Guide */}
-          <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-[11px] text-stone-600 dark:text-stone-400">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px] text-amber-600 dark:text-amber-400">
+          {/* Bottom guide. In the Live tab's right-hand column this sits in about 420px, where
+              the old sentence wrapped to three lines and collided with the readouts beside it.
+              The long form appears only when there is room for it. */}
+          <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-row items-center justify-between gap-3 px-4 py-2 rounded-xl bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/60 dark:border-stone-800/60 text-[11px] text-stone-600 dark:text-stone-400">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="material-symbols-outlined text-[16px] text-amber-600 dark:text-amber-400 shrink-0">
                 keyboard
               </span>
-              <span>
-                <strong>Exact QWERTY Sync:</strong> Press any key on your keyboard to depress that 3D key & ink paper.
+              <span className="truncate">
+                <span className="hidden lg:inline">Press any key and this one goes down. </span>
+                <span className="lg:hidden">Press any key. </span>
+                Enter returns the carriage.
               </span>
             </div>
 
-            <div className="flex items-center gap-3 font-mono text-[10px]">
-              <span className="flex items-center gap-1 text-stone-500">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Live Inking
-              </span>
-              <span className="text-stone-400 hidden sm:inline">|</span>
-              <span className="text-amber-600 dark:text-amber-400">
-                Press Enter for Carriage Return
-              </span>
+            {/* The carriage-return hint moved into the sentence on the left, so this is
+                just the inking light. */}
+            <div className="flex items-center gap-1 font-mono text-[10px] text-stone-500 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="hidden sm:inline">inking</span>
             </div>
           </div>
         </>
