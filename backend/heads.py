@@ -174,7 +174,7 @@ def threat_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
         alert = {"ts": now, "session": ctx.get("session"), "user": ctx.get("user") or baseline.user, "kind": kind,
                  "distance": round(d, 2), "sustained_ticks": sustained, "identity": idn.get("user"),
                  "identity_confidence": idn.get("confidence"), "load": state.get("load"), "drivers": out["drivers"]}
-        res = notify.send(alert, _alert_log_path)
+        res = notify.send(alert, _alert_log_path, push=(kind != "intruder"))   # intruder: backend/actions pushes after the camera check
         st["last_alert_at"], st["alerts"] = now, st["alerts"] + 1
         st["last_alert"] = {"ts": now, "kind": kind, **res}
         out["alerts_total"], out["last_alert"] = st["alerts"], st["last_alert"]

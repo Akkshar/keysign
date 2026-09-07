@@ -65,27 +65,39 @@ def lock_workstation() -> bool:
 
 
 # ---- webcam fallback ----
-def grab_webcam(index: int = 0, warmup_frames: int = 5) -> bytes | None:
-    """One JPEG from the default camera, or None (no camera, in use, headless)."""
+def grab_webcam_burst(n: int = 5, gap_s: float = 0.35, index: int = 0, warmup_frames: int = 8) -> list[bytes]:
+    """
+    Several JPEGs from the default camera, gap_s apart, after a warm-up so exposure has
+    settled. [] if there is no camera / it is in use. One frame is not enough: the
+    typist looks down at the keys most of the time.
+    """
     try:
         import cv2
         cap = cv2.VideoCapture(index)
         if not cap.isOpened():
-            return None
-        frame = None
-        for _ in range(warmup_frames):                 # let exposure settle
+            return []
+        out: list[bytes] = []
+        for _ in range(warmup_frames):
+            cap.read()
+        for i in range(n):
             ok, frame = cap.read()
-            if not ok:
-                frame = None
-                break
+            if ok and frame is not None:
+                ok2, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+                if ok2:
+                    out.append(bytes(buf))
+            if i < n - 1:
+                time.sleep(gap_s)
         cap.release()
-        if frame is None:
-            return None
-        ok, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
-        return bytes(buf) if ok else None
+        return out
     except Exception as e:
         log.warning("webcam grab failed: %s", e)
-        return None
+        return []
+
+
+def grab_webcam(index: int = 0, warmup_frames: int = 8) -> bytes | None:
+    """One JPEG (the burst's first), kept for callers that want a single frame."""
+    frames = grab_webcam_burst(n=1, index=index, warmup_frames=warmup_frames)
+    return frames[0] if frames else None
 
 
 def photo_arrived(ts: float) -> None:
@@ -97,6 +109,9 @@ def photo_arrived(ts: float) -> None:
 def _seen(ts: float) -> bool:
     with _lock:
         return round(float(ts), 3) in _photo_seen
+
+
+QUIT_HOOK = None          # the desktop agent registers its shutdown here (POST /api/agent/quit, --quit)
 
 
 def face_verdict(alert: dict) -> dict | None:
@@ -136,26 +151,33 @@ def on_alert(alert: dict, process_photo) -> None:
     cfg = settings()
 
     def run():
+        from backend import notify
         try:
             verdict = None
             if cfg.get("photo_on_intruder", True):
                 time.sleep(PHOTO_GRACE_S)
                 if not _seen(alert["ts"]):
-                    jpeg = grab_webcam()
-                    if jpeg:
+                    frames = grab_webcam_burst()
+                    if frames:
+                        from backend import faces
                         photo_arrived(alert["ts"])
-                        res = process_photo(alert, jpeg, source="backend-webcam")
-                        verdict = (res or {}).get("face") if isinstance(res, dict) else None
+                        verdict, best = faces.verify_frames(alert.get("user") or "", frames)
+                        res = process_photo(alert, best or frames[-1], source="backend-webcam", verdict=verdict)
+                        verdict = (res or {}).get("face") if isinstance(res, dict) else verdict
                 if verdict is None:
                     verdict = face_verdict(alert)
-            if cfg.get("lock_on_intruder"):
+            # The intruder alert itself is pushed only now, after the camera has had its say.
+            lock, why = should_lock(alert, verdict)
+            if lock:
+                notify.push_alert(alert, why)
+                log.warning("intruder alert on %s's session: %s; pushed", alert.get("user"), why)
+            else:
+                log.warning("intruder alert on %s's session: %s; alert kept local", alert.get("user"), why)
+            notify.mark_delivery(alert, pushed=lock, reason=why)
+            if cfg.get("lock_on_intruder") and lock:
                 time.sleep(LOCK_DELAY_S)
-                lock, why = should_lock(alert, verdict)
-                if lock:
-                    log.warning("intruder alert on %s's session: %s; locking the workstation", alert.get("user"), why)
-                    lock_workstation()
-                else:
-                    log.warning("intruder alert on %s's session: %s; not locking", alert.get("user"), why)
+                log.warning("locking the workstation")
+                lock_workstation()
         except Exception as e:
             log.exception("alert actions failed: %s", e)
 

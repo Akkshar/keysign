@@ -307,7 +307,8 @@ def alerts_api(n: int = 20):
 MAX_PHOTO_BYTES = 2_000_000
 
 
-def process_alert_photo(alert: dict, data: bytes, session: str | None = None, source: str = "dashboard") -> dict:
+def process_alert_photo(alert: dict, data: bytes, session: str | None = None, source: str = "dashboard",
+                        verdict: dict | None = None) -> dict:
     """Store the frame, check the face against the owner, grab the screen, push if not the owner."""
     from backend import actions, faces, notify
     actions.photo_arrived(alert["ts"])
@@ -315,11 +316,13 @@ def process_alert_photo(alert: dict, data: bytes, session: str | None = None, so
     p = notify.save_photo(alert["ts"], sess, data)
     # Is this the owner? The owner of the session is the declared user.
     owner = alert.get("user") or ""
-    try:
-        verdict = faces.verify(owner, data)
-    except Exception as e:                       # OpenCV missing or broken: never block the alert
-        log.warning("face check failed: %s", e)
-        verdict = {"face": None, "match": None, "distance": None, "threshold": faces.THRESHOLD, "enrolled": 0, "reason": str(e)}
+    if verdict is None:
+        try:
+            verdict = faces.verify(owner, data)
+        except Exception as e:                       # OpenCV missing or broken: never block the alert
+            log.warning("face check failed: %s", e)
+            verdict = {"face": None, "match": None, "distance": None, "threshold": faces.THRESHOLD, "enrolled": 0, "reason": str(e)}
+    verdict = dict(verdict)
     verdict["owner"] = owner
     screen_name = None
     shot = faces.grab_screen()
@@ -372,6 +375,17 @@ async def settings_put(request: Request):
     if not isinstance(body, dict):
         return JSONResponse({"error": "object expected"}, status_code=400)
     return actions.update_settings(body)
+
+
+@app.post("/api/agent/quit")
+def agent_quit():
+    """Stop the desktop agent (tray, hook, window, backend). Only the agent registers a hook."""
+    from backend import actions
+    if actions.QUIT_HOOK is None:
+        return JSONResponse({"ok": False, "error": "no desktop agent in this process"}, status_code=404)
+    import threading
+    threading.Timer(0.3, actions.QUIT_HOOK).start()
+    return {"ok": True, "quitting": True}
 
 
 @app.get("/api/agent")
@@ -461,6 +475,28 @@ async def faces_enrol(user: str, request: Request):
         return faces.enrol(user, data)
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@app.post("/api/faces/{user}/grab")
+def faces_enrol_from_camera(user: str, frames: int = 8):
+    """
+    Enrol from the machine's own camera, the same path the intruder check uses: `frames`
+    JPEGs about 0.4 s apart (look at the screen, then down at the keys, then back).
+    """
+    from backend import actions, faces
+    shots = actions.grab_webcam_burst(n=max(1, min(frames, 20)), gap_s=0.4)
+    if not shots:
+        return JSONResponse({"ok": False, "error": "no camera, or it is in use"}, status_code=503)
+    stored, without_face = 0, 0
+    for jpeg in shots:
+        try:
+            r = faces.enrol(user, jpeg)
+        except Exception as e:
+            return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+        stored += 1 if r.get("ok") else 0
+        without_face += 0 if r.get("ok") else 1
+    return {"ok": stored > 0, "stored": stored, "without_face": without_face, "n_samples": faces.n_samples(user),
+            "threshold": round(faces.threshold_for(user), 1)}
 
 
 @app.delete("/api/faces/{user}")

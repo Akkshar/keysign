@@ -89,3 +89,9 @@ export async function postAlertPhoto(ts: number, session: string, blob: Blob): P
 }
 
 export const alertPhotoUrl = (name: string) => `${BACKEND_HTTP}/api/alerts/photo/${encodeURIComponent(name)}`;
+
+/** Enrol from the backend's own camera, the same path the intruder check uses in background mode. */
+export async function enrolFaceFromMachineCamera(user: string, frames = 8): Promise<{ ok: boolean; stored?: number; without_face?: number; n_samples?: number; threshold?: number; error?: string }> {
+  const r = await fetch(`${BACKEND_HTTP}/api/faces/${encodeURIComponent(user)}/grab?frames=${frames}`, { method: 'POST' });
+  return r.json();
+}

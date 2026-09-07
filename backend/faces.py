@@ -82,13 +82,21 @@ def _gray(jpeg: bytes):
     return img
 
 
-def largest_face(gray):
-    """(x, y, w, h) of the largest frontal face, or None."""
+MIN_FACE_FRACTION = 0.24        # a face smaller than this share of the frame height is a bystander, not the
+                                # typist (measured: the owner at the keyboard is 30-46% of a 480 px frame, a
+                                # person two desks back 22%; that person was once scored instead of the owner)
+
+
+def largest_face(gray, min_fraction: float = MIN_FACE_FRACTION):
+    """(x, y, w, h) of the largest frontal face that is big enough to be at the keyboard, or None."""
     cv2 = _cv2()
+    h_frame = gray.shape[0]
     faces = _detector().detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5, minSize=(60, 60))
     if len(faces) == 0:
         return None
     x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
+    if h < min_fraction * h_frame:
+        return None
     return int(x), int(y), int(w), int(h)
 
 
@@ -192,6 +200,27 @@ def verify(user: str, jpeg: bytes, threshold: float | None = None) -> dict:
         return {"face": True, "match": None, "distance": None, "threshold": thr, "enrolled": 0, "reason": "owner face not enrolled"}
     _, dist = rec.predict(_crop(gray, box))
     return {"face": True, "match": bool(dist < thr), "distance": round(float(dist), 1), "threshold": round(thr, 1), "enrolled": n}
+
+
+def verify_frames(user: str, frames: list[bytes]) -> tuple[dict, bytes | None]:
+    """
+    Several frames a few hundred ms apart; the typist looks down at the keys most of
+    the time and up now and then, so take the frame the owner model likes best (lowest
+    distance) among those with a face. Returns (verdict, that frame). With no face in
+    any frame: the no-face verdict and the last frame.
+    """
+    best, best_frame = None, None
+    for jpeg in frames:
+        v = verify(user, jpeg)
+        if v.get("face") and (best is None or (v.get("distance") is not None and best.get("distance") is not None and v["distance"] < best["distance"])
+                              or (best is not None and best.get("distance") is None and v.get("distance") is not None)):
+            best, best_frame = v, jpeg
+        elif best is None and v.get("face"):
+            best, best_frame = v, jpeg
+    if best is None:
+        return (verify(user, frames[-1]) if frames else {"face": False, "match": None, "distance": None, "threshold": THRESHOLD, "enrolled": n_samples(user), "reason": "no frames"}), (frames[-1] if frames else None)
+    best["frames"] = len(frames)
+    return best, best_frame
 
 
 # ---------------------------------------------------------------------------

@@ -103,8 +103,8 @@ export const PrivacyView: React.FC = () => {
                 <dd className="text-xs text-on-surface-variant">
                   Switched on in Settings. The camera opens for one frame the moment an intruder alert fires; the backend
                   checks the face against the owner's enrolled face crops (data/faces) and grabs the screen. Everything is
-                  stored in data/alert_photos on this machine; the images are sent with the phone push only when the face is
-                  not the owner's. Never for a duress alert.
+                  stored in data/alert_photos on this machine. For an intruder alert the phone push itself waits for
+                  that check: if the face is the owner's, nothing is pushed and nothing locks. Never for a duress alert.
                 </dd>
                 <dt className="text-sm font-medium text-on-surface">Silent phone alert (ntfy)</dt>
                 <dd className="text-sm text-on-surface-variant leading-relaxed">

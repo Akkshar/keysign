@@ -76,10 +76,12 @@ export const ThreatsView: React.FC = () => {
     distance: `${(a.distance ?? 0).toFixed(1)}σ`,
     ticks: `${a.sustained_ticks ?? 0} ticks`,
     identity: a.identity ? `${a.identity} (${Math.round((a.identity_confidence ?? 0) * 100)}%)` : 'declared user',
-    sent: a.sent === false ? 'logged only' : 'pushed',
+    sent: a.face && typeof a.face.pushed === 'boolean'
+      ? (a.face.pushed ? `pushed · ${a.face.reason || ''}`.trim() : `kept local · ${a.face.reason || 'owner at the keyboard'}`)
+      : a.sent === false ? 'logged only' : a.sent === null ? 'pending camera check' : 'pushed',
     photo: a.photo ? alertPhotoUrl(a.photo) : null,
     screen: a.screen ? alertPhotoUrl(a.screen) : null,
-    face: a.face ? (a.face.match === true ? 'matched owner' : a.face.match === false ? `not ${a.face.owner || 'the owner'}` : a.face.face === false ? 'no face' : 'not enrolled') : null,
+    face: a.face ? (a.face.match === true ? 'matched owner' : a.face.match === false ? `not ${a.face.owner || 'the owner'}` : a.face.face === false ? 'no face' : 'not enrolled') + (a.face.frames ? ` (best of ${a.face.frames})` : '') : null,
     raw: a,
   }));
 

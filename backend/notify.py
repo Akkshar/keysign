@@ -125,13 +125,43 @@ def _post_photo(alert: dict, photo_path: Path, title: str, message: str) -> None
         r.read()
 
 
-def send(alert: dict, path: Path | str | None = None) -> dict:
-    """Log always; push in the background if configured. Returns what was done."""
+def send(alert: dict, path: Path | str | None = None, push: bool = True) -> dict:
+    """
+    Log always; push in the background if configured and `push`. Intruder alerts pass
+    push=False: backend/actions.py pushes them after the webcam has had its say, so an
+    owner who merely typed oddly never buzzes the phone. Returns what was done.
+    """
     record(alert, path)
     if not enabled():
         return {"sent": False, "channel": "log-only"}
+    if not push:
+        return {"sent": None, "channel": "ntfy", "reason": "pending the camera check"}
     threading.Thread(target=_push_safely, args=(alert,), daemon=True).start()
     return {"sent": True, "channel": "ntfy"}
+
+
+def push_alert(alert: dict, why: str = "") -> dict:
+    """Push a previously recorded alert (the deferred intruder path)."""
+    if not enabled():
+        return {"sent": False, "channel": "log-only"}
+    a = dict(alert)
+    if why:
+        a["why"] = why
+    threading.Thread(target=_push_safely, args=(a,), daemon=True).start()
+    return {"sent": True, "channel": "ntfy"}
+
+
+def mark_delivery(alert: dict, pushed: bool, reason: str, photo_dir: Path | str | None = None) -> None:
+    """Write the final delivery decision next to the alert's photo verdict so the log can show it."""
+    d = Path(photo_dir or PHOTO_DIR)
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / (photo_name(alert.get("ts", 0), alert.get("session"))[:-4] + ".json")
+    try:
+        cur = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        cur = {}
+    cur.update({"pushed": bool(pushed), "reason": reason})
+    p.write_text(json.dumps(cur), encoding="utf-8")
 
 
 def _push_safely(alert: dict) -> None:
@@ -146,8 +176,9 @@ def _post(alert: dict) -> None:
     server = os.environ.get("KEYSIGN_NTFY_SERVER", "https://ntfy.sh").rstrip("/")
     kind = alert.get("kind", "alert")
     title = "KeySign: possible intruder" if kind == "intruder" else "KeySign: possible duress"
-    body = (f"{alert.get('user', '?')} · {kind} · {alert.get('distance', 0):.1f}σ from baseline for "
-            f"{alert.get('sustained_ticks', 0)} ticks · {time.strftime('%H:%M:%S', time.localtime(alert.get('ts', time.time())))}")
+    body = (f"{alert.get('user', '?')} · {kind} · {float(alert.get('distance') or 0):.1f}σ from baseline for "
+            f"{alert.get('sustained_ticks', 0)} ticks · {time.strftime('%H:%M:%S', time.localtime(alert.get('ts', time.time())))}"
+            + (f" · {alert['why']}" if alert.get("why") else ""))
     req = urllib.request.Request(f"{server}/{topic}", data=body.encode("utf-8"), method="POST",
                                  headers={"Title": title, "Priority": "high" if kind == "duress" else "urgent",
                                           "Tags": "rotating_light" if kind == "duress" else "bust_in_silhouette"})

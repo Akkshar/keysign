@@ -64,19 +64,24 @@ def test_alert_actions_webcam_fallback_then_lock(monkeypatch, tmp_path):
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
     calls = []
-    monkeypatch.setattr(actions, "grab_webcam", lambda: b"\xff\xd8jpeg")
+    monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
     monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)
+    from backend import faces, notify
+    monkeypatch.setattr(faces, "verify_frames", lambda user, frames: ({"face": False, "match": None, "distance": None}, frames[-1]))
+    monkeypatch.setattr(notify, "PHOTO_DIR", tmp_path / "photos")
+    pushed_text = []
+    monkeypatch.setattr(notify, "push_alert", lambda a, why="": pushed_text.append(why) or {"sent": True})
     processed = []
     actions.update_settings({"lock_on_intruder": True, "photo_on_intruder": True})
-    actions.on_alert({"ts": 123.0, "kind": "intruder", "user": "owner", "session": "s"},
-                     lambda alert, jpeg, source: processed.append((alert["ts"], source)))
-    time.sleep(0.5)
-    assert processed == [(123.0, "backend-webcam")] and calls == ["lock"]
+    actions.on_alert({"ts": 123.0, "kind": "intruder", "user": "owner", "session": "s", "identity": "Someone Else"},
+                     lambda alert, jpeg, source, verdict=None: processed.append((alert["ts"], source)))
+    time.sleep(0.6)
+    assert processed == [(123.0, "backend-webcam")] and calls == ["lock"] and pushed_text == ["typing identified as Someone Else"]
     # the dashboard already sent a frame: no fallback grab, still the lock
     processed.clear(); calls.clear()
     actions.photo_arrived(124.0)
-    actions.on_alert({"ts": 124.0, "kind": "intruder", "user": "owner"}, lambda *a, **k: processed.append(a))
-    time.sleep(0.5)
+    actions.on_alert({"ts": 124.0, "kind": "intruder", "user": "owner", "identity": "Someone Else"}, lambda *a, **k: processed.append(a))
+    time.sleep(0.6)
     assert processed == [] and calls == ["lock"]
     # duress never locks and never photographs
     processed.clear(); calls.clear()
@@ -85,8 +90,8 @@ def test_alert_actions_webcam_fallback_then_lock(monkeypatch, tmp_path):
     assert processed == [] and calls == []
     # lock switched off
     actions.update_settings({"lock_on_intruder": False})
-    actions.on_alert({"ts": 126.0, "kind": "intruder", "user": "owner"}, lambda alert, jpeg, source: None)
-    time.sleep(0.4)
+    actions.on_alert({"ts": 126.0, "kind": "intruder", "user": "owner", "identity": "Someone Else"}, lambda alert, jpeg, source, verdict=None: None)
+    time.sleep(0.5)
     assert calls == []
 
 
@@ -143,14 +148,36 @@ def test_alert_actions_do_not_lock_when_the_face_is_the_owner(monkeypatch, tmp_p
     monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
     monkeypatch.setattr(actions, "LOCK_DELAY_S", 0.05)
     calls = []
-    monkeypatch.setattr(actions, "grab_webcam", lambda: b"\xff\xd8jpeg")
+    monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [b"\xff\xd8jpeg"])
     monkeypatch.setattr(actions, "lock_workstation", lambda: calls.append("lock") or True)
+    from backend import faces, notify
+    monkeypatch.setattr(notify, "PHOTO_DIR", tmp_path / "photos")
+    pushed_text = []
+    monkeypatch.setattr(notify, "push_alert", lambda a, why="": pushed_text.append(why) or {"sent": True})
+    monkeypatch.setattr(faces, "verify_frames", lambda user, frames: ({"face": True, "match": True, "distance": 30.0}, frames[0]))
     actions.update_settings({"lock_on_intruder": True, "photo_on_intruder": True})
     actions.on_alert({"ts": 500.0, "kind": "intruder", "user": "owner", "identity": "Someone Else"},
-                     lambda alert, jpeg, source: {"ok": True, "face": {"match": True, "distance": 30.0}})
-    time.sleep(0.5)
-    assert calls == []
+                     lambda alert, jpeg, source, verdict=None: {"ok": True, "face": dict(verdict)})
+    time.sleep(0.6)
+    assert calls == [] and pushed_text == []                       # owner in frame: nothing pushed, no lock
+    marked = json.loads((tmp_path / "photos" / "500_s.json").read_text()) if (tmp_path / "photos" / "500_s.json").exists() else json.loads((tmp_path / "photos" / "500_None.json").read_text())
+    assert marked["pushed"] is False and "owner" in marked["reason"]
+    monkeypatch.setattr(faces, "verify_frames", lambda user, frames: ({"face": True, "match": False, "distance": 80.0}, frames[0]))
     actions.on_alert({"ts": 501.0, "kind": "intruder", "user": "owner", "identity": "Someone Else"},
-                     lambda alert, jpeg, source: {"ok": True, "face": {"match": False, "distance": 80.0}})
-    time.sleep(0.5)
-    assert calls == ["lock"]
+                     lambda alert, jpeg, source, verdict=None: {"ok": True, "face": dict(verdict)})
+    time.sleep(0.6)
+    assert calls == ["lock"] and pushed_text == ["face does not match the owner"]
+
+
+def test_bystander_faces_are_ignored_and_best_frame_wins(monkeypatch):
+    from backend import faces
+    import numpy as np
+    small = np.zeros((480, 640), dtype=np.uint8)
+    monkeypatch.setattr(faces, "_detector", lambda: type("D", (), {"detectMultiScale": lambda self, g, **k: np.array([[40, 100, 100, 100]])})())
+    assert faces.largest_face(small) is None                       # 100 px in a 480 px frame: two desks back
+    monkeypatch.setattr(faces, "_detector", lambda: type("D", (), {"detectMultiScale": lambda self, g, **k: np.array([[40, 100, 100, 100], [260, 150, 200, 200]])})())
+    assert faces.largest_face(small) == (260, 150, 200, 200)
+    seq = iter([{"face": True, "match": False, "distance": 80.0}, {"face": True, "match": True, "distance": 40.0}, {"face": False, "match": None, "distance": None}])
+    monkeypatch.setattr(faces, "verify", lambda user, jpeg, threshold=None: next(seq))
+    v, frame = faces.verify_frames("owner", [b"a", b"b", b"c"])
+    assert v["match"] is True and v["distance"] == 40.0 and frame == b"b" and v["frames"] == 3

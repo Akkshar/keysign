@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
-import { clearFaceSamples, fetchFaceStatus } from '../lib/webcam';
+import { clearFaceSamples, enrolFaceFromMachineCamera, fetchFaceStatus } from '../lib/webcam';
 import { fetchAgent, fetchSettings, updateSettings, type AgentStatus, type AppSettings } from '../lib/keysign';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -161,20 +161,35 @@ const FaceEnrolment: React.FC = () => {
     if (!user) return;
     await clearFaceSamples(user); setN(0); setMsg(`Cleared ${user}'s face samples.`);
   };
+  const enrolMachine = async () => {
+    if (!user) return;
+    setBusy(true); setMsg('Look at the screen, then down at the keys, then back… (about 4 s)');
+    const r = await enrolFaceFromMachineCamera(user, 8);
+    setBusy(false);
+    if (r.ok) { setN(r.n_samples ?? null); setMsg(`Stored ${r.stored} frames from the app's camera (${r.without_face ?? 0} had no face). ${user} now has ${r.n_samples} samples, threshold ${r.threshold}.`); }
+    else setMsg(`No frames stored${r.error ? `: ${r.error}` : ''}.`);
+  };
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-6 border-t border-outline-variant/40">
       <div>
         <span className="text-sm font-medium text-on-surface">Your face, for the intruder check</span>
         <p className="text-xs text-on-surface-variant">
           {user ? `${user}: ` : ''}{n == null ? 'not enrolled' : n === 0 ? 'no face samples yet' : `${n} face samples on this machine`}.
-          {' '}Five frames from the webcam, cropped to the face and kept in data/faces. A photo taken at an alert is
-          compared with these; if it matches, it stays here.{msg ? ` ${msg}` : ''}
+          {' '}Frames from the webcam, cropped to the face and kept in data/faces. A photo taken at an alert is
+          compared with these; if it matches, nothing is pushed and nothing locks. Enrol from both cameras: this
+          window's, and the app's own (used when no dashboard is open), and include looking down at the keys.
+          {msg ? ` ${msg}` : ''}
         </p>
       </div>
       <div className="flex gap-2 shrink-0">
         <button type="button" onClick={enrol} disabled={busy || !user || !live.connected}
           className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-          {busy ? 'Capturing…' : n ? 'Add 5 more frames' : 'Enrol my face'}
+          {busy ? 'Capturing…' : n ? 'Add 5 frames (this window)' : 'Enrol my face'}
+        </button>
+        <button type="button" onClick={enrolMachine} disabled={busy || !user || !live.connected}
+          title="The backend takes 8 frames with the machine's camera over about 4 seconds"
+          className="px-4 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-low text-sm text-on-surface hover:border-outline disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+          Add 8 frames (app camera)
         </button>
         {!!n && (
           <button type="button" onClick={clear} disabled={busy}

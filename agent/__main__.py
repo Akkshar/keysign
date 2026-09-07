@@ -10,6 +10,7 @@ One process, four parts:
 
 Build the dashboard first (once, and after UI changes):  npm --prefix ui run build
 Options: --no-window (tray only), --no-capture (backend + window only), --port.
+Stop it: tray -> Quit, Ctrl+C in its console, or  uv run python -m agent --quit
 """
 from __future__ import annotations
 
@@ -80,8 +81,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-window", action="store_true", help="tray only; open the dashboard from the tray")
     p.add_argument("--no-capture", action="store_true", help="do not hook the keyboard (dashboard typing only)")
     p.add_argument("--browser", action="store_true", help="open the dashboard in the default browser instead of the app window")
+    p.add_argument("--quit", action="store_true", help="stop a running agent (asks it over http://localhost:<port>)")
     a = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+
+    if a.quit:
+        import urllib.request
+        try:
+            req = urllib.request.Request(f"http://127.0.0.1:{a.port}/api/agent/quit", method="POST")
+            print(urllib.request.urlopen(req, timeout=3).read().decode())
+            return 0
+        except Exception as e:
+            print(f"no agent answered on port {a.port}: {e}", file=sys.stderr)
+            return 1
 
     dist = ROOT / "ui" / "dist" / "index.html"
     if not dist.exists():
@@ -125,18 +137,28 @@ def main(argv: list[str] | None = None) -> int:
         if capture:
             capture.reset()
 
-    def quit_app(icon, *_):
+    def quit_app(icon=None, *_):
+        log.info("KeySign agent stopping")
         if capture:
             capture.stop()
-        icon.stop()
         try:
-            import webview
+            icon.stop()
+        except Exception:
+            pass
+        try:
             for w in windows:
                 w.destroy()
         except Exception:
             pass
         import os
         os._exit(0)
+
+    # Ctrl+C in the console, POST /api/agent/quit, and `python -m agent --quit` all end here.
+    import signal
+    from backend import actions as _actions
+    _actions.QUIT_HOOK = lambda: quit_app(icon_ref[0] if icon_ref else None)
+    icon_ref: list = []
+    signal.signal(signal.SIGINT, lambda *_: quit_app(icon_ref[0] if icon_ref else None))
 
     def pause_label(*_):
         return "Resume capture" if (capture and capture.paused) else "Pause capture"
@@ -149,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
         pystray.MenuItem("Quit", quit_app),
     )
     icon = pystray.Icon("KeySign", make_icon(), "KeySign · on-device typing signature", menu)
+    icon_ref.append(icon)
     icon.run_detached()
 
     # ---- window (main thread) ----
