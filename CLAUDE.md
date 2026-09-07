@@ -191,6 +191,12 @@ person on it, done first.
 Run everything with `uv run ...` (Python) and `node ...` (JS). Tests:
 `uv run python -m pytest -q`.
 
+As an app: `npm --prefix ui run build` then `uv run python -m agent` (see `agent/`):
+backend + pynput keyboard hook for every application + tray + WebView2 window.
+Agent sessions are recorded redacted (key classes only). Intruder alert -> webcam
+frame (backend fallback) -> face check -> push -> LockWorkStation, per
+`data/settings.json`. Reviewers asked not to see localhost: the window has no address bar.
+
 ## Working principles
 
 - Keep it simple and explainable. A working scikit-learn model beats a fancy one

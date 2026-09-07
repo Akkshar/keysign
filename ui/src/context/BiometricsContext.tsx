@@ -16,6 +16,7 @@ import {
   fetchBaseline,
   kpsToWpm,
   subscribeFeed,
+  updateSettings,
 } from '../lib/keysign';
 import { WebcamSnap, postAlertPhoto, postFaceSample } from '../lib/webcam';
 
@@ -353,6 +354,7 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try { localStorage.setItem(USER_KEY, u); } catch { /* ignore */ }
     captureRef.current?.setUser(u);
     fetchBaseline(u).then(setBaselineDoc).catch(() => setBaselineDoc(null));
+    void updateSettings({ declared_user: u });            // the desktop agent measures against the same person
   }, []);
 
   useEffect(() => {

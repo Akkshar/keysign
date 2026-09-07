@@ -86,6 +86,13 @@ export const PrivacyView: React.FC = () => {
             </p>
             <dl className="space-y-4">
               <div>
+                <dt className="text-sm font-medium text-on-surface">Background capture (the desktop app)</dt>
+                <dd className="text-xs text-on-surface-variant">
+                  Run as an app, KeySign scores typing in every application. The keys travel only to the backend on this
+                  machine and are dropped after the 10-second window; the session recording for the app keeps the class
+                  of each key (letter, digit, space, edit, modifier), never which letter. Capture pauses on its own while a
+                  password manager or a sign-in window is in front, and from the tray at any time.
+                </dd>
                 <dt className="text-sm font-medium text-on-surface">Sign-in (optional, off unless configured)</dt>
                 <dd className="text-xs text-on-surface-variant">
                   With Firebase configured, your email and password, or the Google sign-in exchange, go to Firebase/Google.

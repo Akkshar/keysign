@@ -70,6 +70,15 @@ does not, or there is no face or no enrolment, the webcam frame and the
 screen go to the phone with the alert. `GET/POST/DELETE /api/faces/{user}`
 manage the enrolment.
 
+Run it as an app instead: `uv run python -m agent` starts this backend, a
+system-wide keystroke hook (pynput), a tray icon and a native window showing
+the built dashboard (`npm --prefix ui run build` first). Agent sessions say
+`redact: true`, so their recordings keep only key classes, never the key.
+On an intruder alert the backend grabs a webcam frame itself if the
+dashboard has not posted one within 1.5 s, then locks the workstation
+(`data/settings.json`, `lock_on_intruder`; `PUT /api/settings`). See
+`agent/__main__.py`.
+
 Every live session is recorded to `data/sessions/<date>_<session>.jsonl`
 (raw events plus each tick's features and head outputs; gitignored;
 `KEYSIGN_RECORD=0` disables). A demo run is data: when someone is misjudged,

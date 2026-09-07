@@ -30,6 +30,22 @@ Then: enter your name, pick calm/stress, press Start, type the prompt, press
 Save (or Ctrl+Enter). Repeat 5+ times per person per condition. Export JSON
 and drop the file into data/samples/.
 
+## Run it as an app (no browser, no localhost on screen)
+
+    npm --prefix ui run build          # once, and after UI changes
+    uv run python -m agent             # backend + system-wide capture + tray + native window
+
+One process: the backend serves the built dashboard at 127.0.0.1:8000, a
+tray icon offers Open KeySign / Pause capture / Start a fresh window / Quit,
+and a native window (Windows WebView2) shows the dashboard with no address
+bar. The keyboard hook scores typing in every application; agent sessions
+are recorded with key classes only (letter, digit, space, edit, modifier),
+never the key, and capture pauses by itself while a password manager or a
+sign-in window is in front. On an intruder alert the backend takes a webcam
+frame itself if no dashboard sent one within 1.5 s, runs the face check and
+the push, then locks the workstation (Settings, or `data/settings.json`).
+Flags: `--no-window` (tray only), `--no-capture`, `--browser`, `--port`.
+
 ## Python side (pipeline)
 
 Python deps are managed with [uv](https://docs.astral.sh/uv/); it fetches an

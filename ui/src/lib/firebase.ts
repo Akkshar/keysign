@@ -19,6 +19,7 @@ import {
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut as fbSignOut,
   type Auth,
   type User,
@@ -74,10 +75,17 @@ export async function signUpEmail(email: string, password: string): Promise<Acco
   return toAccount((await createUserWithEmailAndPassword(auth, email, password)).user);
 }
 
-export async function signInGoogle(): Promise<Account> {
+/** True inside the desktop app window (pywebview injects window.pywebview). */
+export const inAppWindow = () => typeof window !== 'undefined' && Boolean((window as any).pywebview);
+
+export async function signInGoogle(): Promise<Account | null> {
   if (!auth) throw new Error('Sign-in is not configured');
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
+  if (inAppWindow()) {
+    await signInWithRedirect(auth, provider);      // comes back through onAuthStateChanged after the redirect
+    return null;
+  }
   return toAccount((await signInWithPopup(auth, provider)).user);
 }
 

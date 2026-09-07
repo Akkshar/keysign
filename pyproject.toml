@@ -11,6 +11,9 @@ dependencies = [
     "uvicorn[standard]>=0.29",
     "opencv-contrib-python-headless>=5.0.0.93",
     "pillow>=12.3.0",
+    "pywebview>=6.2.1",
+    "pystray>=0.19.5",
+    "pynput>=1.8.2",
 ]
 
 [dependency-groups]

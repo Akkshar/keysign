@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useBiometrics } from '../context/BiometricsContext';
 import { clearFaceSamples, fetchFaceStatus } from '../lib/webcam';
+import { fetchAgent, fetchSettings, updateSettings, type AgentStatus, type AppSettings } from '../lib/keysign';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { Reveal } from '../components/motion/Reveal';
@@ -26,6 +27,8 @@ export const SettingsView: React.FC = () => {
       </div>
 
       <AccountSection />
+
+      <AgentSection />
 
       <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -245,6 +248,63 @@ const AccountSection: React.FC = () => {
       <div className="flex justify-end pt-2">
         <button type="button" onClick={() => void auth.signOut()} className="px-4 py-2 rounded-lg border border-outline-variant/60 text-sm text-on-surface-variant hover:border-outline transition-colors">
           Sign out
+        </button>
+      </div>
+    </section>
+  );
+};
+
+
+/** The desktop agent: system-wide capture status, and what an intruder alert does on this machine. */
+const AgentSection: React.FC = () => {
+  const { live } = useBiometrics();
+  const [agent, setAgent] = useState<AgentStatus>({ running: false });
+  const [cfg, setCfg] = useState<AppSettings | null>(null);
+  useEffect(() => {
+    if (!live.connected) return;
+    let stop = false;
+    const poll = () => { fetchAgent().then((a) => { if (!stop) setAgent(a); }); };
+    fetchSettings().then((c) => { if (!stop) setCfg(c); });
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { stop = true; clearInterval(id); };
+  }, [live.connected]);
+  const set = async (changes: Partial<AppSettings>) => { const c = await updateSettings(changes); if (c) setCfg(c); };
+  const ago = agent.last_key_at ? Math.max(0, Math.round(Date.now() / 1000 - agent.last_key_at)) : null;
+  return (
+    <section className="bg-surface-container-lowest border border-outline-variant/60 rounded-2xl p-6 space-y-5">
+      <div>
+        <h2 className="font-serif text-xl font-medium text-on-surface">On this machine</h2>
+        <p className="text-xs text-on-surface-variant">
+          {agent.running
+            ? `Background capture is ${agent.paused ? 'paused from the tray' : agent.auto_paused ? 'paused: the front window looks like a sign-in or password screen' : 'on'}: every app is scored, recordings keep only key classes, never the key.${agent.keys_sent ? ` ${agent.keys_sent} keys this session${ago != null ? `, last one ${ago}s ago` : ''}.` : ''}`
+            : 'Background capture is off: only typing in this window is scored. Start the app with `uv run python -m agent` to score every application.'}
+        </p>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+        <div>
+          <span className="text-sm font-medium text-on-surface">Lock the screen on an intruder alert</span>
+          <p className="text-xs text-on-surface-variant">
+            Windows' own lock screen, about 2 s after the alert so the webcam frame and the screen snapshot are taken
+            first. The owner unlocks with their password. Never for duress: that alert stays silent.
+          </p>
+        </div>
+        <button type="button" disabled={!cfg} onClick={() => cfg && set({ lock_on_intruder: !cfg.lock_on_intruder })}
+          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.lock_on_intruder ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'}`}>
+          {cfg == null ? '…' : cfg.lock_on_intruder ? 'On' : 'Off'}
+        </button>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-outline-variant/40">
+        <div>
+          <span className="text-sm font-medium text-on-surface">Webcam frame when no dashboard is open</span>
+          <p className="text-xs text-on-surface-variant">
+            In background mode the backend takes the frame itself if this window has not sent one within 1.5 s, then runs
+            the same face check and push.
+          </p>
+        </div>
+        <button type="button" disabled={!cfg} onClick={() => cfg && set({ photo_on_intruder: !cfg.photo_on_intruder })}
+          className={`px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-50 ${cfg?.photo_on_intruder ? 'border-primary bg-primary text-white hover:bg-primary/90' : 'border-outline-variant/60 bg-surface-container-low text-on-surface hover:border-outline'}`}>
+          {cfg == null ? '…' : cfg.photo_on_intruder ? 'On' : 'Off'}
         </button>
       </div>
     </section>

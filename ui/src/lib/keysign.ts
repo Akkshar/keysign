@@ -177,3 +177,21 @@ export async function fetchAlerts(n = 20): Promise<any[]> {
 
 /** Keys per second -> words per minute, at the usual 5 characters per word. */
 export const kpsToWpm = (kps: number) => Math.round((kps * 60) / 5);
+
+
+/** Machine-side settings kept by the backend (data/settings.json). */
+export interface AppSettings { lock_on_intruder: boolean; photo_on_intruder: boolean; declared_user: string }
+export async function fetchSettings(): Promise<AppSettings | null> {
+  try { const r = await fetch(`${BACKEND_HTTP}/api/settings`); return r.ok ? r.json() : null; } catch { return null; }
+}
+export async function updateSettings(changes: Partial<AppSettings>): Promise<AppSettings | null> {
+  try {
+    const r = await fetch(`${BACKEND_HTTP}/api/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(changes) });
+    return r.ok ? r.json() : null;
+  } catch { return null; }
+}
+/** The desktop agent (system-wide capture), if one is running in this backend. */
+export interface AgentStatus { running: boolean; session?: string; connected?: boolean; paused?: boolean; auto_paused?: boolean; keys_sent?: number; last_key_at?: number; foreground?: string }
+export async function fetchAgent(): Promise<AgentStatus> {
+  try { const r = await fetch(`${BACKEND_HTTP}/api/agent`); return r.ok ? r.json() : { running: false }; } catch { return { running: false }; }
+}

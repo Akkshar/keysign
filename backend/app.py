@@ -47,6 +47,7 @@ from typing import Any, Callable
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from pipeline.baseline import BASELINE_FEATURES, Baseline, _slug
 from pipeline.features import FEATURE_NAMES, extract_features
@@ -57,6 +58,29 @@ ROOT = Path(__file__).resolve().parent.parent
 BASELINE_DIR = ROOT / "data" / "baselines"
 RECORD_DIR = ROOT / "data" / "sessions"         # every live session, raw events + ticks (gitignored)
 RECORD = os.environ.get("KEYSIGN_RECORD", "1") != "0"
+UI_DIST = ROOT / "ui" / "dist"                  # built dashboard; served at / when present (the app window loads it)
+AGENT_STATUS = None                             # set by the desktop agent: callable -> dict
+
+# Recording redaction for system-wide capture: keep the class of a key, never the key.
+def key_class(e: dict) -> str:
+    code, key = str(e.get("code", "")), str(e.get("key", ""))
+    if code.startswith("Key") or (len(key) == 1 and key.isalpha()):
+        return "letter"
+    if code.startswith("Digit") or (len(key) == 1 and key.isdigit()):
+        return "digit"
+    if code == "Space" or key == " ":
+        return "space"
+    if key in ("Backspace", "Delete"):
+        return "edit"
+    if key in ("Shift", "Control", "Alt", "Meta", "CapsLock", "AltGraph"):
+        return "modifier"
+    if key in ("Enter", "Tab", "Escape"):
+        return "control"
+    return "other"
+
+
+def redact_events(events: list[dict]) -> list[dict]:
+    return [{"type": e.get("type"), "class": key_class(e), "t": e.get("t")} for e in events]
 
 WINDOW_S = 10.0          # features are computed on the last N seconds of events
 BUFFER_S = 120.0         # how much history a session keeps
@@ -123,9 +147,11 @@ def list_baselines() -> list[dict]:
 # Sessions
 # ---------------------------------------------------------------------------
 class Session:
-    def __init__(self, session_id: str, user: str):
+    def __init__(self, session_id: str, user: str, redact: bool = False, source: str = "browser"):
         self.id = session_id
         self.user = user
+        self.redact = redact                 # recordings keep key classes only (system-wide capture)
+        self.source = source
         self.events: deque[dict] = deque()
         self.last_tick = 0.0
         self.last_tick_msg: dict | None = None
@@ -135,7 +161,8 @@ class Session:
         if RECORD:
             RECORD_DIR.mkdir(parents=True, exist_ok=True)
             self.record_path = RECORD_DIR / f"{time.strftime('%Y-%m-%d_%H%M%S')}_{session_id}.jsonl"
-            self.record({"type": "hello", "user": user, "session": session_id, "ts": time.time()})
+            self.record({"type": "hello", "user": user, "session": session_id, "ts": time.time(),
+                         "source": source, "redacted": redact})
 
     def record(self, obj: dict) -> None:
         """Append one line to this session's recording (see backend/sessions.py). Never raises."""
@@ -198,6 +225,23 @@ class Session:
         return msg
 
 
+def _maybe_alert_actions(session: Session, tick: dict) -> None:
+    """A new alert on this tick -> backend/actions.py (webcam fallback, lock). Never raises."""
+    try:
+        th = (tick.get("heads") or {}).get("threat") or {}
+        total = int(th.get("alerts_total") or 0)
+        seen = session.ctx.get("_alerts_actioned", 0)
+        if total > seen and th.get("last_alert"):
+            session.ctx["_alerts_actioned"] = total
+            from backend import actions
+            la = th["last_alert"]
+            alert = {"ts": la.get("ts"), "kind": la.get("kind") or th.get("kind"), "user": session.user, "session": session.id,
+                     "distance": th.get("distance"), "sustained_ticks": th.get("sustained_ticks")}
+            actions.on_alert(alert, process_alert_photo)
+    except Exception:
+        log.exception("alert actions")
+
+
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
@@ -221,7 +265,7 @@ async def broadcast(msg: dict) -> None:
         dashboards.discard(ws)
 
 
-@app.get("/")
+@app.get("/api/info")
 def index():
     from backend import explain, notify
     return {"service": "KeySign backend", "ok": True,
@@ -261,23 +305,10 @@ def alerts_api(n: int = 20):
 MAX_PHOTO_BYTES = 2_000_000
 
 
-@app.post("/api/alerts/photo")
-async def alert_photo(request: Request, ts: float, session: str | None = None):
-    """
-    One webcam frame (JPEG body) for the intruder alert raised at `ts`. Stored
-    in data/alert_photos/ and, if a phone topic is configured, pushed as an
-    attachment. The dashboard only posts this for INTRUDER alerts.
-    """
-    from backend import faces, notify
-    data = await request.body()
-    if not data or len(data) > MAX_PHOTO_BYTES or not data.startswith(b"\xff\xd8"):
-        return JSONResponse({"ok": False, "error": "expected a JPEG under 2 MB"}, status_code=400)
-    alerts = [a for a in notify.recent(50) if abs(float(a.get("ts", 0)) - ts) < 2.0]
-    if not alerts:
-        return JSONResponse({"ok": False, "error": "no alert at that time"}, status_code=404)
-    alert = alerts[-1]
-    if alert.get("kind") != "intruder":
-        return JSONResponse({"ok": False, "error": "photos are only taken for intruder alerts"}, status_code=400)
+def process_alert_photo(alert: dict, data: bytes, session: str | None = None, source: str = "dashboard") -> dict:
+    """Store the frame, check the face against the owner, grab the screen, push if not the owner."""
+    from backend import actions, faces, notify
+    actions.photo_arrived(alert["ts"])
     sess = alert.get("session") or session
     p = notify.save_photo(alert["ts"], sess, data)
     # Is this the owner? The owner of the session is the declared user.
@@ -288,11 +319,12 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
         log.warning("face check failed: %s", e)
         verdict = {"face": None, "match": None, "distance": None, "threshold": faces.THRESHOLD, "enrolled": 0, "reason": str(e)}
     verdict["owner"] = owner
-    notify.save_verdict(alert["ts"], sess, verdict)
     screen_name = None
     shot = faces.grab_screen()
     if shot:
         screen_name = notify.save_photo(alert["ts"], sess, shot, suffix="_screen").name
+    verdict["source"] = source
+    notify.save_verdict(alert["ts"], sess, verdict)
     when = time.strftime("%H:%M:%S", time.localtime(alert["ts"]))
     if verdict.get("match") is True:
         push = {"sent": False, "channel": notify.channel(), "reason": "face matched the owner; kept local"}
@@ -302,6 +334,53 @@ async def alert_photo(request: Request, ts: float, session: str | None = None):
         if screen_name:
             notify.send_photo(alert, notify.PHOTO_DIR / screen_name, "KeySign: what was on the screen", f"{when} · screen at the moment of the alert")
     return {"ok": True, "photo": p.name, "screen": screen_name, "face": verdict, **push}
+
+
+@app.post("/api/alerts/photo")
+async def alert_photo(request: Request, ts: float, session: str | None = None):
+    """
+    One webcam frame (JPEG body) for the intruder alert raised at `ts`. Stored
+    in data/alert_photos/ and, if a phone topic is configured, pushed as an
+    attachment. The dashboard only posts this for INTRUDER alerts.
+    """
+    from backend import notify
+    data = await request.body()
+    if not data or len(data) > MAX_PHOTO_BYTES or not data.startswith(b"\xff\xd8"):
+        return JSONResponse({"ok": False, "error": "expected a JPEG under 2 MB"}, status_code=400)
+    alerts = [a for a in notify.recent(50) if abs(float(a.get("ts", 0)) - ts) < 2.0]
+    if not alerts:
+        return JSONResponse({"ok": False, "error": "no alert at that time"}, status_code=404)
+    alert = alerts[-1]
+    if alert.get("kind") != "intruder":
+        return JSONResponse({"ok": False, "error": "photos are only taken for intruder alerts"}, status_code=400)
+    return process_alert_photo(alert, data, session)
+
+
+@app.get("/api/settings")
+def settings_get():
+    from backend import actions
+    return actions.settings()
+
+
+@app.put("/api/settings")
+async def settings_put(request: Request):
+    """Body: any of lock_on_intruder (bool), photo_on_intruder (bool), declared_user (str)."""
+    from backend import actions
+    body = await request.json()
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "object expected"}, status_code=400)
+    return actions.update_settings(body)
+
+
+@app.get("/api/agent")
+def agent_status():
+    """Is the desktop agent (system-wide capture) running, and what is it doing."""
+    if AGENT_STATUS is None:
+        return {"running": False}
+    try:
+        return {"running": True, **AGENT_STATUS()}
+    except Exception as e:
+        return {"running": True, "error": str(e)}
 
 
 # ---------------------------------------------------------------------------
@@ -426,15 +505,18 @@ async def ws_capture(ws: WebSocket):
             t = msg.get("type")
             if t == "hello":
                 sid = str(msg.get("session") or uuid.uuid4().hex[:8])
-                session = Session(sid, str(msg.get("user") or "unknown"))
+                session = Session(sid, str(msg.get("user") or "unknown"),
+                                  redact=bool(msg.get("redact")), source=str(msg.get("source") or "browser"))
                 sessions[sid] = session
                 await ws.send_text(json.dumps({"type": "ack", "session": sid, "user": session.user,
                                                "baseline": load_baseline(session.user) is not None}))
             elif t == "events" and session is not None:
                 session.add(msg.get("events") or [])
-                session.record({"type": "events", "ts": time.time(), "events": msg.get("events") or []})
+                evs = msg.get("events") or []
+                session.record({"type": "events", "ts": time.time(), "events": redact_events(evs) if session.redact else evs})
                 tick = session.tick()
                 if tick:
+                    _maybe_alert_actions(session, tick)
                     if tick.get("features"):
                         h = tick["heads"]
                         session.record({"type": "tick", "ts": tick["ts"], "user": tick["user"], "n_keys": tick["n_keys"],
@@ -480,3 +562,14 @@ try:
     from backend import heads as _heads  # noqa: F401  (registers on import)
 except ImportError:
     pass
+
+
+
+# The built dashboard, when present: the desktop app window loads http://127.0.0.1:8000/ and
+# nobody sees a browser. Mounted last so every /api and /ws route above wins.
+if UI_DIST.exists():
+    app.mount("/", StaticFiles(directory=str(UI_DIST), html=True), name="dashboard")
+else:
+    @app.get("/")
+    def index_fallback():
+        return index()
