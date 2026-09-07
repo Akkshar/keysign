@@ -19,6 +19,9 @@ from pipeline.baseline import BASELINE_FEATURES, Baseline, robust_center_scale
 from pipeline.features import FEATURE_NAMES
 
 
+JPEG_HEADER = bytes([0xFF, 0xD8, 0xFF, 0xE0])       # the first bytes of a JPEG
+
+
 def typed(n, t0=0.0, flight=120.0, hold=60.0):
     ev, t = [], t0
     for i in range(n):
@@ -41,6 +44,14 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(heads, "MODEL_PATH", tmp_path / "no-identity.joblib")
     monkeypatch.setattr(heads, "STATE_MODEL_PATH", tmp_path / "no-state.joblib")
     heads._model_cache.clear(); heads._state_cache.clear()
+    # A tick can raise a real alert, and an alert now reaches for the webcam and the screen.
+    # Neither belongs in a test run: keep them out and keep the images in tmp_path.
+    from backend import actions, faces, notify
+    monkeypatch.setattr(actions, "grab_webcam_burst", lambda **k: [])
+    monkeypatch.setattr(faces, "grab_screen", lambda *a, **k: None)
+    monkeypatch.setattr(notify, "PHOTO_DIR", tmp_path / "alert_photos")
+    monkeypatch.setattr(actions, "PHOTO_GRACE_S", 0.05)
+    monkeypatch.setattr(actions, "PHOTO_SETTLE_S", 0.05)
     backend._baseline_cache.clear()
     backend.sessions.clear()
     backend.dashboards.clear()
@@ -401,6 +412,78 @@ def test_the_app_window_learns_who_signed_in_from_the_browser(client, tmp_path, 
     assert client.get("/api/active-account").json()["email"] is None
     assert client.post("/api/active-account", json={"email": "nope"}).status_code == 400
     assert client.post("/api/active-account", json={}).status_code == 400
+
+
+def test_an_alert_with_no_camera_frame_still_sends_the_screen(client, tmp_path, monkeypatch):
+    """
+    The camera can give nothing: no camera, or another alert holding it. The screen snapshot
+    still has to go out, which is the whole point of an intruder alert. Measured 2026-09-07:
+    a real intruder alert reached the phone as text only because of this.
+    """
+    from backend import actions, faces, notify
+    monkeypatch.setattr(notify, "PHOTO_DIR", tmp_path / "photos")
+    monkeypatch.setattr(faces, "grab_screen", lambda *a, **k: JPEG_HEADER + b"the screen")
+    monkeypatch.setenv("KEYSIGN_NTFY_TOPIC", "keysign-test")
+    pushed = []
+    monkeypatch.setattr(notify, "_post_photo", lambda a, path, title, msg: pushed.append((title, path.name)))
+    alert = {"ts": 4000.0, "session": "s", "kind": "intruder", "user": "owner", "identity": "Someone Else"}
+    r = backend.process_alert_photo(alert, None, source="backend-no-frame")
+    assert r["photo"] is None and r["screen"] == "4000_s_screen.jpg"
+    assert r["final_kind"] == "intruder" and r["face"]["reason"].startswith("no camera frame")
+    import time as _t
+    for _ in range(50):
+        if pushed:
+            break
+        _t.sleep(0.02)
+    assert pushed == [("KeySign: what was on the screen", "4000_s_screen.jpg")]
+    # a duress alert still keeps its images at home
+    pushed.clear()
+    dur = {"ts": 4100.0, "session": "s", "kind": "duress", "user": "owner", "identity": "owner"}
+    r = backend.process_alert_photo(dur, None, source="backend-no-frame")
+    assert r["final_kind"] == "duress"
+    _t.sleep(0.1)
+    assert pushed == []
+
+
+def test_only_one_thread_opens_the_camera_and_a_fresh_burst_is_shared(monkeypatch):
+    """
+    Two alerts can land a fraction of a second apart (the agent scores every application
+    while a dashboard scores its own window). When both opened the camera at once neither
+    got a frame, and a real intruder alert went to the phone with no photo and no screen.
+    The second one is now handed the first one's burst.
+    """
+    import sys
+    import threading
+    from backend import actions
+    opens = []
+    inside = threading.Event()
+    release = threading.Event()
+
+    class FakeCap:
+        def __init__(self, index):
+            opens.append(index)
+            inside.set()                      # the second caller may start now
+            release.wait(2)                   # ...and it must wait for the lock, not the camera
+        def isOpened(self): return len(opens) == 1     # a second real open fails, as it did here
+        def read(self): return True, "frame"
+        def release(self): pass
+
+    monkeypatch.setitem(sys.modules, "cv2", type("cv2", (), {
+        "VideoCapture": FakeCap, "IMWRITE_JPEG_QUALITY": 1,
+        "imencode": staticmethod(lambda ext, f, p: (True, bytearray(b"jpeg")))}))
+    monkeypatch.setattr(actions, "_last_burst", (0.0, []))
+    got: dict[str, list] = {}
+
+    def grab(name):
+        got[name] = actions.grab_webcam_burst(n=1, gap_s=0, warmup_frames=0)
+
+    first = threading.Thread(target=grab, args=("first",)); first.start()
+    assert inside.wait(2), "the first caller never reached the camera"
+    second = threading.Thread(target=grab, args=("second",)); second.start()
+    release.set()
+    first.join(5); second.join(5)
+    assert opens == [0], f"the camera was opened {len(opens)} times"
+    assert got["first"] and got["second"] == got["first"], "the second alert was left with no frame"
 
 
 def test_signin_browser_opens_only_this_backend(client, monkeypatch):

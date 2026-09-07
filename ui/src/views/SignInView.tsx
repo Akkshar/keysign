@@ -190,6 +190,50 @@ const LinkProfile: React.FC = () => {
   );
 };
 
+/**
+ * The end of the browser's part in the hand-off. This page was opened by the desktop window
+ * only so Google's sign-in could run in a browser; once the local backend has the account,
+ * the window carries on and this can go away. Browsers only let a page close itself when a
+ * script opened it, so the card also says it in words.
+ */
+export const HandoffDone: React.FC = () => {
+  const { account, link } = useAuth();
+  const [closing, setClosing] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { window.close(); } catch { /* not ours to close */ }
+      setTimeout(() => setClosing(false), 600);        // still here: ask for the click
+    }, 1200);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="min-h-screen bg-background text-on-surface flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-md text-center space-y-4">
+        <div className="flex items-center justify-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+            <span className="material-symbols-outlined text-[19px]">keyboard_alt</span>
+          </div>
+          <span className="font-serif text-2xl font-medium tracking-tight">KeySign</span>
+        </div>
+        <h1 className="font-serif text-2xl font-medium">Signed in{account?.email ? ` as ${account.email}` : ''}.</h1>
+        <p className="text-sm text-on-surface-variant">
+          {link?.user
+            ? `The KeySign window has it and is scoring ${link.user}'s typing. `
+            : 'The KeySign window has it. '}
+          {closing ? 'Closing this window…' : 'You can close this window now.'}
+        </p>
+        <button
+          type="button"
+          onClick={() => { try { window.close(); } catch { /* ignore */ } }}
+          className="px-4 py-2 rounded-lg bg-on-surface text-surface text-sm font-medium"
+        >
+          Close this window
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const GoogleMark: React.FC = () => (
   <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
     <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.3 17.7 9.5 24 9.5z" />

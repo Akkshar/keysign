@@ -13,6 +13,7 @@ import {
   CaptureStream,
   FeedMessage,
   Tick,
+  fetchAgent,
   fetchBaseline,
   kpsToWpm,
   subscribeFeed,
@@ -35,6 +36,7 @@ import { WebcamSnap, postAlertPhoto, postFaceSample } from '../lib/webcam';
 export interface LiveState {
   connected: boolean;          // tick feed from the backend
   streaming: boolean;          // this window's keystrokes are reaching the backend
+  agentCapturing: boolean;     // the desktop agent is scoring every application, so this window does not
   tick: Tick | null;
   users: BaselineInfo[];       // people with a baseline on disk
   declaredUser: string;        // whose baseline we measure against
@@ -255,6 +257,7 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // ---- live backend ----
   const [connected, setConnected] = useState(false);
   const [streaming, setStreaming] = useState(false);
+  const [agentCapturing, setAgentCapturing] = useState(false);
   const [tick, setTick] = useState<Tick | null>(null);
   const [stateTimeline, setStateTimeline] = useState<StateTimelineEvent[]>([]);
   const lastLabel = useRef<string | null>(null);
@@ -338,14 +341,30 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return stop;
   }, []);
 
-  // stream this window's keystrokes to the backend while connected
+  // Stream this window's keystrokes to the backend while connected, UNLESS the desktop agent
+  // is already capturing: it hooks every application, this window included, and two sessions
+  // on the same keystrokes means every alert fires twice. Measured 2026-09-07: a chair swap
+  // raised two intruder alerts a quarter of a second apart, both reached for the webcam at
+  // once, and neither got a frame.
   useEffect(() => {
-    if (!connected) { captureRef.current?.stop(); captureRef.current = null; setStreaming(false); return; }
-    const cs = new CaptureStream(declaredRef.current);
-    cs.onStatus = setStreaming;
-    cs.start();
-    captureRef.current = cs;
-    return () => { cs.stop(); captureRef.current = null; setStreaming(false); };
+    if (!connected) { captureRef.current?.stop(); captureRef.current = null; setStreaming(false); setAgentCapturing(false); return; }
+    let stopped = false;
+    fetchAgent().then((a) => {
+      if (stopped) return;
+      const capturing = Boolean(a.running && a.connected && !a.paused);
+      setAgentCapturing(capturing);
+      if (capturing) { setStreaming(false); return; }
+      const cs = new CaptureStream(declaredRef.current);
+      cs.onStatus = setStreaming;
+      cs.start();
+      captureRef.current = cs;
+    }).catch(() => {});
+    return () => {
+      stopped = true;
+      captureRef.current?.stop();
+      captureRef.current = null;
+      setStreaming(false);
+    };
   }, [connected]);
 
   const setDeclaredUser = useCallback((u: string) => {
@@ -477,8 +496,10 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const live = useMemo<LiveState>(() => ({
     connected, streaming, tick, users, declaredUser, setDeclaredUser, reset,
     sessionId: captureRef.current?.session ?? '',
+    agentCapturing,
     photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto, enrolFace,
-  }), [connected, streaming, tick, users, declaredUser, setDeclaredUser, reset, photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto, enrolFace]);
+  }), [connected, streaming, agentCapturing, tick, users, declaredUser, setDeclaredUser, reset, photoOnIntruder,
+       setPhotoOnIntruder, cameraError, lastPhoto, enrolFace]);
 
   return (
     <BiometricsContext.Provider

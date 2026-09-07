@@ -309,42 +309,55 @@ def alerts_api(n: int = 20):
 MAX_PHOTO_BYTES = 2_000_000
 
 
-def process_alert_photo(alert: dict, data: bytes, session: str | None = None, source: str = "dashboard",
+def process_alert_photo(alert: dict, data: bytes | None, session: str | None = None, source: str = "dashboard",
                         verdict: dict | None = None) -> dict:
     """
-    Store the frame, check the face against the owner, grab the screen, and push the
-    images if backend/actions.decide says the final call is an intruder. The text of the
-    alert itself is pushed by backend/actions.on_alert once the camera has had its say.
+    Store the webcam frame if there is one, check the face against the owner, grab the
+    screen, and push whatever images the decision allows. The text of the alert itself is
+    pushed by backend/actions.on_alert once the camera has had its say.
+
+    `data` is None when the camera gave nothing (no camera, or busy). The screen snapshot
+    still goes out then: an intruder alert with nothing attached says far too little.
     """
     from backend import actions, faces, notify
-    actions.photo_arrived(alert["ts"])
     sess = alert.get("session") or session
-    p = notify.save_photo(alert["ts"], sess, data)
-    # Is this the owner? The owner of the session is the declared user.
-    owner = alert.get("user") or ""
-    if verdict is None:
-        try:
-            verdict = faces.verify(owner, data)
-        except Exception as e:                       # OpenCV missing or broken: never block the alert
-            log.warning("face check failed: %s", e)
-            verdict = {"face": None, "match": None, "distance": None, "threshold": faces.THRESHOLD, "enrolled": 0, "reason": str(e)}
-    verdict = dict(verdict)
-    verdict["owner"] = owner
+    owner = alert.get("user") or ""                  # the owner of the session is the declared user
+    p = None
+    if data:
+        actions.photo_arrived(alert["ts"])
+        p = notify.save_photo(alert["ts"], sess, data)
+        if verdict is None:
+            try:
+                verdict = faces.verify(owner, data)
+            except Exception as e:                   # OpenCV missing or broken: never block the alert
+                log.warning("face check failed: %s", e)
+                verdict = {"face": None, "match": None, "distance": None, "threshold": faces.THRESHOLD,
+                           "enrolled": 0, "reason": str(e)}
+    stored = dict(verdict) if verdict else {"face": None, "match": None, "distance": None, "similarity": None,
+                                            "enrolled": faces.n_samples(owner), "method": faces.method(),
+                                            "reason": "no camera frame: no camera, or it was in use"}
+    stored["owner"] = owner
+    stored["source"] = source
     screen_name = None
     shot = faces.grab_screen()
     if shot:
         screen_name = notify.save_photo(alert["ts"], sess, shot, suffix="_screen").name
-    verdict["source"] = source
-    notify.save_verdict(alert["ts"], sess, verdict)
+    notify.save_verdict(alert["ts"], sess, stored)
     when = time.strftime("%H:%M:%S", time.localtime(alert["ts"]))
-    d = actions.decide(alert, verdict)
+    d = actions.decide(alert, verdict)               # None here means the typing decides, as it should
     if d["images"]:
-        push = notify.send_photo(alert, p, "KeySign: who is at the keyboard", f"{when} · {d['why']} · on {owner}'s session")
+        push = {"sent": False, "channel": notify.channel(), "reason": "nothing to attach"}
+        if p is not None:
+            push = notify.send_photo(alert, p, "KeySign: who is at the keyboard",
+                                     f"{when} · {d['why']} · on {owner}'s session")
         if screen_name:
-            notify.send_photo(alert, notify.PHOTO_DIR / screen_name, "KeySign: what was on the screen", f"{when} · screen at the moment of the alert")
+            push = notify.send_photo(alert, notify.PHOTO_DIR / screen_name, "KeySign: what was on the screen",
+                                     f"{when} · the screen when the alert fired"
+                                     + ("" if p is not None else " · the camera gave no frame"))
     else:
         push = {"sent": False, "channel": notify.channel(), "reason": d["why"]}
-    return {"ok": True, "photo": p.name, "screen": screen_name, "face": verdict, "final_kind": d["kind"], **push}
+    return {"ok": True, "photo": p.name if p is not None else None, "screen": screen_name,
+            "face": stored, "final_kind": d["kind"], **push}
 
 
 @app.post("/api/alerts/photo")
@@ -633,6 +646,17 @@ def state_api(session: str | None = None):
             "explanation": st.get("explanation"), "identity": (s.last_tick_msg.get("heads") or {}).get("identity")}
 
 
+def agent_is_capturing() -> bool:
+    """Is the desktop agent hooking the keyboard right now?"""
+    if AGENT_STATUS is None:
+        return False
+    try:
+        st = AGENT_STATUS() or {}
+        return bool(st.get("connected") and not st.get("paused"))
+    except Exception:
+        return False
+
+
 @app.websocket("/ws/capture")
 async def ws_capture(ws: WebSocket):
     await ws.accept()
@@ -643,12 +667,39 @@ async def ws_capture(ws: WebSocket):
             t = msg.get("type")
             if t == "hello":
                 sid = str(msg.get("session") or uuid.uuid4().hex[:8])
+                source = str(msg.get("source") or "browser")
+                # The agent hooks every application, this page included. A second session on the
+                # same keystrokes scores them twice and fires every alert twice: measured
+                # 2026-09-07, a chair swap raised two intruder alerts a quarter of a second
+                # apart, both reached for the webcam at once, and neither got a frame. Newer
+                # dashboards do not even open this socket, but a page left open from before does.
+                if source == "browser" and agent_is_capturing():
+                    await ws.send_text(json.dumps({"type": "ack", "session": sid, "user": str(msg.get("user") or "unknown"),
+                                                   "baseline": load_baseline(str(msg.get("user") or "")) is not None,
+                                                   "scoring": False,
+                                                   "reason": "the desktop agent is scoring every application on this machine"}))
+                    continue
+                if source == "agent":
+                    # The agent's hook has just connected. Anything a browser registered in the
+                    # moment before that (a page left open reconnects as soon as the port opens)
+                    # is now scoring the same keystrokes twice: clear it out.
+                    for old_id in [i for i, x in sessions.items() if x.source == "browser"]:
+                        sessions.pop(old_id, None)
+                        log.info("browser session %s dropped: the agent is scoring every application", old_id)
+                        await broadcast({"type": "session_end", "session": old_id})
                 session = Session(sid, str(msg.get("user") or "unknown"),
-                                  redact=bool(msg.get("redact")), source=str(msg.get("source") or "browser"))
+                                  redact=bool(msg.get("redact")), source=source)
                 sessions[sid] = session
                 await ws.send_text(json.dumps({"type": "ack", "session": sid, "user": session.user,
-                                               "baseline": load_baseline(session.user) is not None}))
+                                               "baseline": load_baseline(session.user) is not None, "scoring": True}))
             elif t == "events" and session is not None:
+                # The agent may have started (or resumed) after this page connected: a browser
+                # session that is now redundant stops being scored and leaves the session list.
+                if session.source == "browser" and agent_is_capturing():
+                    if sessions.pop(session.id, None) is not None:
+                        log.info("browser session %s dropped: the agent is scoring every application", session.id)
+                        await broadcast({"type": "session_end", "session": session.id})
+                    continue
                 session.add(msg.get("events") or [])
                 evs = msg.get("events") or []
                 session.record({"type": "events", "ts": time.time(), "events": redact_events(evs) if session.redact else evs})

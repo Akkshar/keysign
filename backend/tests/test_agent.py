@@ -141,6 +141,50 @@ def test_the_app_shell_is_never_cached_but_its_assets_are(client):
         assert a.status_code == 200 and "immutable" in a.headers.get("cache-control", "")
 
 
+def test_a_browser_session_is_ignored_while_the_agent_captures(client, monkeypatch):
+    """
+    The agent hooks every application, the dashboard's own window included. A page that also
+    streams its keys would have them scored twice and every alert fired twice, which is how a
+    real chair swap ended up with two alerts, both grabbing for the camera, and no photo.
+    A page left open from an older build still does it, so the machine decides here.
+    """
+    monkeypatch.setattr(backend, "AGENT_STATUS", lambda: {"connected": True, "paused": False})
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "stale-tab"})
+        ack = cap.receive_json()
+        assert ack["scoring"] is False and "agent" in ack["reason"]
+        cap.send_json({"type": "events", "events": typed(40)})
+        cap.send_json({"type": "events", "events": typed(40, t0=5000)})
+    assert "stale-tab" not in backend.sessions              # nothing was scored, nothing recorded
+    # the agent's own session is never turned away, and it clears out any browser session that
+    # got in first (a page left open reconnects the moment the backend's port opens)
+    monkeypatch.setattr(backend, "AGENT_STATUS", lambda: None)
+    with client.websocket_connect("/ws/capture") as early:
+        early.send_json({"type": "hello", "user": "Test User", "session": "early-tab-2"})
+        early.receive_json()
+        assert "early-tab-2" in backend.sessions
+        with client.websocket_connect("/ws/capture") as cap:
+            cap.send_json({"type": "hello", "user": "Test User", "session": "agent-1", "source": "agent", "redact": True})
+            assert cap.receive_json()["scoring"] is True
+            assert "early-tab-2" not in backend.sessions and "agent-1" in backend.sessions
+    # and with the agent paused, the dashboard scores again
+    monkeypatch.setattr(backend, "AGENT_STATUS", lambda: {"connected": True, "paused": True})
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "browser-1"})
+        assert cap.receive_json()["scoring"] is True
+    # A page that connected first and had the agent start under it (which is what happens: the
+    # agent brings the backend up before its own hook) is dropped when its keys arrive.
+    monkeypatch.setattr(backend, "AGENT_STATUS", lambda: None)
+    with client.websocket_connect("/ws/capture") as cap:
+        cap.send_json({"type": "hello", "user": "Test User", "session": "early-tab"})
+        assert cap.receive_json()["scoring"] is True
+        assert "early-tab" in backend.sessions
+        monkeypatch.setattr(backend, "AGENT_STATUS", lambda: {"connected": True, "paused": False})
+        cap.send_json({"type": "events", "events": typed(40)})
+        cap.send_json({"type": "events", "events": typed(40, t0=5000)})
+    assert "early-tab" not in backend.sessions
+
+
 def test_agent_key_mapping():
     from agent.capture import key_event, looks_secret
 

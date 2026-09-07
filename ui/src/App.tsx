@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { BiometricsProvider, useBiometrics } from './context/BiometricsContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { SignInView } from './views/SignInView';
+import { HandoffDone, SignInView } from './views/SignInView';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { TypewriterWatermark } from './components/layout/TypewriterWatermark';
@@ -28,6 +28,9 @@ const Gate: React.FC = () => {
   if (status === 'loading') return <div className="min-h-screen bg-background" />;
   if (status === 'signed-out') return <SignInView />;
   if (status === 'signed-in' && (!link || !link.user)) return <SignInView />;
+  // This page was opened only so the desktop window could sign in (?signin=1). That is done:
+  // say so and close, rather than leaving a second dashboard running in the browser.
+  if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('signin')) return <HandoffDone />;
   return <MainContent />;
 };
 

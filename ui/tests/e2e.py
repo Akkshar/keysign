@@ -690,6 +690,31 @@ def main() -> int:
                     sessions_made.append(str(status.get("session") or "agent-none"))
                     served = urllib.request.urlopen(BASE + "/", timeout=10).read().decode(errors="replace")
                     check('<div id="root"' in served, "the agent serves the built dashboard its window loads")
+                    check("no-store" in urllib.request.urlopen(BASE + "/", timeout=10)
+                          .headers.get("Cache-Control", ""), "and serves it uncached, so a new build reaches the window")
+                    # The agent hooks every application, this window included. A dashboard that also
+                    # streamed its own keys would score them twice and fire every alert twice, which is
+                    # how a real chair swap ended up with two alerts and no webcam frame.
+                    from websockets.sync.client import connect as _c0
+                    with _c0(BASE.replace("http://", "ws://") + "/ws/dashboard", open_timeout=10) as _w0:
+                        before_page = json.loads(_w0.recv(timeout=5)).get("sessions", [])
+                    print("   sessions before opening a dashboard:", json.dumps(before_page))
+                    from playwright.sync_api import sync_playwright as _sp
+                    with _sp() as pw2:
+                        b2 = pw2.chromium.launch(headless=True)
+                        p2 = b2.new_context(viewport={"width": 1200, "height": 800}).new_page()
+                        p2.add_init_script("try { sessionStorage.setItem('keysign.ui.operator', '1'); } catch (e) {}")
+                        p2.goto(PAGE)
+                        p2.wait_for_timeout(4000)
+                        from websockets.sync.client import connect as _c
+                        with _c(BASE.replace("http://", "ws://") + "/ws/dashboard", open_timeout=10) as _ws:
+                            live_sessions = json.loads(_ws.recv(timeout=5)).get("sessions", [])
+                        browser_sessions = [x for x in live_sessions if not str(x.get("session", "")).startswith("agent-")]
+                        check(not browser_sessions,
+                              "with the agent capturing, the dashboard does not open a second session",
+                              json.dumps(live_sessions))
+                        check(p2.get_by_text("The live lab").count() >= 1, "and the dashboard still loads")
+                        b2.close()
                     text = agent_log.read_text(encoding="utf-8", errors="replace")
                     check("face engine warm: sface" in text, "it warmed the face models at start-up",
                           " ".join(text.split())[-200:])

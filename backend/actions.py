@@ -66,6 +66,10 @@ LOCK_DELAY_S = 2.5           # lock after the frame and the screen snapshot are 
 
 _photo_seen: set[float] = set()          # alert ts that already got a photo (from the dashboard or us)
 _lock = threading.Lock()
+_camera_lock = threading.Lock()          # only one thread may hold the webcam
+_last_burst: tuple[float, list[bytes]] = (0.0, [])
+BURST_REUSE_S = 6.0                      # a burst this fresh is handed to the next alert instead of
+                                         # reopening the camera
 
 QUIT_HOOK = None                                        # the desktop agent registers its shutdown here
 TOAST_HOOK: Callable[[str, str], None] | None = None    # the desktop agent registers icon.notify here
@@ -105,30 +109,46 @@ def lock_workstation() -> bool:
 def grab_webcam_burst(n: int = 5, gap_s: float = 0.35, index: int = 0, warmup_frames: int = 8) -> list[bytes]:
     """
     Several JPEGs from the default camera, gap_s apart, after a warm-up so exposure has
-    settled. [] if there is no camera / it is in use. One frame is not enough: the
-    typist looks down at the keys most of the time.
+    settled. [] if there is no camera / it is in use. One frame is not enough: the typist
+    looks down at the keys most of the time.
+
+    Serialised, and a burst younger than BURST_REUSE_S is handed to the next caller instead
+    of opening the camera again. Two alerts can land within a fraction of a second of each
+    other (the agent scores every application while a dashboard scores its own window), and
+    when both reached for the camera at once neither got a frame: measured 2026-09-07, a real
+    intruder alert went to the phone with no photo and no screen because of exactly that.
     """
-    try:
-        import cv2
-        cap = cv2.VideoCapture(index)
-        if not cap.isOpened():
+    global _last_burst
+    with _camera_lock:
+        now = time.time()
+        when, frames = _last_burst
+        if frames and now - when < BURST_REUSE_S:
+            log.info("reusing the webcam burst from %.1fs ago", now - when)
+            return frames
+        try:
+            import cv2
+            cap = cv2.VideoCapture(index)
+            if not cap.isOpened():
+                log.warning("no camera, or it is in use by another application")
+                return []
+            out: list[bytes] = []
+            for _ in range(warmup_frames):
+                cap.read()
+            for i in range(n):
+                ok, frame = cap.read()
+                if ok and frame is not None:
+                    ok2, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+                    if ok2:
+                        out.append(bytes(buf))
+                if i < n - 1:
+                    time.sleep(gap_s)
+            cap.release()
+            if out:
+                _last_burst = (time.time(), out)
+            return out
+        except Exception as e:
+            log.warning("webcam grab failed: %s", e)
             return []
-        out: list[bytes] = []
-        for _ in range(warmup_frames):
-            cap.read()
-        for i in range(n):
-            ok, frame = cap.read()
-            if ok and frame is not None:
-                ok2, buf = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
-                if ok2:
-                    out.append(bytes(buf))
-            if i < n - 1:
-                time.sleep(gap_s)
-        cap.release()
-        return out
-    except Exception as e:
-        log.warning("webcam grab failed: %s", e)
-        return []
 
 
 def grab_webcam(index: int = 0, warmup_frames: int = 8) -> bytes | None:
@@ -275,6 +295,10 @@ def on_alert(alert: dict, process_photo) -> None:
                         verdict, best = faces.verify_frames(alert.get("user") or "", frames)
                         res = process_photo(alert, best or frames[-1], source="backend-webcam", verdict=verdict)
                         verdict = (res or {}).get("face") if isinstance(res, dict) else verdict
+                    else:
+                        # No camera, or it was busy. The screen still goes out: an intruder alert
+                        # with nothing attached tells whoever gets it far too little.
+                        process_photo(alert, None, source="backend-no-frame", verdict=None)
                 if verdict is None:
                     verdict = face_verdict(alert)
             d = decide(alert, verdict)
