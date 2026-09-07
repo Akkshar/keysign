@@ -59,10 +59,15 @@ export async function clearActiveAccount(): Promise<void> {
   try { await fetch(`${BACKEND_HTTP}/api/active-account`, { method: 'DELETE' }); } catch { /* ignore */ }
 }
 
-/** Ask the backend to open this dashboard's sign-in page in the default browser. */
-export async function openSignInInBrowser(): Promise<{ ok: boolean; url?: string; error?: string }> {
+/**
+ * Ask the backend to open this dashboard's sign-in page in a browser. `which` is "default"
+ * or "chrome": the machine's default browser is not always the one the person uses Google
+ * in, and signing in needs that browser's Google session.
+ */
+export async function openSignInInBrowser(which: 'default' | 'chrome' = 'default'):
+  Promise<{ ok: boolean; url?: string; browser?: string; chrome_available?: boolean; error?: string }> {
   try {
-    const r = await fetch(`${BACKEND_HTTP}/api/signin/browser`, { method: 'POST' });
+    const r = await fetch(`${BACKEND_HTTP}/api/signin/browser?browser=${which}`, { method: 'POST' });
     return r.json();
   } catch (e) { return { ok: false, error: String(e) }; }
 }

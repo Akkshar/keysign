@@ -589,10 +589,10 @@ def main() -> int:
                 win = ctx.new_page()
                 opened: list = []
                 win.add_init_script("window.pywebview = { api: {} };")   # what pywebview injects
-                win.route("**/api/signin/browser", lambda route: (
+                win.route("**/api/signin/browser*", lambda route: (
                     opened.append(route.request.url),
                     route.fulfill(status=200, content_type="application/json",
-                                  body=json.dumps({"ok": True, "url": PAGE + "/?signin=1"})),
+                                  body=json.dumps({"ok": True, "url": PAGE + "/?signin=1", "chrome_available": True})),
                 ))
                 win.goto(PAGE)
                 btn = win.get_by_role("button", name="Continue with Google in your browser")

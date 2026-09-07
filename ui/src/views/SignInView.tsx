@@ -61,8 +61,9 @@ const secondaryCls = 'w-full rounded-lg border border-outline-variant/60 bg-surf
 const SignInForm: React.FC = () => {
   const {
     signIn, signUp, signInWithGoogle, continueAsOperator, error, busy,
-    googleNeedsBrowser, signInViaBrowser, waitingForBrowser, cancelBrowserWait,
+    googleNeedsBrowser, signInViaBrowser, waitingForBrowser, browserSignInUrl, chromeAvailable, cancelBrowserWait,
   } = useAuth();
+  const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -85,13 +86,35 @@ const SignInForm: React.FC = () => {
         {googleNeedsBrowser ? 'Continue with Google in your browser' : 'Continue with Google'}
       </button>
       {waitingForBrowser && (
-        <div className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 space-y-1" role="status">
+        <div className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-2.5 space-y-2" role="status">
           <p className="text-xs text-on-surface">
-            Your browser is open. Finish signing in there and this window will follow, on its own.
+            A browser is open. Finish signing in there and this window will follow, on its own.
           </p>
-          <button type="button" onClick={cancelBrowserWait} className="text-[11px] text-on-surface-variant hover:underline">
-            Stop waiting
-          </button>
+          <p className="text-xs text-on-surface-variant">
+            Sign in with the browser you use Google in. If that is not the one that opened, put this address in it:
+          </p>
+          <code className="block select-all font-telemetry text-[11px] text-on-surface bg-surface-container-low rounded px-2 py-1 break-all">
+            {browserSignInUrl || 'http://localhost:8000/?signin=1'}
+          </code>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard?.writeText(browserSignInUrl || '').then(() => setCopied(true)).catch(() => setCopied(false));
+              }}
+              className="text-[11px] text-primary hover:underline"
+            >
+              {copied ? 'Address copied' : 'Copy the address'}
+            </button>
+            {chromeAvailable && (
+              <button type="button" onClick={() => void signInViaBrowser('chrome')} className="text-[11px] text-primary hover:underline">
+                Open it in Chrome instead
+              </button>
+            )}
+            <button type="button" onClick={cancelBrowserWait} className="text-[11px] text-on-surface-variant hover:underline">
+              Stop waiting
+            </button>
+          </div>
         </div>
       )}
       <div className="flex items-center gap-3 text-[11px] text-on-surface-variant">

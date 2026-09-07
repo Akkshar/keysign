@@ -27,9 +27,12 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   /** True in the desktop app window: Google sign-in has to happen in the browser. */
   googleNeedsBrowser: boolean;
-  /** Open the browser to sign in with Google, then adopt whoever signed in there. */
-  signInViaBrowser: () => Promise<void>;
+  /** Open a browser to sign in with Google, then adopt whoever signed in there. */
+  signInViaBrowser: (which?: 'default' | 'chrome') => Promise<void>;
   waitingForBrowser: boolean;
+  /** Where the sign-in page was opened, so it can be opened elsewhere by hand. */
+  browserSignInUrl: string | null;
+  chromeAvailable: boolean;
   cancelBrowserWait: () => void;
   signOut: () => Promise<void>;
   continueAsOperator: () => void;
@@ -48,6 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [waitingForBrowser, setWaitingForBrowser] = useState(false);
+  const [browserSignInUrl, setBrowserSignInUrl] = useState<string | null>(null);
+  const [chromeAvailable, setChromeAvailable] = useState(false);
   const waitRef = useRef(false);
   const setDeclared = useRef(live.setDeclaredUser);
   useEffect(() => { setDeclared.current = live.setDeclaredUser; }, [live.setDeclaredUser]);
@@ -116,11 +121,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * The app window's Google button: open this dashboard in the browser, where the
    * Google pop-up works, and wait for it to tell the local backend who signed in.
    */
-  const signInViaBrowser = useCallback(async () => {
+  const signInViaBrowser = useCallback(async (which: 'default' | 'chrome' = 'default') => {
     setError(null);
-    const r = await openSignInInBrowser();
+    const r = await openSignInInBrowser(which);
+    if (r.url) setBrowserSignInUrl(r.url);
+    if (r.chrome_available) setChromeAvailable(true);
     if (!r.ok) {
-      setError('Could not open your browser. Open ' + (r.url || 'the dashboard') + ' yourself and sign in there.');
+      setError('Could not open a browser. Open ' + (r.url || 'the dashboard') + ' yourself and sign in there.');
       return;
     }
     setWaitingForBrowser(true);
@@ -177,10 +184,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = useMemo<AuthContextType>(() => ({
     status, account, link, error, busy, signIn, signUp, signInWithGoogle,
-    googleNeedsBrowser: inAppWindow(), signInViaBrowser, waitingForBrowser, cancelBrowserWait,
-    signOut, continueAsOperator, linkProfile, unlinkProfile,
+    googleNeedsBrowser: inAppWindow(), signInViaBrowser, waitingForBrowser, browserSignInUrl, chromeAvailable,
+    cancelBrowserWait, signOut, continueAsOperator, linkProfile, unlinkProfile,
   }), [status, account, link, error, busy, signIn, signUp, signInWithGoogle, signInViaBrowser, waitingForBrowser,
-       cancelBrowserWait, signOut, continueAsOperator, linkProfile, unlinkProfile]);
+       browserSignInUrl, chromeAvailable, cancelBrowserWait, signOut, continueAsOperator, linkProfile, unlinkProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

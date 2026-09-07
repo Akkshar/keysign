@@ -7,6 +7,7 @@ the capture socket therefore echoes every tick back to its sender and the
 tests read ticks there. Broadcasting itself is unit-tested with fakes.
 """
 import asyncio
+import pathlib
 import json
 
 import numpy as np
@@ -411,6 +412,20 @@ def test_signin_browser_opens_only_this_backend(client, monkeypatch):
     r = local.post("/api/signin/browser").json()
     assert r["ok"] is True and r["url"] == "http://localhost:8000/?signin=1"
     assert opened == ["http://localhost:8000/?signin=1"]
+    # the default browser is not always the one the person uses Google in (here it is Arc), so
+    # Chrome can be asked for by name when it is installed
+    launched = []
+    import subprocess
+    monkeypatch.setattr(subprocess, "Popen", lambda argv, **k: launched.append(argv) or None)
+    monkeypatch.setattr(backend, "CHROME_PATHS", [pathlib.Path(__file__)])          # stand in for chrome.exe
+    r = local.post("/api/signin/browser?browser=chrome").json()
+    assert r["ok"] is True and r["chrome_available"] is True and r["browser"] == "chrome"
+    assert launched and launched[0][1] == "http://localhost:8000/?signin=1"
+    # with no Chrome installed it says so, and falls back to the default browser
+    monkeypatch.setattr(backend, "CHROME_PATHS", [])
+    opened.clear()
+    r = local.post("/api/signin/browser?browser=chrome").json()
+    assert r["chrome_available"] is False and opened == ["http://localhost:8000/?signin=1"]
     # anything that is not this machine is refused, so the endpoint cannot open arbitrary pages
     opened.clear()
     assert client.post("/api/signin/browser").status_code == 400        # base_url http://testserver

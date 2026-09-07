@@ -520,22 +520,42 @@ def active_account_clear():
     return {"email": None, "user": None, "has_baseline": False}
 
 
+CHROME_PATHS = [Path(p) / "Google/Chrome/Application/chrome.exe" for p in
+                (os.environ.get("PROGRAMFILES", ""), os.environ.get("PROGRAMFILES(X86)", ""),
+                 os.environ.get("LOCALAPPDATA", "")) if p]
+
+
+def chrome_path() -> Path | None:
+    return next((p for p in CHROME_PATHS if p.exists()), None)
+
+
 @app.post("/api/signin/browser")
-def signin_in_browser(request: Request):
+def signin_in_browser(request: Request, browser: str = "default"):
     """
-    Open this dashboard in the default browser so Google's sign-in can run there.
-    The URL is this backend's own address plus ?signin=1; nothing else can be opened.
+    Open this dashboard in a browser so Google's sign-in can run there. The URL is this
+    backend's own address plus ?signin=1; nothing else can be opened.
+
+    `browser=chrome` opens Chrome by name instead of the machine's default. Whoever signs in
+    has to be signed into Google in that browser, and the default is not always the one they
+    use: on this machine it is Arc, where the Google account asked for a password.
     """
+    import subprocess
     import webbrowser
     base = str(request.base_url).rstrip("/")
     if not any(base.startswith(p) for p in ("http://localhost", "http://127.0.0.1", "http://[::1]")):
         return JSONResponse({"ok": False, "error": "not a loopback address"}, status_code=400)
     url = f"{base}/?signin=1"
+    chrome = chrome_path()
+    out = {"url": url, "browser": browser, "chrome_available": bool(chrome)}
     try:
-        opened = webbrowser.open(url)
+        if browser == "chrome" and chrome:
+            subprocess.Popen([str(chrome), url], close_fds=True)
+            opened = True
+        else:
+            opened = webbrowser.open(url)
     except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e), "url": url}, status_code=500)
-    return {"ok": bool(opened), "url": url}
+        return JSONResponse({"ok": False, "error": str(e), **out}, status_code=500)
+    return {"ok": bool(opened), **out}
 
 
 @app.get("/api/faces/{user}")

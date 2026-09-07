@@ -113,7 +113,7 @@ So the window hands the job to the browser, the way most desktop apps do:
 
 | step | who |
 |------|-----|
-| `POST /api/signin/browser` opens this dashboard at `?signin=1` in the default browser (only this backend's own loopback address can be opened) | app window |
+| `POST /api/signin/browser` opens this dashboard at `?signin=1` in the default browser, or in Chrome with `?browser=chrome` (only this backend's own loopback address can be opened) | app window |
 | Google's pop-up runs there and Firebase signs the person in | browser |
 | `POST /api/active-account` records who that is in `data/active_account.json` (gitignored) | browser |
 | `GET /api/active-account` returns that account and its linked typing profile; the window polls it and adopts it, and again at every start | app window |
@@ -122,6 +122,11 @@ So the window hands the job to the browser, the way most desktop apps do:
 Same trust model as the account links: a browser on this machine says who
 signed in, nothing is verified against Firebase, and nothing leaves the
 machine. Email and password sign-in works in the window itself.
+
+Whoever signs in has to be signed into Google in *that* browser, and the
+machine's default is not always the one they use: here it is Arc, which asked
+for a Google password. So the window shows the address it opened and offers to
+open Chrome instead.
 
 ## Testing it end to end
 
