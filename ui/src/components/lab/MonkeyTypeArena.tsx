@@ -384,14 +384,14 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
                 <div className="hidden sm:flex items-baseline gap-1" title="Live Flight Latency">
                   <span className="text-stone-400 text-[10px]">FLIGHT</span>
                   <span className="text-stone-700 dark:text-stone-300 font-bold text-xs">
-                    {liveFlight ? `${Math.round(liveFlight)}ms` : '112ms'}
+                    {liveFlight ? `${Math.round(liveFlight)}ms` : '–'}
                   </span>
                 </div>
 
                 <div className="hidden sm:flex items-baseline gap-1" title="Live Dwell Duration">
                   <span className="text-stone-400 text-[10px]">DWELL</span>
                   <span className="text-stone-700 dark:text-stone-300 font-bold text-xs">
-                    {liveDwell ? `${Math.round(liveDwell)}ms` : '84ms'}
+                    {liveDwell ? `${Math.round(liveDwell)}ms` : '–'}
                   </span>
                 </div>
 

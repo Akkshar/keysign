@@ -77,7 +77,7 @@ export const StateView: React.FC = () => {
     <Reveal className="flex flex-col w-full gap-space-2xl">
       {/* Headline */}
       <div>
-        <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">What state are they in?</h1>
+        <h1 className="font-display text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">What state are they in?</h1>
         <p className="font-body text-sm text-on-surface-variant mt-space-xs max-w-2xl">
           Cognitive load from the rhythm of the last {tick?.window_s ?? 10} seconds, scored against {user ? `${titleCase(user)}'s` : 'the'} calm baseline. Other apps read the same answer from <code className="font-telemetry">GET /api/state</code>.
         </p>

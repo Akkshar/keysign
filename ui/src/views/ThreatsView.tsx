@@ -95,7 +95,7 @@ export const ThreatsView: React.FC = () => {
               <div className="flex flex-col gap-space-xs">
                 <span className="font-telemetry text-xs uppercase tracking-wider text-on-surface-variant">Threat · {live.connected ? 'live' : 'backend offline'}</span>
                 <AnimatePresence mode="wait" initial={false}>
-                  <Swap value={level} className={`font-serif text-6xl font-medium tracking-tight leading-none ${LEVEL_TONE[level]}`}>
+                  <Swap value={level} className={`font-display text-6xl font-medium tracking-tight leading-none ${LEVEL_TONE[level]}`}>
                     {LEVEL_WORD[level]}
                   </Swap>
                 </AnimatePresence>

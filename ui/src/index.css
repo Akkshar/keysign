@@ -1,3 +1,51 @@
+/* ---------------------------------------------------------------------------
+   Type, served from this machine.
+   Three Fontshare families under the ITF Free Font Licence (the licence text is
+   next to the files in public/fonts). They are variable, so one file covers
+   every weight the interface asks for, and nothing here reaches the network:
+   the demo has to survive the wifi being switched off, and a dashboard that
+   phones Google on load is a poor advertisement for "on-device only".
+     Chillax  - the interface: body copy, controls, labels.
+     Zodiak   - headings. A sturdy editorial serif that holds up small.
+     Boska    - display only. High contrast, so it is beautiful large and thin
+                and unreadable at 14px; font-display is the opt-in.
+   --------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Chillax';
+  src: url('/fonts/Chillax-Variable.woff2') format('woff2-variations');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Zodiak';
+  src: url('/fonts/Zodiak-Variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Zodiak';
+  src: url('/fonts/Zodiak-VariableItalic.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Boska';
+  src: url('/fonts/Boska-Variable.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Boska';
+  src: url('/fonts/Boska-VariableItalic.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -40,17 +88,24 @@
   html, body {
     margin: 0;
     padding: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: 'Chillax', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
-  /* The new design sets headings in Newsreader; Plus Jakarta stays available as
-     font-headline for anything that wants the sans cut. */
+  /* Headings are Zodiak. `font-display` opts a handful of the largest lines into
+     Boska, whose thin strokes need the size. `font-sans` is the way back to the
+     interface face inside a heading. */
   h1, h2, h3, h4, h5, h6, .font-serif {
-    font-family: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
+    font-family: 'Zodiak', Georgia, Cambria, 'Times New Roman', Times, serif;
+  }
+
+  /* font-display and font-sans are Tailwind utilities (see tailwind.config.js).
+     Boska's thin strokes want a little negative tracking at display sizes. */
+  .font-display {
+    letter-spacing: -0.015em;
   }
 
   code, pre, .font-telemetry {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
     font-feature-settings: 'tnum' on, 'zero' on;
   }
 

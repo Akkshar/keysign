@@ -648,55 +648,29 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
       {/* Gamified HUD Overlay */}
       {showHud && (
         <>
-          {/* Top Left: Streak & Combo Multiplier Badge */}
+          {/* The streak counter, combo multiplier, points and unlock banner that used to sit
+              here were an arcade layer bolted to a security tool: fire and lightning emoji,
+              a purple gradient, "Milestone Unlocked!". Words per minute is the one number
+              worth keeping, because it is measured and it is what a typist looks for. */}
           <div className="absolute top-4 left-4 z-20 flex items-center gap-2 pointer-events-none">
-            <AnimatePresence>
-              {typingGame.streak > 1 ? (
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0, y: -8 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/85 dark:bg-slate-950/85 backdrop-blur-md border border-indigo-500/40 text-white shadow-lg"
-                >
-                  <span className="text-base animate-bounce">🔥</span>
-                  <div className="flex flex-col">
-                    <span className="text-[11px] font-mono font-bold tracking-tight text-indigo-300">
-                      STREAK {typingGame.streak}
-                    </span>
-                    <span className="text-[9px] font-mono text-emerald-400 font-semibold">
-                      {typingGame.comboMultiplier.toFixed(1)}x MULTIPLIER
-                    </span>
-                  </div>
-                </motion.div>
-              ) : (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 text-xs font-mono text-slate-600 dark:text-slate-400">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                  <span>QWERTY Sync Active</span>
-                </div>
-              )}
-            </AnimatePresence>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 text-xs font-mono text-slate-600 dark:text-slate-400">
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span>Follows your keyboard</span>
+            </div>
 
-            {/* WPM Speedometer */}
             {typingGame.wpm > 0 && (
               <motion.div
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="px-3 py-1.5 rounded-full bg-indigo-950/80 backdrop-blur-md border border-indigo-400/40 text-[11px] font-mono text-indigo-200"
+                className="px-3 py-1.5 rounded-full bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-mono text-slate-600 dark:text-slate-300"
               >
-                ⚡ {typingGame.wpm} WPM
+                {typingGame.wpm} wpm
               </motion.div>
             )}
           </div>
 
-          {/* Top Right: Mechanical Carriage Bell & Kinetic Score */}
           <div className="absolute top-4 right-4 z-20 flex items-center gap-2.5">
-            {/* Score Pill */}
-            <div className="px-3.5 py-1.5 rounded-full bg-slate-900/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-700/60 text-white text-xs font-mono shadow-md">
-              <span className="text-slate-400 text-[10px] mr-1.5 uppercase font-medium">Score</span>
-              <span className="font-bold text-amber-400">{typingGame.score.toLocaleString()}</span>
-            </div>
-
-            {/* Brass Bell Icon with Ringing Animation */}
+            {/* The bell stays: a carriage bell at the end of a line is what the machine did. */}
             <motion.div
               animate={typingGame.bellTriggered ? { rotate: [-18, 18, -12, 12, 0], scale: [1, 1.25, 1] } : {}}
               transition={{ duration: 0.45 }}
@@ -719,29 +693,6 @@ export const Interactive3DTypewriter: React.FC<Interactive3DTypewriterProps> = (
               New Sheet
             </button>
           </div>
-
-          {/* Center Milestone Banner */}
-          <AnimatePresence>
-            {typingGame.activeMilestone && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.7, y: -20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.7, y: -20 }}
-                transition={{ type: 'spring', stiffness: 450, damping: 25 }}
-                className="absolute top-16 left-1/2 -translate-x-1/2 z-30 px-5 py-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 text-white shadow-xl shadow-indigo-600/30 flex items-center gap-3 border border-white/20 pointer-events-none"
-              >
-                <span className="text-xl">🌟</span>
-                <div>
-                  <div className="text-xs font-bold font-serif tracking-wide">
-                    {typingGame.activeMilestone.title}
-                  </div>
-                  <div className="text-[10px] font-mono text-indigo-200">
-                    {typingGame.activeMilestone.badge} Milestone Unlocked!
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Bottom Live Interaction Guide */}
           <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 text-[11px] text-slate-600 dark:text-slate-400">

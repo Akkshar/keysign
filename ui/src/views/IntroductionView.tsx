@@ -20,17 +20,17 @@ export const IntroductionView: React.FC = () => {
   const scenes: StoryboardScene[] = [
     {
       id: 'scene-1',
-      stepNumber: '01 / HARDWARE_INTERRUPT',
-      badge: 'Physical Telemetry',
-      title: 'The Sub-Second Kinematics of Typing',
-      subtitle: 'Unconscious motor cortex impulses uniquely identify the typist',
+      stepNumber: '01 / TIMING',
+      badge: 'What is measured',
+      title: 'Two numbers per keystroke',
+      subtitle: 'How long a key is held, and the gap before the next one',
       description:
-        'Every keystroke generates two discrete hardware events: switch contact (Dwell time) and transition to the next key (Flight time). Governed by deep motor neural pathways, these microsecond temporal intervals form an inimitable physical signature.',
+        'Every key press gives a press time and a release time, in milliseconds. Hold is release minus press. Flight is the gap from one release to the next press. Those two numbers, gathered over a ten-second window, are most of what the four heads work from.',
       illustration: (
         <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm">
           <div className="flex items-center justify-between font-mono text-xs text-stone-500">
-            <span>DWELL TIME: 84.2ms</span>
-            <span className="text-amber-600 font-semibold">FLIGHT LATENCY: 112.5ms</span>
+            <span>HOLD</span>
+            <span className="text-amber-600 font-semibold">FLIGHT</span>
           </div>
           <svg className="w-full h-24" viewBox="0 0 320 80">
             <line x1="10" y1="60" x2="65" y2="60" stroke="#78716c" strokeWidth="2" />
@@ -43,31 +43,31 @@ export const IntroductionView: React.FC = () => {
             <text x="198" y="46" fill="#d97706" fontSize="11" fontFamily="monospace" fontWeight="bold">HOLD</text>
           </svg>
           <div className="flex items-center justify-between text-[11px] font-mono text-stone-400">
-            <span>Switch Actuation</span>
-            <span>Local In-Memory Vector</span>
+            <span>A diagram, not a reading</span>
+            <span>Milliseconds</span>
           </div>
         </div>
       ),
     },
     {
       id: 'scene-2',
-      stepNumber: '02 / MECHANICAL_GROUNDING',
-      badge: 'Tactile Simulation',
-      title: 'Physical Grounding via 3D Typewriter',
-      subtitle: 'Visible mechanical verification for invisible behavioral biometrics',
+      stepNumber: '02 / THE ROOM',
+      badge: 'The environment',
+      title: 'Somewhere to type',
+      subtitle: 'A typewriter to play with, so the demo has a keyboard on screen',
       description:
-        'To demonstrate that physical hardware actuation drives the telemetry, a real-time 3D mechanical typewriter strikes individual QWERTY keys, advances its carriage, and inks paper in 1:1 synchronization with the typist.',
+        'Timing is invisible, so the dashboard gives you something to hit. A 3D typewriter answers every key you press. It is a stage prop rather than an instrument: what it shows is your keystroke arriving, and the numbers beside it are what the backend made of it.',
       illustration: (
         <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col items-center justify-center relative overflow-hidden shadow-sm">
           <div className="relative z-10 text-center space-y-2">
             <span className="font-mono text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-              1:1 Physical Kinematics
+              A prop, not a sensor
             </span>
             <h4 className="font-serif font-bold text-stone-900 dark:text-stone-100 text-base">
-              Real-Time Mechanical Response
+              Every key you press moves it
             </h4>
             <p className="font-mono text-xs text-stone-500 dark:text-stone-400">
-              Typebar Strikes • Platen Carriage • Live Paper Inking
+              Keys • Carriage • Paper
             </p>
           </div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
@@ -76,17 +76,17 @@ export const IntroductionView: React.FC = () => {
     },
     {
       id: 'scene-3',
-      stepNumber: '03 / CLINICAL_NEUROMOTOR',
-      badge: 'Neuromotor Screening',
-      title: 'Neuromotor Biomarkers & Typing Stability',
-      subtitle: 'Subtle timing patterns that reflect motor cortex stability',
+      stepNumber: '03 / DRIFT',
+      badge: 'Roadmap',
+      title: 'Does the baseline itself move?',
+      subtitle: 'The long-term question, and the one we cannot answer yet',
       description:
-        'Continuous analysis of sub-second hold times and micro-interval variances screens for subtle motor shifts associated with tremor, fatigue, and cognitive pausing.',
+        'Published work finds that typing rhythm shifts with fatigue, and that it shifts with some motor conditions over months. We have days of our own data, so the drift head is a chart of public longitudinal typing records and the research behind them. It scores nobody and diagnoses nothing.',
       illustration: (
         <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex flex-col justify-between shadow-sm font-mono">
           <div className="flex items-center justify-between text-xs text-stone-500">
-            <span>MOTOR TREMOR SPECTRUM (4–7 Hz)</span>
-            <span className="text-emerald-600 font-bold">NOMINAL BAND</span>
+            <span>WEEKLY MEDIANS, ILLUSTRATED</span>
+            <span className="text-stone-400">not your data</span>
           </div>
           <div className="flex items-end justify-between gap-1.5 h-20 px-2 py-1">
             {[32, 45, 72, 86, 50, 28, 32, 70, 46, 38, 24, 52, 30].map((val, i) => (
@@ -97,36 +97,38 @@ export const IntroductionView: React.FC = () => {
               />
             ))}
           </div>
-          <span className="text-[11px] text-stone-400 text-center">Fast Fourier Transform of inter-key latency</span>
+          <span className="text-[11px] text-stone-400 text-center">
+            The real chart is under Drift, from public Monkeytype and CMU records
+          </span>
         </div>
       ),
     },
     {
       id: 'scene-4',
-      stepNumber: '04 / ZERO_KNOWLEDGE',
-      badge: 'Zero Keylogging',
-      title: 'Zero-Knowledge Privacy by Design',
-      subtitle: 'Mathematically impossible to reconstruct typed text or credentials',
+      stepNumber: '04 / ON THIS MACHINE',
+      badge: 'Privacy',
+      title: 'The words are thrown away, the timing is kept',
+      subtitle: 'Nothing is uploaded, because there is nowhere to upload it to',
       description:
-        'Characters, credentials, and message content are stripped at the hardware driver boundary. Only raw millisecond interval deltas exist in memory, providing an unassailable privacy guarantee.',
+        'The hook sees which key was pressed. It keeps the timing and a coarse class, letter, digit or punctuation, and drops the character before anything is written down. Scoring happens in a process on this laptop. The only thing that ever leaves is an alert you configured, to a phone you chose.',
       illustration: (
         <div className="w-full h-44 rounded-lg border border-stone-200/90 dark:border-stone-800/90 bg-[#fdfcf9] dark:bg-[#151513] p-4 flex items-center justify-around font-mono text-center shadow-sm">
           <div className="space-y-1">
             <span className="text-xs font-mono font-bold text-stone-500">STEP 1</span>
-            <span className="block text-[11px] text-stone-400">Switch Contact</span>
-            <strong className="text-xs text-stone-800 dark:text-stone-200">Text Discarded</strong>
+            <span className="block text-[11px] text-stone-400">Key event</span>
+            <strong className="text-xs text-stone-800 dark:text-stone-200">Character dropped</strong>
           </div>
           <span className="text-stone-400 text-lg">➔</span>
           <div className="space-y-1">
             <span className="text-xs font-mono font-bold text-amber-600">STEP 2</span>
-            <span className="block text-[11px] text-amber-600 font-bold">Delta Timing</span>
-            <strong className="text-xs text-stone-800 dark:text-stone-200">Millisecond Only</strong>
+            <span className="block text-[11px] text-amber-600 font-bold">Hold and flight</span>
+            <strong className="text-xs text-stone-800 dark:text-stone-200">Milliseconds only</strong>
           </div>
           <span className="text-stone-400 text-lg">➔</span>
           <div className="space-y-1">
             <span className="text-xs font-mono font-bold text-emerald-600">STEP 3</span>
-            <span className="block text-[11px] text-emerald-600 font-bold">Rhythm Match</span>
-            <strong className="text-xs text-stone-800 dark:text-stone-200">Verified Identity</strong>
+            <span className="block text-[11px] text-emerald-600 font-bold">Compared to you</span>
+            <strong className="text-xs text-stone-800 dark:text-stone-200">A verdict, locally</strong>
           </div>
         </div>
       ),
@@ -166,16 +168,16 @@ export const IntroductionView: React.FC = () => {
         className="text-center space-y-5 max-w-3xl mx-auto px-4"
       >
 
-        <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
+        <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-medium tracking-tight text-stone-900 dark:text-stone-100">
           KeySign
         </h1>
 
-        <p className="font-serif italic text-2xl sm:text-3xl text-stone-600 dark:text-stone-400 max-w-2xl mx-auto leading-tight">
+        <p className="font-display italic text-2xl sm:text-3xl text-stone-600 dark:text-stone-400 max-w-2xl mx-auto leading-tight">
           "Your keyboard has a signature. We measure the signature, not what you type."
         </p>
 
         <p className="font-sans text-sm sm:text-base text-stone-600 dark:text-stone-400 max-w-xl mx-auto leading-relaxed pt-1">
-          Continuous identity authentication and clinical neuromotor screening operating completely in local memory without recording text.
+          Who is typing, what state they are in, and whether something is wrong right now. Four questions from one signal, answered on this laptop, from timing alone.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
@@ -183,13 +185,13 @@ export const IntroductionView: React.FC = () => {
             onClick={handleScrollToDashboard}
             className="px-6 py-2.5 rounded-md bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 font-mono text-xs uppercase tracking-wider font-semibold hover:bg-stone-800 dark:hover:bg-stone-200 transition-all cursor-pointer shadow-sm border border-stone-800 dark:border-stone-200 flex items-center gap-2"
           >
-            <span>Enter Live Telemetry Dashboard</span>
+            <span>Open the dashboard</span>
             <span>↓</span>
           </button>
         </div>
 
         <div className="pt-6 text-stone-400 dark:text-stone-600 flex flex-col items-center gap-1 font-mono text-xs animate-bounce">
-          <span>Scroll to explore the architecture</span>
+          <span>Scroll for how it works</span>
           <span>↓</span>
         </div>
       </motion.section>
@@ -253,26 +255,26 @@ export const IntroductionView: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2 font-mono text-xs text-stone-600 dark:text-stone-400">
           <div className="space-y-1.5">
             <strong className="text-stone-900 dark:text-stone-100 block text-sm font-serif">
-              1. Zero Keylogging Guarantee
+              1. The text is not kept
             </strong>
             <p className="leading-relaxed text-[11px]">
-              Strict mathematical guarantee that characters are stripped at the hardware interrupt boundary before behavioral analysis. No sensitive text ever leaves local memory.
+              Recordings hold timings and a coarse key class: letter, digit, punctuation, navigation. Not the characters, so a session file cannot be read back as what you wrote.
             </p>
           </div>
           <div className="space-y-1.5">
             <strong className="text-stone-900 dark:text-stone-100 block text-sm font-serif">
-              2. Clinical Neuromotor Screening
+              2. Four heads, one pipeline
             </strong>
             <p className="leading-relaxed text-[11px]">
-              Passive evaluation for 6 neuro-functional conditions: Parkinson's, Alzheimer's, Mild Cognitive Impairment (MCI), Multiple Sclerosis, Depression, and Bipolar motor manifestations.
+              Identity, State and Threat run live against your own baseline. Drift is a chart of published longitudinal data and the research behind it: a screening idea for later, not a test, and it evaluates nobody today.
             </p>
           </div>
           <div className="space-y-1.5">
             <strong className="text-stone-900 dark:text-stone-100 block text-sm font-serif">
-              3. Physical 3D Kinematics
+              3. It works outside this window
             </strong>
             <p className="leading-relaxed text-[11px]">
-              WebGL vintage mechanical typewriter physically striking keys and inking real paper in exact 1:1 synchronization with the typist's keyboard input.
+              Run as a desktop agent, KeySign reads typing in whatever application has focus, not only in the dashboard. The browser page is the easy way to try it; the agent is the product.
             </p>
           </div>
         </div>

@@ -60,11 +60,16 @@ export default {
           600: '#4338CA',
         },
       },
+      // Three Fontshare families, served from public/fonts. Utilities and the
+      // base rules in index.css must agree, because a utility outranks the
+      // element selector and a mismatch shows up as one stray paragraph.
       fontFamily: {
-        serif: ['Newsreader', 'Georgia', 'serif'],
-        headline: ['"Plus Jakarta Sans"', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
-        telemetry: ['"JetBrains Mono"', 'monospace'],
+        sans: ['Chillax', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+        body: ['Chillax', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+        headline: ['Chillax', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['Zodiak', 'Georgia', 'Cambria', 'serif'],
+        display: ['Boska', 'Zodiak', 'Georgia', 'serif'],
+        telemetry: ['"JetBrains Mono Variable"', '"JetBrains Mono"', 'ui-monospace', 'Consolas', 'monospace'],
       },
       spacing: {
         'space-2xs': '0.125rem',

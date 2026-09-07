@@ -126,14 +126,10 @@ const defaultGauges: NeuromotorGauges = {
   threatStatus: 'ALL CLEAR',
 };
 
-const initialPulses: KeystrokeTuple[] = Array.from({ length: 20 }, (_, i) => ({
-  id: String(i + 1),
-  timestamp: Date.now() - (20 - i) * 100,
-  dwellMs: 80 + ((i * 7) % 10),
-  flightMs: 108 + ((i * 11) % 18),
-  entropy: 0.97,
-  status: 'VERIFIED' as const,
-}));
+// Nothing until somebody types. This used to be seeded with twenty invented
+// keystrokes marked VERIFIED, so every instrument on the page showed a plausible
+// reading before a single key had been pressed.
+const initialPulses: KeystrokeTuple[] = [];
 
 const clamp = (x: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, x));
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
@@ -246,9 +242,10 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [eventsPerSec, setEventsPerSec] = useState<number>(0);
   const [liveConfidence, setLiveConfidence] = useState<number>(0);
   const [liveWpm, setLiveWpm] = useState<number>(0);
-  const [liveDwell, setLiveDwell] = useState<number>(84);
-  const [liveFlight, setLiveFlight] = useState<number>(112);
-  const [liveJitter, setLiveJitter] = useState<number>(0.04);
+  // Zero means "not measured yet", and the panels say so rather than showing a number.
+  const [liveDwell, setLiveDwell] = useState<number>(0);
+  const [liveFlight, setLiveFlight] = useState<number>(0);
+  const [liveJitter, setLiveJitter] = useState<number>(0);
   const [recentPulses, setRecentPulses] = useState<KeystrokeTuple[]>(initialPulses);
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     '{"info":"waiting for the local KeySign backend on ws://localhost:8000"}',

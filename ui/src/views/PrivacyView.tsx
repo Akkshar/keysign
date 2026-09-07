@@ -42,7 +42,7 @@ export const PrivacyView: React.FC = () => {
   return (
     <Reveal className="flex flex-col w-full gap-8 pb-12">
       <div className="space-y-2">
-        <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">
+        <h1 className="font-display text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">
           Keystrokes never leave this machine
         </h1>
         <p className="font-body text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">

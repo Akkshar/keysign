@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { BiometricsProvider, useBiometrics } from './context/BiometricsContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { HandoffDone, SignInView } from './views/SignInView';
@@ -20,9 +20,7 @@ import { ThreatsView } from './views/ThreatsView';
 import { DriftView } from './views/DriftView';
 import { SettingsView } from './views/SettingsView';
 import { AlertCard } from './components/telemetry/AlertCard';
-import { ShootingStars } from './components/motion/ShootingStars';
 import { FallingKeys } from './components/motion/FallingKeys';
-import { Galaxy } from './components/background/Galaxy';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -62,10 +60,6 @@ const Gate: React.FC = () => {
 
 const MainContent: React.FC = () => {
   const { activeArea, onKeyAction } = useBiometrics();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-  // views that already own a WebGL canvas
-  const heavyView = activeArea === 'monitoring' || activeArea === 'live-demo';
 
   // Global keystroke listener: typing anywhere on the site interacts with the 3D typewriter and telemetry.
   // The timings also stream to the local backend (see BiometricsContext), which is what the heads score.
@@ -122,35 +116,14 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-on-background font-body theme-transition flex relative overflow-x-hidden">
-      {/* Ambient layer, pointer-events off so nothing under it changes. The Galaxy shader runs
-          only where no other WebGL does: Live Monitoring already draws the 3D typewriter, and two
-          contexts on one page cost frames on the demo laptop. Falling keys are canvas 2D and cheap
-          enough to leave everywhere. */}
+      {/* Ambient layer, pointer-events off so nothing under it changes.
+          The starfield and the shooting stars used to live here. They went for two reasons:
+          the stars' cores blew out to white and read as blips flickering over the dark page,
+          and a twinkling galaxy behind a keystroke-security tool is decoration that belongs
+          to some other product. What is left is keycaps drifting down at about a tenth
+          opacity, which at least says what this thing is about. */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Dark only: the shader paints a starfield, and on a white page it reads as smudges
-            rather than depth. Light mode keeps the falling keys and the shooting stars. */}
-        {isDark && !heavyView && (
-          <Galaxy
-            className="absolute inset-0"
-            density={0.6}
-            starSpeed={0.22}
-            glowIntensity={0.32}
-            saturation={0.65}
-            hueShift={220}
-            mouseInteraction={false}
-            mouseRepulsion={false}
-            twinkleIntensity={0.25}
-          />
-        )}
         <FallingKeys />
-        <ShootingStars
-          minSpeed={14}
-          maxSpeed={30}
-          minDelay={1200}
-          maxDelay={3600}
-          starColor={isDark ? '#38bdf8' : '#6366f1'}
-          trailColor={isDark ? '#818cf8' : '#a5b4fc'}
-        />
       </div>
 
       {/* Ambient Misty Vintage Typewriter Watermark Layer */}

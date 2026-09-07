@@ -73,7 +73,7 @@ export const TopNav: React.FC = () => {
         {/* Brand */}
         <button type="button" onClick={() => go('introduction')} className="flex items-baseline gap-2 shrink-0 text-left">
           <span className="font-serif text-xl font-medium tracking-tight text-on-surface">KeySign</span>
-          <span className="hidden 2xl:inline font-serif italic text-[11px] text-outline">your typing tells a bigger story</span>
+          <span className="hidden 2xl:inline font-display italic text-[11px] text-outline">your typing tells a bigger story</span>
         </button>
 
         {/* Sections */}

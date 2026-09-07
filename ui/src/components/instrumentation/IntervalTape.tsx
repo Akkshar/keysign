@@ -29,21 +29,21 @@ export const IntervalTape: React.FC<IntervalTapeProps> = ({
         <div className="flex items-center gap-2">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-stone-400 dark:bg-stone-500" />
           <span className="uppercase font-semibold tracking-widest text-stone-700 dark:text-stone-300">
-            Chronometer Interval Stream
+            Every key, as it lands
           </span>
           <span className="text-stone-400 dark:text-stone-600">•</span>
-          <span className="text-stone-500">10ms / tick div</span>
+          <span className="text-stone-500">tall bar = long hold</span>
         </div>
 
         <div className="flex items-center gap-3">
           <span className="tabular-nums">
             <span className="text-stone-400 mr-1">HOLD</span>
-            <strong className="text-stone-800 dark:text-stone-200 font-semibold">{liveDwell || 82}ms</strong>
+            <strong className="text-stone-800 dark:text-stone-200 font-semibold">{liveDwell ? `${liveDwell}ms` : '–'}</strong>
           </span>
           <span className="text-stone-300 dark:text-stone-700">|</span>
           <span className="tabular-nums">
             <span className="text-stone-400 mr-1">FLIGHT</span>
-            <strong className="text-stone-800 dark:text-stone-200 font-semibold">{liveFlight || 114}ms</strong>
+            <strong className="text-stone-800 dark:text-stone-200 font-semibold">{liveFlight ? `${liveFlight}ms` : '–'}</strong>
           </span>
           {isTyping && (
             <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900/50">

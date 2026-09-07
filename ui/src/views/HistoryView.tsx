@@ -21,7 +21,7 @@ export const HistoryView: React.FC = () => {
         <span className="text-xs font-telemetry tracking-wider uppercase text-on-surface-variant font-semibold">
           Illustrative
         </span>
-        <h1 className="font-serif text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">
+        <h1 className="font-display text-3xl sm:text-4xl font-medium tracking-tight text-on-surface">
           History
         </h1>
         <p className="font-body text-sm sm:text-base text-on-surface-variant max-w-2xl leading-relaxed">

@@ -97,7 +97,7 @@ export const DriftView: React.FC = () => {
       {/* Framing */}
       <div className="flex flex-col gap-space-sm max-w-3xl">
         <span className="font-telemetry text-xs uppercase tracking-wider text-on-surface-variant">Roadmap · public longitudinal data</span>
-        <h1 className="font-serif text-3xl lg:text-4xl font-medium tracking-tight text-on-surface leading-tight">
+        <h1 className="font-display text-3xl lg:text-4xl font-medium tracking-tight text-on-surface leading-tight">
           Does a person's baseline move over months?
         </h1>
         <p className="font-body text-base text-on-surface-variant">

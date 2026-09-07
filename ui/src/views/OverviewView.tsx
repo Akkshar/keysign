@@ -34,7 +34,7 @@ const Band: React.FC = () => {
 
   const cell = 'flex flex-col items-center text-center px-4 py-2';
   const label = 'font-telemetry text-[11px] uppercase tracking-widest text-on-surface-variant mb-1.5';
-  const value = 'font-serif text-4xl sm:text-5xl font-medium tracking-tight text-on-surface tabular-nums leading-none';
+  const value = 'font-display text-4xl sm:text-5xl font-medium tracking-tight text-on-surface tabular-nums leading-none';
   const note = 'font-serif italic text-xs text-on-surface-variant mt-2';
 
   return (
@@ -141,15 +141,17 @@ export const OverviewView: React.FC = () => {
               <StrokeText
                 text="KEYSIGN"
                 fontSize={38}
-                strokeColor={isDark ? '#38bdf8' : '#4f46e5'}
-                fillColor={isDark ? '#e0f2fe' : '#312e81'}
+                // Warm ink, drawn in the accent the rest of the paper palette uses. It was
+                // sky blue against a cream page, which read as a sticker from another site.
+                strokeColor={isDark ? '#f59e0b' : '#d97706'}
+                fillColor={isDark ? '#edece6' : '#1c1917'}
                 strokeWidth={1.5}
                 drawDuration={1.2}
                 fillMode="wipe"
               />
             </div>
 
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-on-surface leading-[1.1]">
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-medium tracking-tight text-on-surface leading-[1.1]">
               Your typing is a signature. KeySign reads it.
             </h1>
 

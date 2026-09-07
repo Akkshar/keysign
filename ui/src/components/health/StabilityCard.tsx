@@ -145,7 +145,7 @@ export const StabilityCard: React.FC<StabilityCardProps> = ({ className = '' }) 
           {/* Waveform Explanation Caption */}
           <div className="flex items-center justify-between text-[11px] text-slate-400 font-normal">
             <span>Live typing pattern (timing only)</span>
-            <span className="font-telemetry text-[10px] text-slate-400">Sampling Rate: 1,000Hz</span>
+            <span className="font-telemetry text-[10px] text-on-surface-variant">One reading per key, in milliseconds</span>
           </div>
         </div>
       </div>
