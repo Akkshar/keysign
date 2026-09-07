@@ -16,6 +16,9 @@ Sign-in (email/password and Google) is optional: copy `.env.example` to
 links the account to an enrolled typing profile (kept locally by the backend
 in `data/accounts.json`), which becomes the declared user. Without the
 config there is no sign-in screen and the declared user is a dropdown.
+`uv run python ui/tests/signin.py http://localhost:5173` is a Playwright smoke test
+of the gate: wrong-password copy, the Google pop-up reaching Google's account
+chooser, and operator mode. It creates no accounts.
 
 Needs the backend (`uv run python -m backend`). The header pill shows the
 connection; the selector next to it is the **declared user**, i.e. whose

@@ -51,3 +51,6 @@ ui/.env.local
 
 # Live session recordings (raw keystrokes, personal)
 data/sessions/
+
+# Playwright screenshots from ui/tests
+ui/tests/out/
