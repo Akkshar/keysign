@@ -311,7 +311,7 @@ async def broadcast(msg: dict) -> None:
 def index():
     from backend import explain, notify
     return {"service": "KeySign backend", "ok": True,
-            "endpoints": ["/health", "/api/users", "/api/baseline/{user}", "/api/state", "/api/alerts",
+            "endpoints": ["/health", "/api/users", "/api/baseline/{user}", "/api/state", "/api/alerts", "/api/sessions",
                           "POST /api/alerts/photo?ts=", "/api/alerts/photo/{name}",
                           "GET/POST/DELETE /api/faces/{user}", "GET/PUT/DELETE /api/accounts/{email}",
                           "WS /ws/capture", "WS /ws/dashboard"],
@@ -335,6 +335,16 @@ def users():
 def baseline(user: str):
     b = load_baseline(user)
     return b.to_dict() if b else {"error": "no baseline", "user": user}
+
+
+@app.get("/api/sessions")
+def sessions_api(n: int = 40):
+    """
+    What this machine has scored, from data/sessions/*.jsonl. Counts only: no keystroke
+    content is read or returned, and the recordings never held the characters anyway.
+    """
+    from backend import history
+    return {"sessions": history.recent(n), "totals": history.totals()}
 
 
 @app.get("/api/alerts")

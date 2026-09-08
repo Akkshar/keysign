@@ -577,3 +577,47 @@ def test_signin_browser_opens_only_this_backend(client, tmp_path, monkeypatch):
     opened.clear()
     assert client.post("/api/signin/browser").status_code == 400        # base_url http://testserver
     assert opened == []
+
+
+def test_sessions_api_summarises_the_recordings(tmp_path, monkeypatch):
+    """History is read back from data/sessions/*.jsonl. Counts only: the recordings never held
+    the characters, and the summary must not invent anything they do not contain."""
+    import json as _json
+
+    from backend import history
+
+    monkeypatch.setattr(history, "SESSIONS_DIR", tmp_path)
+    history._cache.clear()
+    f = tmp_path / "2026-09-08_101500_agent-abc.jsonl"
+    rows = [
+        {"type": "hello", "user": "Someone", "session": "agent-abc"},
+        {"type": "events", "events": [{"type": "down"}, {"type": "up"}, {"type": "down"}]},
+        {"type": "tick", "ts": 100.0, "features": {"n_keys": 30}, "distance": 1.0,
+         "heads": {"identity": {"user": "Someone"}, "threat": {"level": "ok"}, "state": {"load": 0.2}}},
+        {"type": "tick", "ts": 101.0, "features": {"n_keys": 30}, "distance": 3.0,
+         "heads": {"identity": {"user": "Other"}, "threat": {"level": "alert", "kind": "intruder", "distance": 3.0},
+                   "state": {"load": 0.6}}},
+        # the head stays at alert while the condition holds: that is still one alert
+        {"type": "tick", "ts": 102.0, "features": {"n_keys": 30}, "distance": 3.2,
+         "heads": {"identity": {"user": "Other"}, "threat": {"level": "alert", "kind": "intruder"},
+                   "state": {"load": 0.6}}},
+    ]
+    f.write_text("\n".join(_json.dumps(r) for r in rows), encoding="utf-8")
+
+    got = history.recent(10)
+    assert len(got) == 1
+    s = got[0]
+    assert s["declared"] == "Someone" and s["source"] == "agent"
+    assert s["keys"] == 2 and s["ticks"] == 3
+    assert len(s["alerts"]) == 1                       # not one per tick
+    assert s["called"] == {"Other": 2, "Someone": 1}
+    assert s["seconds"] == 2.0 and s["mean_distance"] == 2.4
+
+    t = history.totals()
+    assert t["sessions"] == 1 and t["alerts"] == 1 and t["keys"] == 2
+
+    # a recording that never scored a window is not history
+    (tmp_path / "2026-09-08_101600_x.jsonl").write_text(
+        _json.dumps({"type": "hello", "user": "Nobody"}), encoding="utf-8")
+    history._cache.clear()
+    assert len(history.recent(10)) == 1
