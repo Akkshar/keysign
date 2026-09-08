@@ -360,3 +360,37 @@ def test_alert_carries_whether_the_duress_clock_was_full(baseline, alert_log):
     for _ in range(heads.INTRUDER_PERSIST):
         out = heads.threat_head(odd_features(), baseline, calm)
     assert out["kind"] == "intruder" and out["duress_ready"] is False
+
+
+def test_a_machine_with_one_profile_still_measures_but_never_accuses(baseline, alert_log, monkeypatch):
+    """Telling people apart needs two people enrolled, so a freshly calibrated machine has no
+    classifier. The baseline still answers "does this look like you", which is worth saying; what
+    it must not do is call the owner an impostor, because there is no evidence of anybody else."""
+    monkeypatch.setattr(heads, "_identity_model", lambda: None)
+    monkeypatch.setattr(heads, "_model_cache", {})
+    ctx = {"user": "Test User"}
+
+    normal = backend.extract_features(typed(40, flight=120, hold=70))
+    out = heads.identity_head(normal, baseline, ctx)
+    assert out["solo"] is True and out["unknown"] is False
+    assert out["matches_declared"] is True and out["closest"] is None
+
+    far = backend.extract_features(typed(40, flight=60, hold=30))
+    out = heads.identity_head(far, baseline, ctx)
+    assert out["distance"] > heads.UNKNOWN_DIST
+    assert out["unknown"] is True                      # says so
+    assert out["matches_declared"] is True             # but never accuses
+
+    # and the threat head therefore keeps it on the duress path, where the camera decides
+    ctx2 = ctx_with(identity=out, state={"load": 0.9})
+    res = None
+    for _ in range(heads.THREAT_PERSIST):
+        res = heads.threat_head(far, baseline, ctx2)
+    assert res["kind"] == "duress" and res["identity_mismatch"] is False
+
+
+def test_no_model_and_no_baseline_says_what_to_do(monkeypatch):
+    monkeypatch.setattr(heads, "_identity_model", lambda: None)
+    monkeypatch.setattr(heads, "_model_cache", {})
+    out = heads.identity_head({"n_keys": 40}, None, {"user": "Nobody"})
+    assert out["user"] is None and "calibrate" in out["reason"]

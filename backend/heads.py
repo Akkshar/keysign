@@ -77,10 +77,58 @@ def _identity_model() -> IdentityModel | None:
     return m
 
 
+def _identity_without_a_model(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
+    """
+    No classifier, which is the state of a machine where only one person has calibrated:
+    telling people apart needs at least two of them. The baseline still answers the only
+    question that matters here, "does this look like the person whose machine it is", from
+    the distance the open-set rule already uses. There is no name to offer, so `user` stays
+    the declared user and `closest` stays empty; what this adds is the ability to say no.
+    """
+    declared = ctx.get("user")
+    if baseline is None:
+        return {"user": None, "unknown": None, "warming_up": False,
+                "reason": "no identity model and no baseline yet: calibrate to create one"}
+    n_keys = int(features.get("n_keys", 0))
+    if n_keys < UNKNOWN_MIN_KEYS:
+        return {"user": None, "unknown": False, "matches_declared": None, "warming_up": True,
+                "confidence": None, "closest": None, "closest_confidence": None,
+                "declared_confidence": None, "votes": {}, "probs": {},
+                "reason": f"need {UNKNOWN_MIN_KEYS} keys in the window to judge the distance"}
+    d = float(baseline.distance(features))
+    st = ctx.setdefault("identity", {"history": []})
+    # the same hysteresis the probability test uses, in sigma rather than probability
+    out_now = d > (UNKNOWN_DIST * 1.4 if st.get("declared_out") else UNKNOWN_DIST)
+    st["declared_out"] = out_now
+    return {
+        "user": declared,
+        "closest": None,
+        "closest_confidence": None,
+        "confidence": None,
+        "declared_confidence": None,
+        "distance": round(d, 2),
+        "unknown": bool(out_now),
+        "low_confidence": False,
+        # Never "somebody else": with nobody else enrolled there is no positive evidence of
+        # another person, only distance, and distance alone is the duress path by design
+        # (see threat_head). Saying False here would turn the owner's own bad window into an
+        # intruder alert and lock the machine, which is the rule this project already learned.
+        "matches_declared": True,
+        "probs": {},
+        "votes": {},
+        "warming_up": False,
+        "solo": True,
+        "reason": ("only one person is enrolled, so there is no name to give and no way to call "
+                   "anybody an impostor from typing alone; this is the distance from "
+                   f"{declared or 'the declared user'}'s own baseline, and the camera is what "
+                   "decides whether somebody else is in the chair"),
+    }
+
+
 def identity_head(features: dict, baseline: Baseline | None, ctx: dict) -> dict:
     m = _identity_model()
     if m is None:
-        return {"user": None, "unknown": None, "reason": "no identity model yet (uv run python -m pipeline.identity train data/features.csv)"}
+        return _identity_without_a_model(features, baseline, ctx)
     pred = m.predict(features)
     b = load_baseline(pred["user"])
     d = float(b.distance(features)) if b is not None else None

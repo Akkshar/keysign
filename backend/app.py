@@ -56,7 +56,9 @@ from pipeline.features import FEATURE_NAMES, extract_features
 log = logging.getLogger("keysign")
 
 ROOT = Path(__file__).resolve().parent.parent
-BASELINE_DIR = ROOT / "data" / "baselines"
+# Overridable so a fresh machine can be exercised without moving anybody's real profiles
+# out of the way: point it at an empty directory and the backend is in the state a clone is in.
+BASELINE_DIR = Path(os.environ.get("KEYSIGN_BASELINE_DIR") or (ROOT / "data" / "baselines"))
 RECORD_DIR = ROOT / "data" / "sessions"         # every live session, raw events + ticks (gitignored)
 RECORD = os.environ.get("KEYSIGN_RECORD", "1") != "0"
 UI_DIST = ROOT / "ui" / "dist"                  # built dashboard; served at / when present (the app window loads it)

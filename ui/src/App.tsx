@@ -19,6 +19,7 @@ import { StateView } from './views/StateView';
 import { ThreatsView } from './views/ThreatsView';
 import { DriftView } from './views/DriftView';
 import { SettingsView } from './views/SettingsView';
+import { FirstRunView } from './views/FirstRunView';
 import { AlertCard } from './components/telemetry/AlertCard';
 import { FallingKeys } from './components/motion/FallingKeys';
 
@@ -59,7 +60,7 @@ const Gate: React.FC = () => {
 };
 
 const MainContent: React.FC = () => {
-  const { activeArea, onKeyAction } = useBiometrics();
+  const { activeArea, onKeyAction, live } = useBiometrics();
 
   // Global keystroke listener: typing anywhere on the site interacts with the 3D typewriter and telemetry.
   // The timings also stream to the local backend (see BiometricsContext), which is what the heads score.
@@ -83,7 +84,13 @@ const MainContent: React.FC = () => {
     };
   }, [onKeyAction]);
 
+  // Nobody enrolled on this machine: every head measures against a personal baseline, so
+  // there is nothing to show and one thing worth doing. Settings stays reachable, because
+  // that is where the backend's own state and the face enrolment live.
+  const noProfile = live.connected && live.users.length === 0;
+
   const renderActiveView = () => {
+    if (noProfile && activeArea !== 'settings' && activeArea !== 'privacy') return <FirstRunView />;
     switch (activeArea) {
       case 'introduction':
         return <MainOverviewFlow />;

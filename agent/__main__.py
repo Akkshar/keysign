@@ -83,8 +83,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--no-capture", action="store_true", help="do not hook the keyboard (dashboard typing only)")
     p.add_argument("--browser", action="store_true", help="open the dashboard in the default browser instead of the app window")
     p.add_argument("--quit", action="store_true", help="stop a running agent (asks it over http://localhost:<port>)")
+    p.add_argument("--setup", action="store_true",
+                   help="check what a fresh machine is missing, fetch the face models, and say what to do next")
     a = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+
+    if a.setup:
+        from agent.setup import run
+        return run()
 
     if a.quit:
         import urllib.request
