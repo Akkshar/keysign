@@ -189,7 +189,13 @@ person on it, done first.
    Drift is a chart only.
 
 Run everything with `uv run ...` (Python) and `node ...` (JS). Tests:
-`uv run python -m pytest -q`.
+`uv run python -m pytest -q`, and `uv run python ui/tests/e2e.py` end to end (it refuses to
+run beside a live agent, and needs `KEYSIGN_NTFY_TOPIC` unset so nothing reaches a phone).
+
+History is real: `backend/history.py` summarises `data/sessions/*.jsonl` behind
+`/api/sessions`, one row per recording, cached on size and mtime. Count an alert when the
+head *enters* the alert state, not once per tick, and take a session's length from its own
+first and last window rather than ticks times the interval.
 
 Sign-in: Firebase (email/password, Google) in a browser. The app window cannot
 run Google's sign-in (pop-ups go to the system browser; the redirect flow dies on
@@ -210,6 +216,28 @@ sessions were the owner's ordinary typing; the gate keeps only the one at full
 load). `modifier_ratio` is out of the baseline distance (zero spread in
 enrolment; one Shift pinned it at the clip). Reviewers asked not to see
 localhost: the window has no address bar.
+
+## A machine that is not this one
+
+`data/` is personal and is not in the repository, so a clone has no baselines, no identity
+model and no face models. `uv run python -m agent --setup` (agent/setup.py) reports what is
+missing, fetches the two face models, and prints the next step; `docs/setup.md` is the
+whole path from clone to running. The dashboard lands on `views/FirstRunView.tsx` whenever
+the backend reports zero baselines, with the calibration wizard one button away, and the
+wizard's last card offers the webcam enrolment the camera check needs.
+
+One profile is a real state. Identity needs two people enrolled (`pipeline.identity.train`
+refuses below that), so a solo machine has no classifier; `heads._identity_without_a_model`
+answers "does this look like you" from the baseline distance instead. It must never answer
+"this is somebody else": with nobody else enrolled there is no evidence of another person,
+only distance, and distance alone is the duress path. The camera decides who is in the chair.
+
+`backend/profile_io.py` moves a calibration between machines (samples, baseline, and the
+face frames unless `--no-faces`). Imports refuse to overwrite an existing calibration, and
+an archive cannot write outside those three directories.
+
+`KEYSIGN_BASELINE_DIR` points the backend at another baseline directory, which is how the
+fresh-machine screen is exercised without moving real profiles aside.
 
 ## Working principles
 

@@ -6,6 +6,20 @@ something is wrong right now, and whether their baseline is drifting over time.
 
 Built for a 48-hour GDG hackathon at VIT Vellore. Team of 4.
 
+## Run it on your own machine
+
+```bash
+npm --prefix ui install && npm --prefix ui run build
+uv run python -m agent --setup     # what is missing, and it fetches the face models
+uv run python -m agent
+```
+
+A clone has no profiles: `data/` holds people's typing and is not in the repository. The
+window opens on calibration, ten sentences and about two minutes, and everything after
+that measures against your own baseline. **[docs/setup.md](docs/setup.md)** is the whole
+path, including alerts on your phone, taking a profile to another machine, and what to do
+when something looks wrong.
+
 ---
 
 ## The core idea
@@ -248,6 +262,7 @@ and drop the file into data/samples/.
 ## Run it as an app (no browser, no localhost on screen)
 
     npm --prefix ui run build          # once, and after UI changes
+    uv run python -m agent --setup     # check a fresh machine, fetch the face models
     uv run python -m agent             # backend + system-wide capture + tray + native window
 
 One process: the backend serves the built dashboard at 127.0.0.1:8000, a
@@ -260,6 +275,15 @@ sign-in window is in front. On an intruder alert the backend takes a webcam
 frame itself if no dashboard sent one within 1.5 s, runs the face check and
 the push, then locks the workstation (Settings, or `data/settings.json`).
 Flags: `--no-window` (tray only), `--no-capture`, `--browser`, `--port`.
+
+## Moving a profile between machines
+
+    uv run python -m backend.profile_io export "Your Name" -o you.keysign
+    uv run python -m backend.profile_io show you.keysign      # writes nothing
+    uv run python -m backend.profile_io import you.keysign    # on the other machine
+
+Samples, baseline and (unless `--no-faces`) the enrolled webcam frames. Nothing else
+travels, and an import will not overwrite an existing calibration unless asked.
 
 ## Python side (pipeline)
 
