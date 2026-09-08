@@ -434,6 +434,30 @@ def settings_get():
     return actions.settings()
 
 
+def repoint_sessions(user: str) -> list[str]:
+    """
+    Point every live capture session at `user` and forget what the heads had decided.
+
+    A session takes its user when it connects and keeps it, so calibrating while the agent
+    is running would otherwise leave the hook scoring the new person against the previous
+    baseline, and asking the camera about the previous person's face. The head state goes
+    with it: a vote history and a threat clock built against one baseline say nothing about
+    another.
+    """
+    moved = []
+    for s in sessions.values():
+        if s.user == user:
+            continue
+        s.user = user
+        for k in ("identity", "threat", "state"):
+            s.ctx.pop(k, None)
+        s.ctx["user"] = user
+        moved.append(s.id)
+    if moved:
+        log.info("declared user is now %r; moved session(s) %s", user, ", ".join(moved))
+    return moved
+
+
 @app.put("/api/settings")
 async def settings_put(request: Request):
     """Body: any of lock_on_intruder (bool), photo_on_intruder (bool), toast_on_alert (bool), declared_user (str)."""
@@ -441,7 +465,11 @@ async def settings_put(request: Request):
     body = await request.json()
     if not isinstance(body, dict):
         return JSONResponse({"error": "object expected"}, status_code=400)
-    return actions.update_settings(body)
+    out = actions.update_settings(body)
+    who = body.get("declared_user")
+    if isinstance(who, str) and who.strip():
+        out = {**out, "sessions_moved": repoint_sessions(who.strip())}
+    return out
 
 
 @app.post("/api/agent/quit")
@@ -678,6 +706,10 @@ async def enrol_api(request: Request):
         _save_accounts(d)
         summary["account"] = _account_view(email, d[email])
     actions.update_settings({"declared_user": user})     # the agent measures against them now
+    # ...and so does the session already running. Without this the hook carries on scoring
+    # against whoever it started as, which is how a new person got locked out against the
+    # previous profile's baseline, with the camera checking the previous person's face.
+    summary["sessions_moved"] = repoint_sessions(user)
     return {"ok": True, **summary, "identity": enrol_mod.status()}
 
 

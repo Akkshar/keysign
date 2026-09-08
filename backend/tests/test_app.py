@@ -643,3 +643,44 @@ def test_recalibrating_joins_the_profile_it_matches(tmp_path, monkeypatch):
     # a baseline with no usable name in it does not rename anybody
     (tmp_path / "blank.json").write_text(_json.dumps({"user": "  "}))
     assert enrol.existing_name("blank") is None
+
+
+def test_calibrating_moves_the_running_session_to_the_new_person(client, monkeypatch):
+    """A session takes its user when the hook connects and keeps it. Calibrating mid-session
+    used to change only the settings, so the agent carried on scoring the new person against
+    the previous baseline and the camera checked the previous person's face."""
+    from backend import app as backend_app
+
+    class FakeSession:
+        def __init__(self, sid, user):
+            self.id, self.user = sid, user
+            self.ctx = {"user": user, "identity": {"history": ["Old"]}, "threat": {"hist": [1]}}
+
+    s = FakeSession("agent-1", "Old Person")
+    monkeypatch.setitem(backend_app.sessions, "agent-1", s)
+
+    moved = backend_app.repoint_sessions("New Person")
+    assert moved == ["agent-1"]
+    assert s.user == "New Person" and s.ctx["user"] == "New Person"
+    # the clocks and the vote history belonged to the other baseline
+    assert "identity" not in s.ctx and "threat" not in s.ctx
+
+    # and it is a no-op when the session is already theirs
+    assert backend_app.repoint_sessions("New Person") == []
+
+
+def test_settings_endpoint_moves_the_session_too(client, monkeypatch, tmp_path):
+    from backend import actions
+    from backend import app as backend_app
+
+    monkeypatch.setattr(actions, "SETTINGS_PATH", tmp_path / "settings.json")
+
+    class FakeSession:
+        def __init__(self):
+            self.id, self.user, self.ctx = "agent-2", "Someone", {}
+
+    s = FakeSession()
+    monkeypatch.setitem(backend_app.sessions, "agent-2", s)
+    r = client.put("/api/settings", json={"declared_user": "Somebody Else"})
+    assert r.status_code == 200 and r.json().get("sessions_moved") == ["agent-2"]
+    assert s.user == "Somebody Else"

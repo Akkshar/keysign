@@ -102,6 +102,7 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
       const r = await enrol({ user: name.trim(), email: account?.email, samples: samples.current });
       setSummary(r);
       live.setDeclaredUser(r.user);                       // measure against them from here on
+      void live.refreshUsers();                           // and appear in the list of profiles at once
       // The account is linked when they leave this screen, not now: linking flips the gate,
       // which would replace these numbers with the dashboard before anyone had read them.
     } catch (e: any) {
@@ -120,19 +121,46 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
     if (val.length >= sentence.length) setTimeout(() => { void finishSentence(); }, 120);
   };
 
-  const rendered = useMemo(() => sentence.split('').map((char, i) => {
-    const done = i < typedText.length;
-    const right = done && typedText[i] === char;
-    return (
-      <span key={i} className={`relative inline-block transition-colors rounded-sm px-[1px] ${
-        !done ? 'text-on-surface-variant/70'
-          : right ? 'text-stone-900 bg-amber-400 font-semibold'
-          : 'text-white bg-error font-semibold'}`}>
-        {i === typedText.length && <span className="absolute -left-[1.5px] top-0 bottom-0 w-[2px] bg-amber-500 animate-pulse" />}
-        {char === ' ' ? ' ' : char}
-      </span>
-    );
-  }), [sentence, typedText]);
+  const rendered = useMemo(() => {
+    // One span per character gives the browser a break opportunity between every letter, so
+    // long words were being split across lines. Words are the unit: each is nowrap, and the
+    // characters inside it keep their own colour.
+    const glyph = (char: string, i: number) => {
+      const done = i < typedText.length;
+      const right = done && typedText[i] === char;
+      return (
+        <span key={i} className={`relative inline-block transition-colors rounded-sm px-[1px] ${
+          !done ? 'text-on-surface-variant/70'
+            : right ? 'text-stone-900 bg-amber-400 font-semibold'
+            : 'text-white bg-error font-semibold'}`}>
+          {i === typedText.length && <span className="absolute -left-[1.5px] top-0 bottom-0 w-[2px] bg-amber-500 animate-pulse" />}
+          {char === ' ' ? '\u00a0' : char}
+        </span>
+      );
+    };
+
+    const out: React.ReactNode[] = [];
+    let word: React.ReactNode[] = [];
+    let wordStart = 0;
+    const flush = () => {
+      if (word.length) {
+        out.push(<span key={`w${wordStart}`} className="inline-block whitespace-nowrap">{word}</span>);
+        word = [];
+      }
+    };
+    for (let i = 0; i < sentence.length; i++) {
+      if (sentence[i] === ' ') {
+        flush();
+        out.push(glyph(' ', i));          // the space itself is where a line may break
+        wordStart = i + 1;
+      } else {
+        if (!word.length) wordStart = i;
+        word.push(glyph(sentence[i], i));
+      }
+    }
+    flush();
+    return out;
+  }, [sentence, typedText]);
 
   // ---- the name, before any typing ----
   if (!started) {

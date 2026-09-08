@@ -8,6 +8,7 @@ import {
   NeuromotorGauges,
 } from '../types/biometrics';
 import {
+  BACKEND_HTTP,
   BaselineDoc,
   BaselineInfo,
   CaptureStream,
@@ -39,6 +40,8 @@ export interface LiveState {
   agentCapturing: boolean;     // the desktop agent is scoring every application, so this window does not
   tick: Tick | null;
   users: BaselineInfo[];       // people with a baseline on disk
+  refreshUsers: () => Promise<BaselineInfo[]>;   // after an enrolment: the list arrives with the
+                                                 // socket's hello and is otherwise never refetched
   declaredUser: string;        // whose baseline we measure against
   setDeclaredUser: (u: string) => void;
   reset: () => void;           // "someone new sits down": clear the backend window
@@ -491,15 +494,30 @@ export const BiometricsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, []);
 
+  // The list of profiles comes with the feed's hello. Anybody who calibrates after that is
+  // missing from it until the socket reconnects, which is why Settings called a person who
+  // had just enrolled "not enrolled yet".
+  const refreshUsers = useCallback(async () => {
+    try {
+      const r = await fetch(`${BACKEND_HTTP}/api/users`);
+      const d = await r.json();
+      const list: BaselineInfo[] = d?.baselines || [];
+      setUsers(list);
+      return list;
+    } catch {
+      return usersRef.current;
+    }
+  }, []);
+
   const clearTerminal = () => setTerminalLogs([]);
 
   const live = useMemo<LiveState>(() => ({
-    connected, streaming, tick, users, declaredUser, setDeclaredUser, reset,
+    connected, streaming, tick, users, declaredUser, setDeclaredUser, reset, refreshUsers,
     sessionId: captureRef.current?.session ?? '',
     agentCapturing,
     photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto, enrolFace,
-  }), [connected, streaming, agentCapturing, tick, users, declaredUser, setDeclaredUser, reset, photoOnIntruder,
-       setPhotoOnIntruder, cameraError, lastPhoto, enrolFace]);
+  }), [connected, streaming, agentCapturing, tick, users, declaredUser, setDeclaredUser, reset, refreshUsers,
+       photoOnIntruder, setPhotoOnIntruder, cameraError, lastPhoto, enrolFace]);
 
   return (
     <BiometricsContext.Provider
