@@ -621,3 +621,25 @@ def test_sessions_api_summarises_the_recordings(tmp_path, monkeypatch):
         _json.dumps({"type": "hello", "user": "Nobody"}), encoding="utf-8")
     history._cache.clear()
     assert len(history.recent(10)) == 1
+
+
+def test_recalibrating_joins_the_profile_it_matches(tmp_path, monkeypatch):
+    """Baseline files are named from the slug, so "Test1" and "test1" are one profile. The
+    samples used to keep whatever was typed, which gave the identity model two classes for
+    one person: measured on this machine, 85 windows against 81, and cross-validated accuracy
+    fell from 93.7% to 91.1% with both present."""
+    import json as _json
+
+    from backend import enrol
+
+    monkeypatch.setattr(enrol, "BASELINE_DIR", tmp_path)
+    assert enrol.existing_name("Test1") is None                      # nothing enrolled yet
+
+    (tmp_path / "test1.json").write_text(_json.dumps({"user": "test1", "n_samples": 5}))
+    assert enrol.existing_name("Test1") == "test1"                   # the shift key is not a new person
+    assert enrol.existing_name("  TEST1 ".strip()) == "test1"
+    assert enrol.existing_name("Someone Else") is None
+
+    # a baseline with no usable name in it does not rename anybody
+    (tmp_path / "blank.json").write_text(_json.dumps({"user": "  "}))
+    assert enrol.existing_name("blank") is None

@@ -198,9 +198,21 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
             ))}
           </dl>
           <p className="text-xs text-on-surface-variant">
-            Ten sentences is a small baseline: it is enough to score you, and it tightens every time you
-            calibrate again. The identity model is being retrained in the background so it can tell you
-            from the others; until it finishes, Identity may call you unknown, which is the honest answer.
+            {summary.in_identity_model === false ? (
+              <>
+                Your baseline is live: the Threat and State heads measure against it from now on, and the
+                camera check works. Telling you apart from the others is a separate job, and ten sentences
+                is too thin for it: a class this small sits close to everybody and costs the people already
+                enrolled real accuracy (measured here: 93.7% down to 89.6%). Calibrate again when you have
+                a minute and it earns its place. Until then Identity says unknown, which is the true answer.
+              </>
+            ) : (
+              <>
+                Ten sentences is a small baseline: it is enough to score you, and it tightens every time you
+                calibrate again. The identity model is being retrained in the background so it can tell you
+                from the others; until it finishes, Identity may call you unknown, which is the honest answer.
+              </>
+            )}
           </p>
 
           {/* The camera is the second factor on every alert. Without a face to compare against it

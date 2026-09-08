@@ -18,6 +18,10 @@ export interface EnrolSummary {
   stress_speed_kps?: number;
   state?: { focus_below: number; load_above: number } | null;
   identity?: { state: string; message: string };
+  // A profile gets a baseline immediately; a class in the identity model is earned with
+  // more typing, because a thin class costs the people already enrolled real accuracy.
+  in_identity_model?: boolean;
+  samples_for_identity?: { have: number; need: number };
 }
 
 export interface EnrolRequest {

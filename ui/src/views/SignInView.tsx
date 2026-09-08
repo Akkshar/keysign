@@ -177,7 +177,11 @@ const LinkProfile: React.FC = () => {
         </button>
         <p className="text-[11px] text-on-surface-variant">About two minutes. Timings only; the letters are never stored.</p>
       </div>
-      <p className="text-xs text-on-surface-variant">Or pick a profile that is already on this machine:</p>
+      {/* On a machine where nobody has calibrated there is no list to offer, and inviting
+          somebody to pick from an empty one is worse than saying nothing. */}
+      {live.users.length > 0 && (
+        <p className="text-xs text-on-surface-variant">Or pick a profile that is already on this machine:</p>
+      )}
       {!live.connected && (
         <p className="text-xs text-tertiary">The local backend is not running, so the enrolled profiles cannot be listed yet. Start it with <code className="font-telemetry">uv run python -m backend</code>.</p>
       )}

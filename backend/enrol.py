@@ -199,6 +199,36 @@ def model_accuracy(path: Path = MODEL_PATH) -> float | None:
         return None
 
 
+# How many enrolment samples a profile needs before it becomes a class the classifier has
+# to choose between. Measured 2026-09-08: a 20-sample profile in the model took overall
+# cross-validated accuracy from 93.7% to 89.6% and Akkshar's own windows from 98.8% to
+# 92.8%, because a thin class sits close to everybody and wins ties. Two calibrations, or
+# one plus the live turns a few sessions produce, clears this.
+IDENTITY_MIN_SAMPLES = 40
+
+
+def thin_profiles(min_samples: int = IDENTITY_MIN_SAMPLES) -> dict[str, int]:
+    """
+    Enrolled profiles with too few samples to be a class, by name. They keep their baseline
+    and everything that depends on it; they are only left out of the identity training set.
+    """
+    out: dict[str, int] = {}
+    for path in sorted(SAMPLES_DIR.glob("enrolled_*.json")):
+        try:
+            rows = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        counts: dict[str, int] = {}
+        for r in rows if isinstance(rows, list) else []:
+            name = r.get("user")
+            if isinstance(name, str) and name.strip():
+                counts[name] = counts.get(name, 0) + 1
+        for name, n in counts.items():
+            if n < min_samples:
+                out[name] = n
+    return out
+
+
 def retrain_identity(user: str) -> None:
     """
     Rebuild the window features over every sample file and retrain the identity model, so the
@@ -234,6 +264,20 @@ def retrain_identity(user: str) -> None:
             if r.returncode != 0:
                 _set_status(state="error", message=f"feature windows failed: {r.stderr[-200:]}")
                 return
+            thin = thin_profiles()
+            if thin:
+                # Drop the thin classes from the training table before training. The rows stay
+                # in the samples on disk, so a later rebuild picks them up once there are enough.
+                try:
+                    import pandas as pd
+                    df = pd.read_csv(WINDOWS_CSV)
+                    keep = df[~df["user"].isin(thin)]
+                    if keep["user"].nunique() >= 2:
+                        keep.to_csv(WINDOWS_CSV, index=False)
+                        log.info("identity training leaves out %s (too few samples: %s)",
+                                 ", ".join(thin), ", ".join(f"{k} {v}" for k, v in thin.items()))
+                except Exception as e:                      # never let this stop a retrain
+                    log.warning("could not filter thin profiles: %s", e)
             r = subprocess.run([sys.executable, "-m", "pipeline.identity", "train", str(WINDOWS_CSV)],
                                cwd=str(ROOT), capture_output=True, text=True, timeout=900)
             if r.returncode != 0:
@@ -261,6 +305,26 @@ def retrain_identity(user: str) -> None:
     threading.Thread(target=run, daemon=True, name="keysign-enrol-train").start()
 
 
+def existing_name(user: str) -> str | None:
+    """
+    The name a profile with this slug is already stored under, if there is one.
+
+    Baseline files are named from the slug, so "Test1" and "test1" write the same file, but
+    the samples keep the raw string and the identity model builds a class per spelling. That
+    splits one person in two: measured on this machine, 85 windows against 81, and the
+    classifier's accuracy fell from 93.7% to 91.1% with both classes present. Recalibrating
+    should add to a profile, not compete with it.
+    """
+    path = BASELINE_DIR / f"{_slug(user)}.json"
+    if not path.exists():
+        return None
+    try:
+        stored = json.loads(path.read_text(encoding="utf-8")).get("user")
+    except (OSError, json.JSONDecodeError):
+        return None
+    return stored if isinstance(stored, str) and stored.strip() else None
+
+
 def enrol(user: str, raw_samples: list[dict], train: bool = True) -> dict:
     """
     Turn a wizard run into a working profile. Raises ValueError with a plain sentence when
@@ -269,6 +333,7 @@ def enrol(user: str, raw_samples: list[dict], train: bool = True) -> dict:
     user = (user or "").strip()
     if not user or len(user) > 64:
         raise ValueError("A name is needed for the profile (up to 64 characters).")
+    user = existing_name(user) or user
     samples = to_capture_samples(user, raw_samples)
     calm = [s for s in samples if s["condition"] == "calm"]
     if len(calm) < MIN_CALM:
@@ -284,6 +349,12 @@ def enrol(user: str, raw_samples: list[dict], train: bool = True) -> dict:
     summary = summarise(user, df, baseline)
     summary["state"] = state
     summary["baseline"] = str(path.relative_to(ROOT))
+    # Say plainly which half of the system this profile has. The baseline is live the moment
+    # this returns; a class in the identity model is earned with more typing (see thin_profiles).
+    thin = thin_profiles()
+    summary["in_identity_model"] = user not in thin
+    summary["samples_for_identity"] = {"have": thin.get(user, 0) or len(samples),
+                                       "need": IDENTITY_MIN_SAMPLES}
     if train:
         retrain_identity(user)
     else:

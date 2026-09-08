@@ -569,7 +569,7 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-1 text-[10.5px] font-mono text-stone-400 dark:text-stone-500 pt-0.5 select-none">
             <span>
               {arenaMode === 'testing'
-                ? 'Click inside box or type anywhere to test rhythm & ink mechanical keys'
+                ? ''
                 : isCalmPhase
                 ? 'Type at your own pace: these five become your calm baseline'
                 : 'Now go fast: these five show what your typing does under pressure'}

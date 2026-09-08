@@ -72,9 +72,7 @@ export const WaveformVisualizer: React.FC = () => {
             <span className="w-3 h-1.5 rounded-full bg-secondary" />
             <span className="font-headline text-xs text-on-surface-variant">Flight</span>
           </div>
-          <div className="bg-surface-container-low px-space-sm py-space-2xs rounded text-on-surface-variant font-telemetry text-xs border border-outline-variant">
-            one point per key
-          </div>
+
         </div>
       </div>
 

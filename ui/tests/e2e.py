@@ -138,9 +138,25 @@ def up(timeout: float = 1.0) -> bool:
 
 # ---------------------------------------------------------------- typing data
 def load_samples() -> list[dict]:
-    if not SAMPLES.exists():
-        die(f"{SAMPLES} is missing; this test replays the team's recorded samples.")
-    return json.loads(SAMPLES.read_text(encoding="utf-8"))
+    """
+    Everything recorded on this machine: the team's capture exports and anybody who has
+    calibrated from the dashboard. The declared user is whoever the machine is set to, and
+    on a machine where a reviewer calibrated that is their profile, whose samples live in
+    data/samples/enrolled_<slug>.json rather than in the team's file.
+    """
+    out: list[dict] = []
+    if SAMPLES.exists():
+        out += json.loads(SAMPLES.read_text(encoding="utf-8"))
+    for extra in sorted(DATA.glob("samples/enrolled_*.json")):
+        try:
+            rows = json.loads(extra.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(rows, list):
+            out += rows
+    if not out:
+        die(f"no recorded samples under {DATA / 'samples'}; this test replays real typing.")
+    return out
 
 
 def stream_of(samples: list[dict], user: str, condition: str = "calm", n: int = 8) -> list[dict]:

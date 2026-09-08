@@ -90,9 +90,6 @@ export const LiveMonitoringView: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-baseline justify-between gap-4 px-1">
               <h2 className="font-serif text-lg font-medium text-stone-900 dark:text-stone-100">Type here</h2>
-              <span className="font-mono text-[11px] text-stone-500 dark:text-stone-400">
-                or anywhere on the page
-              </span>
             </div>
 
             {/* The arena is the one box on this page that asks to be typed into. It used to
@@ -129,9 +126,6 @@ export const LiveMonitoringView: React.FC = () => {
           <div className={`${PANEL} p-5 space-y-3`}>
             <div className="flex items-baseline justify-between">
               <h3 className="font-serif text-base font-medium text-stone-900 dark:text-stone-100">Last keystrokes</h3>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                timings only, no characters
-              </span>
             </div>
             <div className="font-telemetry text-xs">
               <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 px-3 pb-1.5 text-[10px] uppercase tracking-wider text-stone-400 dark:text-stone-500 border-b border-stone-200 dark:border-stone-700">
@@ -175,9 +169,6 @@ export const LiveMonitoringView: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-700">
               <span className="font-serif text-sm font-medium text-stone-800 dark:text-stone-200">
                 The typewriter
-              </span>
-              <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-900 text-stone-600 dark:text-stone-400">
-                strikes the key you press
               </span>
             </div>
             <div className="relative w-full h-[420px] rounded-lg overflow-hidden bg-stone-50/70 dark:bg-stone-900/40 [&>div>div:first-child]:!h-[420px]">

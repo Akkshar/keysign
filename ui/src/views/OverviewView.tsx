@@ -195,9 +195,6 @@ export const OverviewView: React.FC = () => {
       <section className="space-y-3">
         <div className="flex items-baseline justify-between px-1">
           <h2 className="font-serif text-lg font-medium text-on-surface">The KeySign environment</h2>
-          <span className="font-body text-xs text-on-surface-variant">
-            Type anywhere: every key you press is scored on this machine
-          </span>
         </div>
         <div className="relative w-full h-[480px] rounded-xl bg-surface-container-low border border-outline-variant overflow-hidden [&>div>div:first-child]:!h-[480px]">
           <Interactive3DTypewriter className="w-full" />
