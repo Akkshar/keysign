@@ -6,7 +6,7 @@ const SAMPLE_SENTENCES = [
   "the quick brown fox jumps over the lazy dog while the typewriter carriage slides smoothly across parchment",
   "your keyboard has a unique rhythmic signature that reveals physical cadence rather than the words you write",
   "every keystroke hold time and flight latency creates an invisible fingerprint of human motor rhythm",
-  "involuntary neuromotor intervals reveal subtle temporal patterns without ever recording the content of thoughts",
+  "the gap between one key going up and the next going down is as personal as handwriting",
   "focus on your natural typing rhythm and watch the mechanical keys strike in perfect synchronization",
 ];
 
@@ -458,10 +458,11 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
             <div className="p-8 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50/80 dark:bg-stone-900/80 text-center space-y-3 animate-fade-in font-mono">
               <div className="w-7 h-7 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto" />
               <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
-                Synthesizing Neuromuscular Baseline...
+                Building your baseline
               </h3>
               <p className="text-xs text-stone-500 max-w-sm mx-auto">
-                Computing dwell variances, flight interval distributions, and stress compression ratio.
+                Working out how long you hold a key, how long you leave between them, and how far
+                the hurried sentences moved from the calm ones.
               </p>
             </div>
           )}
@@ -570,8 +571,8 @@ export const MonkeyTypeArena: React.FC<MonkeyTypeArenaProps> = ({
               {arenaMode === 'testing'
                 ? 'Click inside box or type anywhere to test rhythm & ink mechanical keys'
                 : isCalmPhase
-                ? 'Type comfortably and relaxed to establish your calm neuromotor baseline'
-                : 'Type with high urgency and speed to calibrate stress flight compression'}
+                ? 'Type at your own pace: these five become your calm baseline'
+                : 'Now go fast: these five show what your typing does under pressure'}
             </span>
             <span className="shrink-0">Yellow = inked · Red = jitter · Grey = target</span>
           </div>

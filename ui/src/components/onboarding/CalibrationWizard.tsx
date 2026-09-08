@@ -46,6 +46,8 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
   const [currentStep, setCurrentStep] = useState(0);
   const [typedText, setTypedText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [faceState, setFaceState] = useState<'idle' | 'working' | 'done' | 'failed'>('idle');
+  const [faceNote, setFaceNote] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<EnrolSummary | null>(null);
 
@@ -200,6 +202,45 @@ export const CalibrationWizard: React.FC<{ onDone?: (user: string) => void; onCa
             calibrate again. The identity model is being retrained in the background so it can tell you
             from the others; until it finishes, Identity may call you unknown, which is the honest answer.
           </p>
+
+          {/* The camera is the second factor on every alert. Without a face to compare against it
+              has no opinion, and the machine is left deciding on the typing alone. Offered here
+              because this is where somebody is already set up to say yes; it opens the webcam, so
+              it stays a choice, and it is skippable. */}
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-2">
+            <h3 className="font-serif text-base font-medium text-on-surface">One more thing, if you want it</h3>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              KeySign can take eight frames from your webcam and use them as a second opinion when an
+              alert fires: the difference between "somebody else is typing" and "you, typing oddly".
+              Nothing is pushed or locked without it having looked. The frames stay on this machine.
+              {' '}Look at the screen the way you normally do, keys included.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={busy || faceState === 'working' || faceState === 'done'}
+                onClick={async () => {
+                  setFaceState('working');
+                  try {
+                    const r = await live.enrolFace(summary.user, 8);
+                    setFaceState(r.ok ? 'done' : 'failed');
+                    setFaceNote(r.ok ? `${r.n_samples} frame(s) stored` : (r.reason || 'the camera had nothing to show'));
+                  } catch (e) {
+                    setFaceState('failed');
+                    setFaceNote(String(e));
+                  }
+                }}
+                className="px-4 py-2 rounded-lg border border-outline-variant text-sm text-on-surface hover:bg-surface-container disabled:opacity-50"
+              >
+                {faceState === 'working' ? 'Looking...' : faceState === 'done' ? 'Face added' : 'Add my face'}
+              </button>
+              {faceNote && <span className="text-xs text-on-surface-variant">{faceNote}</span>}
+              {faceState === 'idle' && (
+                <span className="text-xs text-on-surface-variant">Or later, from Settings.</span>
+              )}
+            </div>
+          </div>
+
           <button
             type="button"
             disabled={busy}

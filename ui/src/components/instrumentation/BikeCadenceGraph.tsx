@@ -5,7 +5,8 @@ interface BikeCadenceGraphProps {
 }
 
 /**
- * Interactive, lag-free bicycle navigating the Neuromotor Cadence graph.
+ * A bicycle you can ride along a line. It is a toy: the line is drawn, not measured,
+ * and no keystroke on this panel reaches the backend.
  * Steer and pedal using Arrow Keys (← / →) or on-screen touch pedals.
  */
 export const BikeCadenceGraph: React.FC<BikeCadenceGraphProps> = ({
@@ -191,7 +192,7 @@ export const BikeCadenceGraph: React.FC<BikeCadenceGraphProps> = ({
         <div className="flex items-center gap-2.5">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-600 animate-pulse" />
           <h3 className="font-serif text-lg font-medium text-stone-900 dark:text-stone-100">
-            Neuromotor Cadence & Flight Dispersion
+            A line to ride along
           </h3>
         </div>
 
