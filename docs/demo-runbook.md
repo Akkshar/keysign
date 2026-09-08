@@ -189,16 +189,23 @@ on this laptop. Questions."
 
 ## Numbers slide (say them, don't read them)
 
+Re-measured 2026-09-08. The three struck-through rows were wrong and are kept here
+so nobody quotes them from memory; `docs/pitch.md` carries the full checked table.
+
 | Claim | Number |
 |-------|--------|
-| Identity, cross-validated, 4 people, 131 samples | 97.7% (chance 25%) |
+| Identity, cross-validated, live-shaped windows | 95.6% on 2074 windows, 5 classes (chance 20%) |
+| ~~Identity~~ | ~~97.7%~~ — that was whole enrolment samples, not what the demo runs |
 | Own-baseline distance vs other-person distance | 0.8-1.6σ vs 1.8-4.1σ |
-| Stress detection, own baseline, best person | AUC 0.97 |
+| Face check: called the owner / called somebody else | 0.42-0.87 vs 0.11-0.25, no overlap on 58 real frames |
+| Camera as the second factor | 104 alerts with a verdict: 39 kept local, 23 downgraded, 42 locked |
+| ~~Stress detection AUC~~ | ~~0.97~~ — the model scores 0.66 and is gated off; the live head uses the rule |
 | Public benchmark scale | CMU 51 people, 20,400 samples |
 | Longitudinal data behind Drift | 22 people, 15,003 tests, up to 3 years |
 | Datasets converted into one format | 4 public + ours |
 | Timing resolution | 0.1 ms |
-| Tests | 60 |
+| Tests | 135, plus a 13-step end-to-end |
+| ~~Tests~~ | ~~60~~ |
 
 ## If something breaks
 
